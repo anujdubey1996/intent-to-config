@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "zigbee2mqtt.fullname" . }}
+  labels:
+    {{- include "zigbee2mqtt.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "zigbee2mqtt.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "zigbee2mqtt.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "zigbee2mqtt.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 0
+            failureThreshold: 3
+            timeoutSeconds: 1
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 0
+            failureThreshold: 3
+            timeoutSeconds: 1
+            periodSeconds: 10
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 0
+            failureThreshold: 30
+            timeoutSeconds: 1
+            periodSeconds: 5
+          resources:
+            limits:
+              {{- if .Values.genericDevicePlugin.enabled }}
+              {{ .Values.genericDevicePlugin.identifier}}: 1
+              {{- end }}
+              {{- if .Values.resources.limits }}
+              {{- toYaml .Values.resources.limits | nindent 14 }}
+              {{- end}}
+            requests:
+              {{- if .Values.resources.requests }}
+              {{- toYaml .Values.resources.requests| nindent 14 }}
+              {{- end}}
+          volumeMounts:
+            - mountPath: /app/data
+              name: {{ .Chart.Name }}-data
+            - mountPath: /app/data/configuration.yaml
+              subPath: configuration.yaml
+              name: {{ .Chart.Name }}-runtime-config
+      initContainers:
+        - name: {{ .Chart.Name }}-config-init
+          image: "busybox:latest"
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          command:
+            - "sh"
+            - "-ce"
+            - "cp /configmap/configuration.yaml /tmp/files/configuration.yaml"
+          volumeMounts:
+            - mountPath: /configmap/configuration.yaml
+              subPath: config
+              name: {{ .Chart.Name }}-configmap
+            - mountPath: /tmp/files
+              name: {{ .Chart.Name }}-runtime-config
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: {{ .Chart.Name }}-data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Chart.Name }}-data
+          {{- else }}
+          emptyDir:
+            sizeLimit: {{ .Values.persistence.size }}
+          {{- end }}
+        - name: {{ .Chart.Name }}-configmap
+          configMap:
+            name: {{ .Chart.Name }}-config
+        - name: zigbee2mqtt-runtime-config
+          emptyDir:
+            sizeLimit: 10Mi
+

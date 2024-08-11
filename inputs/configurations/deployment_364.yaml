@@ -1,0 +1,23 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: cassandra-seed
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cassandra
+    spec:
+      containers:
+      - name: cassandra-seed
+        image: cassandra
+        env:
+#        - name: CASSANDRA_BROADCAST_ADDRESS
+#          value: 10.99.99.99
+        ports:
+        - containerPort: 7000
+        - containerPort: 7001
+        - containerPort: 7199
+        - containerPort: 9042
+        - containerPort: 9160

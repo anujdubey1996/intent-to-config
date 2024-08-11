@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # annotations:
+  #   deployment.kubernetes.io/revision: "1"
+  labels:
+    app: cts-nodejs
+  name: cts-nodejs
+  namespace: cts-kube
+  annotations:
+    app.gitlab.com/app: ${CI_PROJECT_PATH_SLUG}
+    app.gitlab.com/env: ${CI_ENVIRONMENT_SLUG}
+    eks.amazonaws.com/compute-type: fargate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cts-nodejs
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: cts-nodejs
+    spec:
+      containers:
+      - env:
+        - name: NODEJS_HOST
+          value: cts_nodejs
+        - name: NODEJS_PORT
+          value: "4000"
+        - name: REDIS_HOSTNAME
+          value: redis
+        - name: REDIS_PORT
+          value: "6379"
+        image: registry.epa.gov/qed/cyanweb_kube/cts-nodejs:dev-gl
+        imagePullPolicy: Always
+        name: cts-nodejs
+        resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          livenessProbe:
+            exec:
+              command:
+                - ls
+                - /
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - ls
+                - /
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 10
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler

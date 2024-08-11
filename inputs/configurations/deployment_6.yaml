@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: app-deploy-v1
+  name: app-deploy-v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-deploy-v1
+      version: v1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: app-deploy-v1
+        version: v1
+    spec:
+      containers:
+      - command: ["/bin/sh","-c","echo hell world! && sleep 3600"]
+        image: busybox
+        name: busybox
+        resources: {}
+status: {}

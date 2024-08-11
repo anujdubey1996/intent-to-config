@@ -1,0 +1,14 @@
+apiVersion: "apps/v1"
+kind: Deployment
+metadata:
+  name: no-name
+spec:
+  template:
+    metadata:
+      labels:
+        logs: "true"
+        load: "true"
+    spec:
+      containers:
+      - name: "online-shop-deployment"
+        imagePullPolicy: Always

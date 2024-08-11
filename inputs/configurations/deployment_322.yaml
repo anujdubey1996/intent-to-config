@@ -1,0 +1,28 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: kotlin-example-deployment
+spec:
+  selector:
+    matchLabels:
+      app: kotlin-example-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: kotlin-example-app
+    spec:
+      containers:
+      - name: kotlin-example-app
+        image: theguardian94/kotlin-demo:latest
+        env:
+          - name: spring.data.mongodb.host
+            value: localhost
+        ports:
+        - containerPort: 8080
+          name: server
+      - name: kotlin-example-app-mongo-db
+        image: mongo
+        ports: 
+        - containerPort: 27017
+          name: database

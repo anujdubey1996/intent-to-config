@@ -1,0 +1,17 @@
+apiVersion: apps/v1 # which kubernetes version to use
+kind: Deployment
+metadata:
+  name: one-percent-backend
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: one-percent-backend
+  template:
+    metadata:
+      labels:
+        app: one-percent-backend
+    spec:
+      containers:
+        - name: one-percent-backend
+          image: gcr.io/one-percent-better-271915/one-percent-backend:v1

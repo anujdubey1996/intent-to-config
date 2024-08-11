@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+  namespace: jellyfin
+  labels:
+    app: jellyfin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jellyfin
+  template:
+    metadata:
+      labels:
+        app: jellyfin
+    spec:
+      containers:
+      - name: jellyfin
+        image: linuxserver/jellyfin:latest
+        ports:
+        - name: web
+          containerPort: 8096
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+        - name: movies
+          mountPath: "/data/movies"
+        - name: tvshows
+          mountPath: "/data/tvshows"
+        env:
+        - name: TZ
+          value: Europe/Copenhagen
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: jellyfin-config
+      - name: movies
+        persistentVolumeClaim:
+          claimName: jellyfin-movies
+      - name: tvshows
+        persistentVolumeClaim:
+          claimName: jellyfin-tvshows

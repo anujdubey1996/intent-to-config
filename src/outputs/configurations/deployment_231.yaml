@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: favorites-db-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: favorites-db
+  template:
+    metadata:
+      labels:
+        app: favorites-db
+    spec:
+      containers:
+        - name: favorites-db-pod
+          image: postgres:15.0-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: favorites-db-credentials

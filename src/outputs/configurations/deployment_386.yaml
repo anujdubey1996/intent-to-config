@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users-horizon
+  labels:
+    app: users-horizon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: users-horizon
+  template:
+    metadata:
+      labels:
+        app: users-horizon
+    spec:
+      containers:
+        - name: users-horizon
+          image: mo7zayed/k8s-users-api:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - "php artisan optimize && php -d memory_limit=-1 artisan horizon"
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "256Mi"
+          envFrom:
+            - configMapRef:
+                name: users-configs
+            - secretRef:
+                name: users-secrets

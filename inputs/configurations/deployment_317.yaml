@@ -1,0 +1,22 @@
+apiVersion: apps/v1beta1 # implies the use of kubernetes 1.7
+                         # use apps/v1beta2 for kubernetes 1.8
+kind: Deployment
+metadata:
+  name: node-svc-deployment
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: node-svc
+  template:
+    metadata:
+      labels:
+        app: node-svc
+    spec:
+      containers:
+      - name: node-svc
+        image: gcr.io/proven-sum-252123/node-svc:latest 
+
+        #image: dmacademy/node-svc:latest #If you don't specify a registry hostname, Kubernetes assumes that you mean the Docker public registry.
+                                  #https://kubernetes.io/docs/concepts/containers/images/
+---

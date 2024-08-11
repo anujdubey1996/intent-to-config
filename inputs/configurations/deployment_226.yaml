@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+  namespace: default
+
+spec:
+  replicas: 1 
+  template:
+    spec:
+      containers:
+      - name: nginx
+        image: nginxdemos/hello
+        envFrom:
+          - configMapRef:
+              name: nginx-cm
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"

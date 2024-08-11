@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-center1-kube-system-pod-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-center1-kube-system-pod-collector
+  template:
+    metadata:
+      labels:
+        app: data-center1-kube-system-pod-collector
+    spec:
+      containers:
+        - name: data-center1-kube-system-pod-collector
+          image: phuongbac/namespace-pod-collector
+          ports:
+            - containerPort: 9090
+          env:
+            - name: URL  # Name of the environment variable in the container
+              value: "http://192.168.24.20:31179/prometheus/api/v1/query"  # Set the value here
+            - name: CLUSTER_NAME
+              value: "data-center1"
+            - name: NAME_SPACE
+              value: "kube-system"
+
+

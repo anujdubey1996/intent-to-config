@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example
+  template:
+    metadata:
+      labels:
+        app: example
+    spec:
+      containers:
+      - name: example-container
+        image: example-image
+        ports:
+        - containerPort: 8080
+
+
+
+# apiVersion: especifica a versão da API do Kubernetes. Neste caso, está usando a versão da API “apps/v1”, que é apropriada para Deployments.
+# kind: especifica o tipo de recurso do Kubernetes. Aqui, é “Implantação”, indicando que este arquivo de configuração está definindo uma implantação.
+# spec: esta seção define o estado desejado da implantação.
+# replicas: 3: especifica que você deseja executar três réplicas do seu aplicativo.
+# selector: descreve o seletor para corresponder aos pods gerenciados por esta implantação.
+# matchLabels: especifica os rótulos que o conjunto de réplicas criado pela implantação deve usar para selecionar os pods que ele gerencia. Neste caso, os pods com o rótulo  app: example são selecionados.
+# template: define o modelo de pod usado para criar novos pods.
+# metadata: contém os rótulos a serem aplicados aos pods criados a partir deste modelo. Neste caso, os pods terão o rótulo  app: example.
+# spec: descreve a especificação dos pods.
+# containers: esta seção especifica os contêineres a serem executados no pod.
+# name: example-container: atribui um nome ao contêiner.
+# image: example-image: especifica a imagem do Docker a ser usada para esse contêiner.
+# ports: Define as portas a serem abertas no contêiner.
+# containerPort: 8080: indica que o contêiner escutará na porta 80.

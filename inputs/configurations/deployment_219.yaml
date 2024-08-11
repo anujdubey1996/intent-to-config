@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: webhook-fiaplanches
+  name: webhook-fiaplanches
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: webhook-fiaplanches
+  template:
+    metadata:
+      labels:
+        app: webhook-fiaplanches
+      name: webhook-fiaplanches
+    spec:
+      containers:
+        - image: dalexandrias/webhook-fiaplanches-api:2.0
+          imagePullPolicy: IfNotPresent
+          name: webhook-fiaplanches
+          ports:
+            - containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: webhook-config
+      restartPolicy: Always

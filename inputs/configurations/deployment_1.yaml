@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: d
+spec:
+  selector:
+    matchLabels:
+      app: d
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: d
+    spec:
+      containers:
+        - name: d
+          image: nginx
+          resources:
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              port: 80
+            failureThreshold: 1
+            periodSeconds: 10
+---

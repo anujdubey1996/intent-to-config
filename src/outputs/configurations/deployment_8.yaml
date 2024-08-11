@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: mlops-minikube
+  name: mlops-minikube
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlops-minikube
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: mlops-minikube
+    spec:
+      containers:
+        - image: mlflow-s1-web:latest
+          name: mlflow-s1-web
+          resources: {}
+status: {}

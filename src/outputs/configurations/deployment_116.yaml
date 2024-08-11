@@ -1,0 +1,71 @@
+# Необходимо 
+# - Изменить манифест deployment из прошлых Д3 так, чтобы поды запускались под service account monitoring
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hw-deployment
+  namespace: homework
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hw
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: hw
+    spec:
+      serviceAccountName: monitoring
+      nodeSelector:
+        homework: "true" 
+      containers:
+      - name: web-server
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: shared-data
+          mountPath: /homework
+        - name: config-volume
+          mountPath: /homework/conf
+        - name: nginx-config-volume
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        lifecycle:
+          preStop:
+            exec:
+              command: ["sh", "-c", "rm /homework/index.html"] # удалять файл index.html из директории /homework основного контейнера, перед его завершением
+        readinessProbe:
+          httpGet:
+            path: /index.html
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      initContainers:
+      - name: init-container
+        image: busybox:1.28
+        volumeMounts:
+        - name: shared-data
+          mountPath: /init
+        command: ['sh', '-c', 'echo "<html><head><title>Welcome</title></head><body><h1>Hello, world!</h1></body></html>" > /init/index.html']
+        # command:
+        # - wget
+        # - "-O"
+        # - "/init/index.html"
+        # - http://info.cern.ch
+      volumes:
+      - name: shared-data
+        persistentVolumeClaim:
+          claimName: hw-pvc
+      - name: config-volume
+        configMap:
+          name: hw-configmap
+      - name: nginx-config-volume
+        configMap:
+          name: nginx-config

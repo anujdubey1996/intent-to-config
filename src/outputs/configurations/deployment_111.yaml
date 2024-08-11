@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-deploy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+      - name: auth
+        image: shafaqzehra/backend:latest
+        ports:
+        - containerPort: 4000
+        env:
+        - name: GUARD_PORT
+          value: "4000"
+        - name: POSTGRES_USERNAME
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "postgres"
+        - name: POSTGRES_HOST
+          value: "postgres"
+        - name: POSTGRES_DATABASE
+          value: "signupapp"
+        command: ["yarn", "start"]

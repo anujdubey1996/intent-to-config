@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redisbank-deployment
+spec:
+  selector:
+    matchLabels:
+      app: redisbank
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: redisbank
+    spec:
+      containers:
+      - name: redisbank
+        image: gcr.io/central-beach-194106/redisbank:0.0.1
+        ports:
+        - containerPort: 8080

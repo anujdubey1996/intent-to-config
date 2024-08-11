@@ -1,0 +1,35 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fdk-rdf-parse-event-publisher
+  labels:
+    app: fdk-rdf-parse-event-publisher
+spec:
+  template:
+    spec:
+      containers:
+        - name: fdk-rdf-parse-event-publisher
+          env:
+            - name: LOG_LEVEL
+              value: INFO
+            - name: FDK_RDF_PARSER_SERVICE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: commonurl-staging
+                  key: FDK_RDF_PARSER_SERVICE_HOST
+            - name: FDK_RDF_PARSER_SERVICE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fdk-rdf-parser-service
+                  key: API_KEY
+            - name: KAFKA_SCHEMA_REGISTRY
+              valueFrom:
+                secretKeyRef:
+                  name: fdk-metadata-quality-staging
+                  key: SCHEMA_REGISTRY
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                secretKeyRef:
+                  name: fdk-metadata-quality-staging
+                  key: BROKERS

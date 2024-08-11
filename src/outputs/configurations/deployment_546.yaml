@@ -1,0 +1,28 @@
+{{ if .Values.enabled }}
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: socialmap-app-main-page
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: socialmap-app-main-page
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+      - name: socialmap
+        image: {{ .Values.mainpageImage | quote }}
+        ports:
+        - containerPort: 8000
+        resources: {{ .Values.mainpageResources }}
+        volumeMounts:
+        - name: themes
+          mountPath: /themes
+      volumes:
+      - name: themes
+        hostPath:
+          path: /var/budgetkey-themes
+          type: DirectoryOrCreate
+{{ end }}

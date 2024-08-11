@@ -1,0 +1,224 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: DEPLOYMENT_NAME
+  namespace: NAMESPACE
+  labels:
+    app: PROJECT
+spec:
+  selector:
+    matchLabels:
+      project: PROJECT
+  template:
+    metadata:
+      namespace: NAMESPACE
+      labels:
+        project: PROJECT
+    spec:
+      containers:
+         - name: PROJECT
+           image: REGISTRY_HOSTNAME/PROJECT:TAG_VERSION
+           ports:
+             - containerPort: PORT_CONTAINER
+
+           env:
+             - name: EMAIL
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: EMAIL
+             - name: EMAIL_PASS
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: EMAIL_PASS
+             - name: APP_PORT
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: APP_PORT
+             - name: PUBLIC_FRONT_URL
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: PUBLIC_FRONT_URL
+             - name: RECAPTCHA_SECRET_SITE
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: RECAPTCHA_SECRET_SITE
+             - name: RECAPTCHA_SECRET_KEY
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: RECAPTCHA_SECRET_KEY
+             - name: GOOGLE_CLIENT_ID
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: GOOGLE_CLIENT_ID
+             - name: GOOGLE_CLIENT_SECRET
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: GOOGLE_CLIENT_SECRET
+             - name: GOOGLE_CALL_BACK_URL
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: GOOGLE_CALL_BACK_URL
+             - name: GITHUB_CLIENT_ID
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: GITHUB_CLIENT_ID
+             - name: GITHUB_CLIENT_SECRET
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: GITHUB_CLIENT_SECRET
+             - name: GITHUB_CALL_BACK_URL
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: GITHUB_CALL_BACK_URL
+             - name: S3_ACCESS_KEY_ID
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: S3_ACCESS_KEY_ID
+             - name: S3_SECRET_ACCESS_KEY
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: S3_SECRET_ACCESS_KEY
+             - name: BUCKET_NAME
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: BUCKET_NAME
+             - name: S3_DOMAIN
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: S3_DOMAIN
+             - name: S3_BUCKET_NAME_PLUS_S3_DOMAIN
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: S3_BUCKET_NAME_PLUS_S3_DOMAIN
+             - name: MONGO_URL_FILES
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: MONGO_URL_FILES
+             - name: SERVICE_HOST
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: SERVICE_HOST
+             - name: FILE_SERVICE_PORT
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: FILE_SERVICE_PORT
+             - name: FILE_SERVICE_HOST
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: FILE_SERVICE_HOST
+             - name: PAY_SERVICE_HOST
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: PAY_SERVICE_HOST
+             - name: PAY_SERVICE_PORT
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: PAY_SERVICE_PORT
+             - name: STRIPE_SECRET
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: STRIPE_SECRET
+             - name: STRIPE_SIGNING_SECRET
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: STRIPE_SIGNING_SECRET
+             - name: PAYMENT_SUCCESS_URL
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: PAYMENT_SUCCESS_URL
+             - name: PAYMENT_CANCEL_URL
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: PAYMENT_CANCEL_URL
+             - name: PAYPAL_HOOK_URL
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: PAYPAL_HOOK_URL
+             - name: PAYPAL_CLIENT_ID
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: PAYPAL_CLIENT_ID
+             - name: PAYPAL_SECRET
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: PAYPAL_SECRET
+             - name: PAYPAL_BASE_URL
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: PAYPAL_BASE_URL
+             - name: PAYPAL_ACCESS_TOKEN
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: PAYPAL_ACCESS_TOKEN
+             - name: ACCESS_TOKEN_SECRET
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: ACCESS_TOKEN_SECRET
+             - name: ACCESS_TOKEN_EXP
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: ACCESS_TOKEN_EXP
+             - name: REFRESH_TOKEN_SECRET
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: REFRESH_TOKEN_SECRET
+             - name: REFRESH_TOKEN_EXP
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: REFRESH_TOKEN_EXP
+             - name: ENV
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: ENV
+             - name: CRYPTO_SALT
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: CRYPTO_SALT
+             - name: PROVIDER_REDIRECT_URL
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: PROVIDER_REDIRECT_URL
+             - name: DATABASE_URL
+               valueFrom:
+                 secretKeyRef:
+                   name: fs-production-config-secret
+                   key: DATABASE_URL

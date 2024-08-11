@@ -1,0 +1,24 @@
+apiVersion: apps/v1  # Specifies the API version for this Kubernetes resource, which is the apps/v1 version.
+kind: Deployment  # Defines the type of Kubernetes resource, in this case, it's a Deployment for managing application deployments.
+metadata:
+  name: shipping  # Specifies the name of the Deployment resource, which is "shipping."
+  namespace: karsajobs-ns  # Specifies the Kubernetes namespace where this Deployment will be created.
+spec:
+  selector:
+    matchLabels:
+      app: shipping  # Selects Pods to include in this Deployment based on the label "app: shipping."
+  template:
+    metadata:
+      labels:
+        app: shipping  # Specifies the labels for the Pods created by this Deployment; in this case, "app: shipping."
+    spec:
+      containers:
+      - env:
+        - name: PORT
+          value: "3001"  # Sets an environment variable "PORT" with the value "3001" for the container.
+        - name: AMQP_URL
+          value: amqp://rabbitmq-service.default.svc.cluster.local:5672  # Sets an environment variable "AMQP_URL" with the RabbitMQ URL.
+        image: ghcr.io/mirfani340/devops-dicoding-3/shipping-services:v1  # Specifies the Docker image to use for this container.
+        name: shipping  # Specifies the name of the container within the Pod.
+        ports:
+        - containerPort: 3001  # Specifies the port on which the container listens for incoming traffic (3001).

@@ -1,0 +1,57 @@
+{{- if .Values.redis.enabled }}
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Values.redis.name }}
+  labels:
+    app: {{ .Values.redis.name }}
+    chart: {{ template "app.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        release: {{ .Release.Name }}
+        app: {{ .Values.redis.name }}
+    spec:
+      containers:
+      - name: {{ .Values.redis.name }}
+        image: redis:latest
+        imagePullPolicy: Always
+        args:
+        - redis-server
+        - --appendonly
+        - "yes"
+        ports:
+        - containerPort: 6379
+          name: redis-port
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /data
+          name: {{ .Values.redis.name }}-pesistance
+        livenessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 3
+          periodSeconds: 2
+          successThreshold: 1
+          tcpSocket:
+            port: 6379
+          timeoutSeconds: 2
+        readinessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 3
+          periodSeconds: 2
+          successThreshold: 2
+          tcpSocket:
+            port: 6379
+          timeoutSeconds: 2
+      volumes:
+      - name: {{ .Values.redis.name }}-pesistance
+        persistentVolumeClaim:
+          claimName: {{ .Values.redis.name }}
+
+{{- end }}

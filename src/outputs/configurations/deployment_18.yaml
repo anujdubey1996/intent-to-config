@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-restapp
+  labels:
+    app: backend-restapp
+    tier: backend
+spec: 
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend-restapp
+  template: 
+    metadata:
+      labels:
+        app: backend-restapp
+        tier: backend
+    spec:
+      containers:
+        - name: backend-restapp
+          image: stacksimplify/kube-helloworld:1.0.0
+          ports:
+            - containerPort: 8080
+
+## for Deployment
+
+# apiVersion: apps/v1
+# kind: Deployment 
+# metadata:
+#   name:
+#   labels:
+# spec:
+#   replicas:
+#   selector:
+#     matchLabels:
+#   template:
+#     metadata:
+#     spec:
+#       containers:
+#         - name:
+#           image:
+#           ports:
+#             - containerPort:
+
+# apiVersion: apps/v1
+# kind: Deployment 
+# metadata:
+#   name: backend-restapp
+#   labels:
+#     app: backend-restapp
+#     tier: backend
+# spec:
+#   replicas: 3
+#   selector:
+#     matchLabels:
+#       app: backend-restapp
+#   template:
+#     metadata:
+#       labels:
+#         app: backend-restapp
+#         tier: backend
+#     spec:
+#       containers:
+#         - name: backend-restapp
+#           image: stacksimplify/kube-helloworld:1.0.0 
+#           ports:
+#             - containerPort: 8080

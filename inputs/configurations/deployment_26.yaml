@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/created-by: application-service
+    app.kubernetes.io/instance: devfile-sample-xyqd
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: devfile-sample-xyqd
+    app.kubernetes.io/part-of: ci1t-43256-0021-app
+  name: devfile-sample-xyqd
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: nodejs-app
+      app.kubernetes.io/instance: devfile-sample-xyqd
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nodejs-app
+        app.kubernetes.io/instance: devfile-sample-xyqd
+    spec:
+      containers:
+      - image: quay.io/stonesoup_perfscale/ci1t-43256-0021-tenant/ci1t-43256-0021-app/devfile-sample-xyqd@sha256:4fa5dae10fa42e6a919297ade8f64f8196cc576c40bb63ca76cf92e615b47067
+        name: my-nodejs
+        ports:
+        - containerPort: 3001
+          name: http
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 10m
+            memory: 50Mi
+status: {}

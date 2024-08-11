@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "voltaserve-language.fullname" . }}
+  labels:
+    {{- include "voltaserve-language.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.language.deployment.replicaCount | default 1}}
+  selector:
+    matchLabels:
+      {{- include "voltaserve-language.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- if or .Values.language.deployment.podAnnotations (.Values.globals).podAnnotations }}
+      annotations:
+        {{- with .Values.language.deployment.podAnnotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with (.Values.globals).podAnnotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      labels:
+        {{- include "voltaserve-language.labels" . | nindent 8 }}
+        {{- with .Values.language.deployment.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.imagePullSecrets }}
+        {{- with .Values.imagePullSecrets }}
+        imagePullSecrets:
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.language.deployment.security }}
+      {{- if .Values.language.deployment.security.securityContext }}
+      securityContext:
+        {{- toYaml .Values.language.deployment.security.securityContext | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      containers:
+        - name: main
+          {{- if .Values.language.deployment.security }}
+          {{- if .Values.language.deployment.security.podSecurityContext }} 
+          securityContext:
+            {{- toYaml .Values.language.deployment.security.podSecurityContext | nindent 12 }}
+          {{- end }}
+          {{- end }}
+          image: {{ .Values.language.image.repository | default "voltaserve/language" }}:{{ .Values.language.image.tag | default .Chart.AppVersion }}
+          imagePullPolicy: {{ .Values.language.deployment.imagePullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: http
+              containerPort: 8084
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.language.deployment.livenessProbePath | default "/v2/health" }}
+              port: 8084
+            initialDelaySeconds: 300
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.language.deployment.readinessProbePath | default "/v2/health" }}
+              port: 8084
+            initialDelaySeconds: 15
+          {{- if .Values.language.deployment.resources }}
+          resources:
+            {{- toYaml .Values.language.deployment.resources | nindent 12 }}
+          {{- end }}
+          {{- with .Values.language.deployment.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.language.deployment.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if or .Values.language.deployment.nodeSelector (.Values.globals).nodeSelectors }}
+      nodeSelector:
+      {{- with .Values.language.deployment.nodeSelector }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (.Values.globals).nodeSelectors }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      {{- with .Values.language.deployment.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.language.deployment.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

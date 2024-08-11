@@ -1,0 +1,22 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: worker
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          command: ['/bin/bash']
+          args: ['-c', 'celery -A tasks worker --loglevel=info -c 6']
+          image: gcr.io/visualdb-1046/kubequeue-wc
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: 8.1
+      nodeSelector:
+        cloud.google.com/gke-nodepool: workers

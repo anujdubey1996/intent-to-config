@@ -1,0 +1,171 @@
+{{- /* Copyright 2020-2023 Open Text */ -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.microfocus.com/default-replica-count: "1"
+    deployment.microfocus.com/runlevel: STANDBY
+  name: "{{ .Values.global.evtsvc.namePrefix }}-artemis"
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "evtsvc-artemis.labels" . | indent 4 }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "{{ .Values.global.evtsvc.namePrefix }}-artemis"
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+{{ include "evtsvc-artemis.labels" . | indent 8 }}
+      annotations:
+        pod.boostport.com/vault-approle: {{ .Release.Namespace }}-{{ .Values.global.vaultAppRole | default "default" }}
+        pod.boostport.com/vault-init-container: vault-init
+        prometheus.io/scrape: "true"
+        prometheus.io/scheme: "https"
+        prometheus.io/port: "8443"
+        prometheus.io/path: "/artemis/mgmt/prometheus"
+    spec:
+      serviceAccount: {{ .Values.deployment.rbac.serviceAccount | default (printf "%s-artemis" .Values.global.evtsvc.namePrefix) }}
+      serviceAccountName: {{ .Values.deployment.rbac.serviceAccount | default (printf "%s-artemis" .Values.global.evtsvc.namePrefix) }}
+{{- if .Values.global.docker.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.global.docker.imagePullSecret }}
+{{- end }}
+      securityContext:
+        runAsUser: {{ .Values.global.securityContext.user | int64 }}
+        runAsGroup: {{ .Values.global.securityContext.fsGroup | int64 }}
+        fsGroup: {{ .Values.global.securityContext.fsGroup | int64 }}
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      nodeSelector:
+        {{- toYaml (.Values.nodeSelector | default .Values.global.nodeSelector) | nindent 8 }}
+{{- if not .Values.testMode }}
+      initContainers:
+      {{- include "helm-lib.waitForVault" . | nindent 6 }}
+      {{- include "helm-lib.containers.vaultInit" (dict "containerName" "vault-init" "certNames" (print .Values.global.evtsvc.namePrefix "-artemis") "Values" .Values) | nindent 6 }}
+{{- end }}
+      containers:
+      - name: service
+        image: {{ .Values.image | default (printf "%s/%s/%s:%s" .Values.global.docker.registry .Values.global.docker.orgName .Values.imageName .Values.imageTag) }}
+        imagePullPolicy: {{ .Values.global.docker.imagePullPolicy }}
+        resources:
+{{ include "evtsvc-artemis.resources" . | indent 10 }}
+        ports:
+        - containerPort: 5443
+          name: bus
+        - containerPort: 8443
+          name: secure-rest
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        env:
+        - name: "POD_NAMESPACE"
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: "POD_NAME"
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAME_PREFIX
+          value: {{ .Values.global.evtsvc.namePrefix }}
+        - name: "ENABLE_FIPS"
+          value: {{ .Values.global.fipsMode | quote }}
+        - name: "ENABLE_JVM_STATISTICS_LOGGER"
+          value: {{ .Values.enableJvmStatisticsLogger | quote }}
+        - name: "ARTEMIS_READONLY_TOPICS"
+          value: {{ .Values.artemis.topics.readonly | quote }}
+        - name: "ARTEMIS_SUPER_USERS"
+          value: {{ .Values.artemis.users.super | quote }}
+        - name: "ARTEMIS_READONLY_USERS"
+          value: {{ .Values.artemis.users.readonly | quote }}
+{{- if not .Values.testMode }}
+        - name: IDM_ADDR
+          value: "https://{{ .Values.global.idm.serviceName }}:{{ .Values.global.idm.internalPort }}"
+        - name: IDM_ORGANIZATION
+          value: {{ .Values.global.idm.tenant | quote }}
+        - name: "APPROLE"
+          value: {{ .Values.global.vaultAppRole | quote | default "default" }}
+        - name: "ROLE_ID"
+          value: {{ .Values.global.vaultRoleId | quote | default "X" }}
+        - name: "VAULT_ADDR"
+          value: "https://itom-vault:8200"
+{{- else }}
+        - name: "TEST_CERT_COMMON_NAME"
+          value: {{ .Chart.Name | quote }}
+{{- end }}
+{{- if .Values.enableRemoteDebug }}
+        - name: "ENABLE_REMOTE_DEBUG"
+          value: "true"
+{{- end }}
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+{{- if .Values.destinationsCM }}
+        - name: destinations
+          mountPath: /service/destinations
+{{- end }}
+{{- if not .Values.testMode }}
+        - name: vault-token
+          mountPath: /var/run/secrets/boostport.com
+{{- end }}
+        - name: data-storage
+          mountPath: /service/bus
+          subPath: "bus"
+        - name: conf-storage
+          mountPath: /service/conf
+          subPath: "{{ .Values.global.evtsvc.namePrefix }}-artemis/conf"
+        - name: log-storage
+          mountPath: /service/log
+          subPath: "{{ .Values.global.evtsvc.namePrefix }}-artemis/log"
+        readinessProbe:
+          httpGet:
+            path: /artemis/api/base/v1/ready
+            port: secure-rest
+            scheme: HTTPS
+          initialDelaySeconds: 30
+          failureThreshold: 10
+          periodSeconds: 6
+{{- if not .Values.testMode }}
+      {{- include "helm-lib.containers.vaultRenew" (dict "containerName" "vault-renew" "Values" .Values) | nindent 6 }}
+{{- end }}
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+{{- if .Values.destinationsCM }}
+      - name: destinations
+        configMap:
+          defaultMode: 0444
+          name: {{ .Values.destinationsCM }}
+{{- end }}
+{{- if not .Values.testMode }}
+      - name: vault-token
+        emptyDir: {}
+      - name: conf-storage
+        {{- include "helm-lib.pvcStorage" (dict "claim" "configVolumeClaim" "Release" .Release "Template" .Template "Values" .Values) | nindent 8 }}
+      - name: log-storage
+        {{- include "helm-lib.pvcStorage" (dict "claim" "logVolumeClaim" "Release" .Release "Template" .Template "Values" .Values ) | nindent 8 }}
+      - name: data-storage
+        persistentVolumeClaim:
+          claimName: "{{ .Release.Name }}-{{ .Values.global.evtsvc.namePrefix }}-artemis-pvc"
+{{- else }}
+      - name: conf-storage
+        emptyDir: {}
+      - name: log-storage
+        emptyDir: {}
+      - name: data-storage
+        emptyDir: {}
+{{- end }}

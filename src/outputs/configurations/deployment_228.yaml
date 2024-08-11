@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secondary-container
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: secondary-container
+  template:
+    metadata:
+      labels:
+        app: secondary-container
+    spec:
+      containers:
+      - image: azacrkub.azurecr.io/secondary_container:latest
+        name: secondary-container
+        ports:
+        - containerPort: 23456
+

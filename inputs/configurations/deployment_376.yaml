@@ -1,0 +1,17 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: master
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: blender-render-farm-master
+    spec:
+      containers:
+      - name: hello-http
+        image: hello-http-image:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080

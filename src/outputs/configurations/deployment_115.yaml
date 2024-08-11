@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: site-deployment
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: site-app
+  template:
+    metadata:
+      labels:
+        app: site-app
+    spec:
+      containers:
+        - name: site-container
+          image: site:latest
+          ports:
+            - containerPort: 7901

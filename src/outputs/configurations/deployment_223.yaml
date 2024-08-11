@@ -1,0 +1,24 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: helloworld
+  name: helloworld
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: helloworld
+  template:
+    metadata:
+      labels:
+        app: helloworld
+    spec:
+      containers:
+      - image: gcr.io/galloro-gke/helloworld:v1.0
+        name: pipeline
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP

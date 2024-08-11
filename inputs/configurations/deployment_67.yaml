@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pong-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pong
+  template:
+    metadata:
+      labels:
+        app: pong
+    spec:
+      containers:
+      - name: pong-container
+        image: feralbert90/pokepong1  
+        ports:
+        - containerPort: 8080  

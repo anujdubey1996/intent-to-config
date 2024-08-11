@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-server-deployment
+  labels:
+    app: http-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: http-server
+  template:
+    metadata:
+      labels:
+        app: http-server
+    spec:
+      containers:
+        - name: http-server
+          image: sandaalexandru/nginxtest:latest  # Use the name of the Docker image you built
+          ports:
+            - containerPort: 7080

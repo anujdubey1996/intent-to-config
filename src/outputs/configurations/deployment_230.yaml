@@ -1,0 +1,112 @@
+# Copyright 2021 Mavenir
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+  {{- $cnfHdr := (dict "" "") -}}
+  {{- include "cnfTplHeader_2_9" (dict "cnfHdr" $cnfHdr "dot" . )}}
+apiVersion: apps/v1
+kind: Deployment
+  {{- include "cnfTplMetadata_2_9" (dict "setOffset" "0" "cnfHdr" $cnfHdr "metadata" "") }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.componentSpec.deployment.pod_metaspec.labels.app }}
+  template:
+    {{- include "cnfTplMetadata_2_9" (dict "setOffset" "4" "cnfHdr" $cnfHdr "metadata" .Values.componentSpec.deployment.pod_metaspec) }}
+    spec:
+      {{- if and (.Values.global) (.Values.global.xgvela) (.Values.global.xgvela.mgmtNodeSelector) (.Values.global.xgvela.mgmtNodeSelector.enabled) }}
+      nodeSelector:
+        {{ .Values.global.xgvela.mgmtNodeSelector.labelKey }}: {{ .Values.global.xgvela.mgmtNodeSelector.labelValue | quote }}
+      {{- end }}
+      {{- with .Values.global.xgvela.image.imagePullSecrets }}
+      imagePullSecrets:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: simulator
+          image:  "{{ .Values.global.xgvela.image.repository }}:{{ .Values.global.xgvela.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy:  {{ .Values.global.xgvela.image.pullPolicy}}
+          ports:
+            - name: httpserver
+              containerPort: 20001
+              protocol: TCP
+            - name: httpgrpc
+              containerPort: 20100
+              protocol: TCP
+          env:
+            - name: K8S_POD_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: JAVA_OPTIONS
+              value: "-Xmx500m"
+            - name: DN_PREFIX
+              value: {{ .Values.global.dnPrefix }}
+            - name: ZK_SVC_FQDN
+              value: {{ .Values.global.xgvela.zk_svc_fqdn | default .Values.zk_svc_fqdn | quote }}
+            - name: KAFKA_SVC_FQDN
+              value: {{ .Values.global.xgvela.kafka_svc_fqdn | default .Values.kafka_svc_fqdn | quote }}
+            - name: ETCD_SVC_FQDN
+              value: {{ .Values.global.xgvela.etcd_svc_fqdn | default .Values.etcd_svc_fqdn | quote }}
+            - name: ALL_ACTIVE_FORCEFUL
+              value: "true"
+            - name: GRACE_PERIOD
+              value: "10"
+            - name: MAX_WAIT_BEFORE_SCALE_PERIOD
+              value: "5"
+            - name: K8S_SVC_FQDN
+              value: {{ .Values.global.xgvela.k8s_svc_fqdn | default .Values.k8s_svc_fqdn | quote }}
+            - name: "nf.instanceId"
+              value: "upfinstanceid002"
+            - name: "nf.name"
+              value: "UPF002"
+            - name: "nf.type"
+              value: "UPF"
+            - name: "nf.registerIp"
+              value: "oam-network-agent.oam-system"
+            - name: "nf.registerPort"
+              value: "20101"
+            - name: "nf.signalPort"
+              value: "20100"
+          volumeMounts:
+            - mountPath: /data/oam-network-simulator/logs/
+              name: oam-simulator-log
+            - mountPath: /root/data/
+              name: oam-simulator-data
+        - name: filebeat
+          image: elastic/filebeat:7.8.1
+          imagePullPolicy: {{ .Values.global.xgvela.image.pullPolicy}}
+          volumeMounts:
+            - name: oam-simulator-log
+              mountPath: /data/oam-network-simulator/logs/
+            - name: filebeat-config
+              mountPath: /usr/share/filebeat/filebeat.yml
+              subPath: filebeat.yml
+      volumes:
+        - hostPath:
+            path: /root/oam/cloud-native-OAM-builder/simulator002/data/
+            type: DirectoryOrCreate
+          name: oam-simulator-data
+        - name: oam-simulator-log
+          emptyDir: { }
+        - name: filebeat-config
+          configMap:
+            name: filebeat-config
+            items:
+              - key: filebeat.yml
+                path: filebeat.yml

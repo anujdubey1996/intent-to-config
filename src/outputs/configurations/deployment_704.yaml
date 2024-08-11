@@ -1,0 +1,21 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: kredis
+  name: {{ $.Release.Name }}-kredis
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: kredis
+    spec:
+      containers:
+      - name: kredis
+        imagePullPolicy: IfNotPresent
+        image: ereon/kredis
+        args:
+{{ range $shard := until (int $.Values.shards) }}
+        - "{{ range $instance := until (int $.Values.instances) }}{{ if gt $instance 0 }},{{ end }}{{ $.Release.Name }}-redis-{{ add (mul $shard $.Values.instances) $instance }}.{{ $.Release.Name }}-redis{{ end }}"
+{{ end }}

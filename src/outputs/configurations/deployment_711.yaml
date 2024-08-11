@@ -1,0 +1,24 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: interactions-hibot-deployment
+  labels:
+    app: interactions-hibot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: interactions-hibot
+  template:
+    metadata:
+      labels:
+        app: interactions-hibot
+    spec:
+      containers:
+      - name: interactions-hibot
+        image: gcr.io/hibot-env/interactions-hibot
+        env:
+        - name: spring_profiles_active
+          value: dll
+        ports:
+        - containerPort: 8080

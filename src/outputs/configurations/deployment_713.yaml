@@ -1,0 +1,41 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: discord-memo-deployment
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: discord-memo
+    spec:
+      containers:
+        - image: asia.gcr.io/flex-k8s/discord-memo
+          imagePullPolicy: Always
+          name: discord-memo-container
+          env:
+            - name: DISCORD_TOKEN
+              valueFrom:
+                  secretKeyRef:
+                      name: discord-config-memo
+                      key: memo-token
+            - name: DB_HOST
+              valueFrom:
+                  secretKeyRef:
+                      name: database-config
+                      key: hostname
+            - name: DB_USER
+              valueFrom:
+                  secretKeyRef:
+                      name: database-config
+                      key: username
+            - name: DB_PASS
+              valueFrom:
+                  secretKeyRef:
+                      name: database-config
+                      key: password
+            - name: DB_NAME
+              value: "memo"
+          resources:
+            requests:
+              cpu: "1m"

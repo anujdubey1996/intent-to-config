@@ -1,0 +1,24 @@
+apiVersion: apps/v1beta1 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: logtest-deployment
+  labels:
+    app: logtest
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: logtest
+  template:
+    metadata:
+      labels:
+        app: logtest
+    spec:
+      containers:
+      - name: logtest
+        image: naughtytao/logtest:0.3
+        args:
+          - --s=1024
+          - --i=0.01
+          - --p=10
+      restartPolicy: Always

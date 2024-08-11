@@ -1,0 +1,16 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: api-deployment
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels: # labels to select/identify the deployment
+        app: api
+    spec:     # pod spec
+      containers:
+      - name: api
+        image: gcr.io/nextstepapi/api:v1 # image we pushed
+        ports:
+        - containerPort: 8080

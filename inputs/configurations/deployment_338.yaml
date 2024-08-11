@@ -1,0 +1,17 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: maartje-shell-alpine
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: maartje-shell-alpine
+    spec:
+      containers:
+      - name: maartje-shell-alpine
+        image: alpine
+        command:
+          - ping
+          - localhost

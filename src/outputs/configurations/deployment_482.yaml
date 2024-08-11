@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bash
+  labels:
+    app: bash
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bash
+  template:
+    metadata:
+      labels:
+        app: bash
+    spec:
+      containers:
+      - name: bash
+        command: ["sleep", "infinity"]
+        image: bash:latest

@@ -1,0 +1,17 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: nodeapi-deployment
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: nodeapi
+    spec:            
+      containers: 
+      - name: nodeapi
+        image: gcr.io/greentree-250510/nodeapi-image:v2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000

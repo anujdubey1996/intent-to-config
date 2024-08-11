@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-leader-example
+  labels:
+    app:  k8s-leader-example
+spec:
+  replicas: 2
+  strategy:
+    rollingUpdate:
+        maxSurge: 100%
+        maxUnavailable: 0
+  selector:
+    matchLabels:
+      app:  k8s-leader-example
+  template:
+    metadata:
+      labels:
+        app:  k8s-leader-example
+    spec:
+      serviceAccountName: k8s-leader-example
+      containers:
+        - name: k8s-leader-example
+          image: ghcr.io/mjasion/golang-k8s-leader-example:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: k8s-leader-example

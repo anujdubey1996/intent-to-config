@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.26.0 (40646f47)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: notifications
+  name: notifications
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: notifications
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/edgex-network: "true"
+        io.kompose.service: notifications
+    spec:
+      containers:
+        - args:
+            - /support-notifications
+            - -cp=consul.http://edgex-core-consul:8500
+            - --registry
+            - --confdir=/res
+          command:
+            - /edgex-init/ready_to_run_wait_install.sh
+          env:
+            - name: API_GATEWAY_HOST
+              value: edgex-kong
+            - name: API_GATEWAY_STATUS_PORT
+              value: "8100"
+            - name: CLIENTS_CORE_COMMAND_HOST
+              value: edgex-core-command
+            - name: CLIENTS_CORE_DATA_HOST
+              value: edgex-core-data
+            - name: CLIENTS_CORE_METADATA_HOST
+              value: edgex-core-metadata
+            - name: CLIENTS_SUPPORT_NOTIFICATIONS_HOST
+              value: edgex-support-notifications
+            - name: CLIENTS_SUPPORT_SCHEDULER_HOST
+              value: edgex-support-scheduler
+            - name: DATABASES_PRIMARY_HOST
+              value: edgex-redis
+            - name: EDGEX_SECURITY_SECRET_STORE
+              value: "true"
+            - name: MESSAGEQUEUE_HOST
+              value: edgex-redis
+            - name: PROXY_SETUP_HOST
+              value: edgex-security-proxy-setup
+            - name: REGISTRY_HOST
+              value: edgex-core-consul
+            - name: SECRETSTORE_HOST
+              value: edgex-vault
+            - name: SECRETSTORE_PORT
+              value: "8200"
+            - name: SERVICE_HOST
+              value: edgex-support-notifications
+            - name: SPIFFE_ENDPOINTSOCKET
+              value: /tmp/edgex/secrets/spiffe/public/api.sock
+            - name: SPIFFE_TRUSTBUNDLE_PATH
+              value: /tmp/edgex/secrets/spiffe/trust/bundle
+            - name: SPIFFE_TRUSTDOMAIN
+              value: edgexfoundry.org
+            - name: STAGEGATE_BOOTSTRAPPER_HOST
+              value: edgex-security-bootstrapper
+            - name: STAGEGATE_BOOTSTRAPPER_STARTPORT
+              value: "54321"
+            - name: STAGEGATE_DATABASE_HOST
+              value: edgex-redis
+            - name: STAGEGATE_DATABASE_PORT
+              value: "6379"
+            - name: STAGEGATE_DATABASE_READYPORT
+              value: "6379"
+            - name: STAGEGATE_KONGDB_HOST
+              value: edgex-kong-db
+            - name: STAGEGATE_KONGDB_PORT
+              value: "5432"
+            - name: STAGEGATE_KONGDB_READYPORT
+              value: "54325"
+            - name: STAGEGATE_READY_TORUNPORT
+              value: "54329"
+            - name: STAGEGATE_REGISTRY_HOST
+              value: edgex-core-consul
+            - name: STAGEGATE_REGISTRY_PORT
+              value: "8500"
+            - name: STAGEGATE_REGISTRY_READYPORT
+              value: "54324"
+            - name: STAGEGATE_SECRETSTORESETUP_HOST
+              value: edgex-security-secretstore-setup
+            - name: STAGEGATE_SECRETSTORESETUP_TOKENS_READYPORT
+              value: "54322"
+            - name: STAGEGATE_WAITFOR_TIMEOUT
+              value: 60s
+          image: edgexfoundry/support-notifications:2.3.0
+          name: edgex-support-notifications
+          ports:
+            - containerPort: 59860
+          resources: {}
+          volumeMounts:
+            - mountPath: /edgex-init
+              name: edgex-init
+              readOnly: true
+            - mountPath: /tmp/edgex/secrets/support-notifications
+              name: notifications-claim1
+              readOnly: true
+      hostname: edgex-support-notifications
+      restartPolicy: Always
+      volumes:
+        - name: edgex-init
+          persistentVolumeClaim:
+            claimName: edgex-init
+            readOnly: true
+        - name: notifications-claim1
+          persistentVolumeClaim:
+            claimName: notifications-claim1
+            readOnly: true
+status: {}

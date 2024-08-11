@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      volumes:
+      - name: mysql-pv
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+      containers:
+      - name: mysql
+        image: mysql:latest
+        env:
+        - name: MYSQL_DATABASE
+          value: "test"  # Corrected: Enclosed in quotes as a string
+        - name: MYSQL_ROOT_PASSWORD
+          value: "1234"  # Corrected: Enclosed in quotes as a string
+        volumeMounts:
+        - name: mysql-pv
+          mountPath: /var/lib/mysql
+        ports:
+        - containerPort: 3306
+          name: mysql
+---
+

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: ashu-app-deploy
+  name: ashu-app-deploy # name of deployment
+spec:
+  replicas: 1 # number of pods 
+  selector:
+    matchLabels:
+      app: ashu-app-deploy
+  strategy: {} #  
+  template: # pod templates 
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ashu-app-deploy
+    spec:
+      containers:
+      - image: dockerashu/ashu-customer:bmoappv1
+        name: ashu-customer
+        ports:
+        - containerPort: 8080
+        env: # calling Env variables 
+        - name: myapp
+          value: prod 
+        resources: {}
+

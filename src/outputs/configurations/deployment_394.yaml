@@ -1,0 +1,27 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: haproxy
+  labels:
+    app: haproxy
+spec:
+  selector:
+    matchLabels:
+      app: haproxy
+  template:
+    metadata:
+      labels:
+        app: haproxy
+        name: haproxy
+    spec:
+      hostname: haproxy
+      containers:
+      - image: cooljacob204/haproxy
+        name: haproxy
+        volumeMounts:
+          - mountPath: "/etc/letsencrypt"
+            name: certbot
+      volumes:
+      - name: certbot
+        persistentVolumeClaim:
+          claimName: certbot

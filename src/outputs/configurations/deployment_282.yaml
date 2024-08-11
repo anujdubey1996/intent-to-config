@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-cache-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-cache-deployment
+  template:
+    metadata:
+      labels:
+        app: redis-cache-deployment
+    spec:
+      containers:
+        - name: redis-cache
+          image: redis:latest
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: pv
+              mountPath: /data
+      volumes:
+        - name: pv
+          persistentVolumeClaim:
+            claimName: pvc

@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bibbi-backend-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bibbi-backend-api
+  template:
+    metadata:
+      labels:
+        app: bibbi-backend-api
+    spec:
+      containers:
+        - name: webserver
+          image: no5ing/bibbi-backend-api:1
+          envFrom:
+            - secretRef:
+                name: bibbi-backend-api-secret
+          resources:
+            requests:
+              memory: "3.0Gi"
+              cpu: "2000m"
+            limits:
+              memory: "4.0Gi"
+              cpu: "2000m"
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3

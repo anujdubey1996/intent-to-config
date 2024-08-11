@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-kubernetes.yml
+    kompose.service.type: LoadBalancer
+    kompose.version: 1.32.0 (HEAD)
+  labels:
+    io.kompose.service: search-service
+  name: search-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: search-service
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose-kubernetes.yml
+        kompose.service.type: LoadBalancer
+        kompose.version: 1.32.0 (HEAD)
+      labels:
+        io.kompose.network/learningdocker-micro-net: "true"
+        io.kompose.service: search-service
+    spec:
+      containers:
+        - image: girikgarg/learningdocker-search_service
+          name: search-service
+          ports:
+            - containerPort: 3010
+              hostPort: 3001
+              protocol: TCP
+      restartPolicy: Always

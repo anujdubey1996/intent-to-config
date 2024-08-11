@@ -1,0 +1,15 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: acr-auth-example
+spec:
+  template:
+    metadata:
+      labels:
+        app: acr-auth-example
+    spec:
+      containers:
+      - name: acr-auth-example
+        image: xdcontainerregistry.azurecr.io/aci-helloworld:v1
+      imagePullSecrets:
+        - name: acr-auth

@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "calculator-api-facade.fullname" . }}
+  labels:
+    pythia.io/enabled: "true"
+{{ include "calculator-api-facade.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount.min }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "calculator-api-facade.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "calculator-api-facade.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        timstamp: "{{ date "20060102150405" .Release.Time }}"
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image }}"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+#          livenessProbe:
+#            httpGet:
+#              path: /live
+#              port: http
+#          readinessProbe:
+#            httpGet:
+#              path: /ready
+#              port: http
+          env:
+            - name: SUBTRACT_URL
+              value: "{{ .Release.Name }}-calculator-subtract"
+            - name: FACTORIAL_URL
+              value: "{{ .Release.Name }}-calculator-factorial"
+            - name: ADD_URL
+              value: "{{ .Release.Name }}-calculator-add"
+            - name: SQUARED_URL
+              value: "{{ .Release.Name }}-calculator-squared"
+            - name: MODULO_URL
+              value: "{{ .Release.Name }}-calculator-modulo"
+            - name: MULTIPLY_URL
+              value: "{{ .Release.Name }}-calculator-multiply"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "phpmyadmin.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "phpmyadmin.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "phpmyadmin.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "phpmyadmin.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "phpmyadmin.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        {{- if .Values.authzproxy.enabled }}
+        - name: authz-proxy
+          securityContext:
+            {{- toYaml .Values.authzproxy.securityContext | nindent 12 }}
+          image: '{{ include "image.ghcr" (merge (dict "_repo" $.Values.authzproxy.repository) $) }}:{{ .Values.authzproxy.tag | default .Chart.AppVersion }}'
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - run
+            - --listen={{ .Values.authzproxy.params.listen }}
+            - --metrics-addr={{ .Values.authzproxy.params.metricsAddr }}
+            - --secret-name={{ .Values.app.authSecret.name }}
+            - --secret-namespace={{ .Release.Namespace }}
+            - --target-url=http://localhost:80
+            - --platform-url={{ .Values.authzproxy.params.platformURL }}
+            {{- if .Values.authzproxy.params.platformCABundle }}
+            - --platform-ca-file=/var/platform-auth/ca.crt
+            {{- end }}
+          ports:
+            - name: proxy
+              containerPort: {{ .Values.authzproxy.params.listen }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.authzproxy.params.metricsAddr }}
+              protocol: TCP
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          resources:
+            {{- toYaml .Values.authzproxy.resources | nindent 12 }}
+          {{- if .Values.authzproxy.params.platformCABundle }}
+          volumeMounts:
+            - mountPath: /var/platform-auth
+              name: platform-auth
+          {{- end }}
+        {{ end }}
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: '{{ include "image.ghcr" (merge (dict "_repo" $.Values.image.repository) $) }}:{{ .Values.image.tag | default .Chart.AppVersion }}'
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: APACHE_PORT
+              value: "8080"
+            - name: PMA_HOST
+              value: "{{ .Values.app.service.name }}.{{ .Values.app.service.namespace }}.svc"
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.authSecret.name }}
+                  key: password
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/phpmyadmin
+      volumes:
+        # fix ./tmp/
+        # https://docs.phpmyadmin.net/en/latest/config.html#cfg_SaveDir
+        - name: data
+          emptyDir: {}
+      {{- if .Values.authzproxy.params.platformCABundle }}
+        - name: platform-auth
+          secret:
+            defaultMode: 420
+            secretName: {{ include "phpmyadmin.fullname" . }}-platform-auth
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

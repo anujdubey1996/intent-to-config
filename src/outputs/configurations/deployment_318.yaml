@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: mongo
+    tier: db
+  name: mongo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+      tier: db
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: mongo
+        tier: db
+    spec:
+      containers:
+      - image: mongo:5
+        ports:
+          - containerPort: 27017
+        name: mongo
+        args: ["--dbpath","/data/db","--tlsMode","requireTLS","--tlsCertificateKeyFile","/data/db/certs/merged.pem","--tlsCAFile","/data/db/certs/ca.pem","--auth"]
+        livenessProbe:
+          exec:
+            command:
+              - mongo
+              - --disableImplicitSessions
+              - --eval
+              - "db.adminCommand('ping')"
+              - --tlsCertificateKeyFile=/data/db/certs/merged.pem 
+              - --tls
+              - --tlsCAFile=/data/db/certs/ca.pem
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+        readinessProbe:
+          exec:
+            command:
+              - mongo
+              - --disableImplicitSessions
+              - --eval
+              - "db.adminCommand('ping')"
+              - --tlsCertificateKeyFile=/data/db/certs/merged.pem 
+              - --tls
+              - --tlsCAFile=/data/db/certs/ca.pem
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongo-creds
+              key: username
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongo-creds
+              key: password
+        volumeMounts:
+        - name: "mongo-data-dir"
+          mountPath: "/data/db"
+      volumes:
+      - name: "mongo-data-dir"
+        persistentVolumeClaim:
+          claimName: "mongo-storage"
+          readOnly: false

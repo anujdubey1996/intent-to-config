@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:   #nome do pod e namespace que ele pertence
+  name: tig-telegraf
+  labels:
+    app: ${APP_NAME_TELEGRAF}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: #o deployment vai apontar para que pod ?
+      app: ${APP_NAME_TELEGRAF}
+  minReadySeconds: 5
+  template:
+    metadata: 
+      labels:
+        app: ${APP_NAME_TELEGRAF} #a mesma tag que aparecer no matchLabels tem que aparecer aqui
+    spec:
+      terminationGracePeriodSeconds: 0 #Periodo em que o k8s vai esperar pra criar o pod caso seja deletado -> 0 nao eh recomendado.
+      containers:
+        - image:  telegraf:${TELEGRAF_VERSION}
+          name: telegraf
+          resources:
+            requests:
+              memory: "0.25Gi"
+              cpu: "0.3"
+            limits:
+              memory: "0.5Gi"
+              cpu: "1"
+          envFrom:
+            - secretRef:
+                name: telegraf-secrets
+          volumeMounts:
+            - name: telegraf-config-volume
+              mountPath: /etc/telegraf/telegraf.conf
+              subPath: telegraf.conf
+              readOnly: true
+      volumes:
+        - name: telegraf-config-volume
+          configMap:
+            name: telegraf-config
+            items:
+              - key: telegraf.conf
+                path: telegraf.conf
+

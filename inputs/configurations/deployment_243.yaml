@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cmk-workload3-pod
+  name: cmk-workload3-pod
+# Consumed by mutating webhook
+  annotations:
+    cmk.intel.com/mutate: "true" # accepted values to trigger mutation: "true", "True", "1"
+  namespace: cmk-namespace
+spec:
+  selector:
+   matchLabels:
+    app: cmk-workload3-pod
+  replicas: 0
+  template:
+    metadata:
+      labels:
+        app: cmk-workload3-pod
+    spec:
+     serviceAccountName: cmk-serviceaccount
+     containers:
+      - name: cmk-isolate-exclusive-workload3
+        image: hrabhijith2/play:sample1
+        imagePullPolicy: Always
+        ports:
+         - containerPort: 5001
+           hostPort: 5001
+        resources:
+         requests:
+          cmk.intel.com/exclusive-cores: '1'
+         limits:
+          cmk.intel.com/exclusive-cores: '1'
+        volumeMounts:
+         - name: tmp
+           mountPath: "/tmp"
+        securityContext:
+         allowPrivilegeEscalation: true
+         readOnlyRootFilesystem: true
+         runAsNonRoot: false
+         privileged: true
+         capabilities:
+          drop:
+           - all
+     volumes:
+      - hostPath:
+         path: "/tmp"
+        name: tmp

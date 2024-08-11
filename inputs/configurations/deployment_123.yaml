@@ -1,0 +1,11 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-server
+  namespace: qa
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: nginx

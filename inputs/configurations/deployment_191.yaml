@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-node-deployment
+  labels:
+    app: my-node-app
+spec: 
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-node-app
+  minReadySeconds: 20
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: my-node-app
+    spec:
+      containers:
+      - name: my-node-container
+        imagePullPolicy: Always
+        image: josanescod/node-simple-app:2.0
+        ports:
+        - containerPort: 3000

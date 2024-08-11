@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rasa-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rasa
+      tier: server
+  template:
+    metadata:
+      labels:
+        app: rasa
+        tier: server
+    spec:
+      containers:
+      - name: rasa-server
+        image: codife/test-rasa
+        ports:
+        - containerPort: 5005
+          name: rasa-server

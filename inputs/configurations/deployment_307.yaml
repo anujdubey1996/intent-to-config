@@ -1,0 +1,19 @@
+apiVersion: apps/v1beta1 
+kind: Deployment
+metadata:
+  name: hypriot
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: hypriot
+        run: hypriot
+    spec:
+      containers:
+      - name: hypriot
+        image: hypriot/rpi-busybox-httpd
+        ports:
+        - containerPort: 80
+      nodeSelector: 
+          beta.kubernetes.io/arch: arm

@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: buzz
+  labels:
+    app: buzz
+spec:
+  selector:
+    matchLabels:
+      app: buzz
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: buzz
+    spec:
+      imagePullSecrets:
+      - name: k3sgitlab
+      containers:
+      - image: registry.gitlab.com/anynou/k3s/buzz:latest
+        name: buzz
+        ports:
+        - containerPort: 50000
+          name: http
+
+
+#kubectl create secret docker-registry k3sgitlab --docker-server=https://registry.gitlab.com --docker-username=Anynou --docker-password=KshziWUqLRqUgatvysba --docker-email=jose.alonso0087@gmail.com

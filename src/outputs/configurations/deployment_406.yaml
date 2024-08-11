@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "canvas.fullname" . }}-worker
+  labels:
+    type: worker
+    {{- include "canvas.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.worker.autoscaling.enabled }}
+  replicas: {{ .Values.worker.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "canvas.selectorLabels" . | nindent 6 }}
+      type: worker
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "canvas.selectorLabels" . | nindent 8 }}
+        type: worker
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "canvas.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      terminationGracePeriodSeconds: {{ .Values.worker.terminationGracePeriodSeconds }}
+      containers:
+        - name: rails
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: 
+            - script/canvas_init
+            - run
+            {{- range .Values.worker.extraArgs }}
+            - "{{ . }}"
+            {{- end }}
+          volumeMounts:
+            - name: secrets
+              mountPath: /secrets
+            - name: shared
+              mountPath: /shared
+          env:
+            {{- if .Values.metrics.prometheusExporter.enabled }}
+            - name: STATSD_ENABLE
+              value: "1"
+            {{- end }}
+          lifecycle:
+            {{- toYaml .Values.worker.lifecycle | nindent 12 }}
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+        {{- if .Values.metrics.prometheusExporter.enabled }}
+        - name: prometheus-exporter
+          image: "{{ .Values.metrics.prometheusExporter.repository }}:{{ .Values.metrics.prometheusExporter.tag }}"
+          imagePullPolicy: {{ .Values.metrics.prometheusExporter.pullPolicy }}
+          ports:
+            - name: metrics
+              containerPort: 9394
+            - name: listener
+              containerPort: 8125
+          args:
+            - --statsd.listen-udp=:8125
+            - --web.listen-address=:9394
+            - --statsd.mapping-config=/statsd-exporter/mapping-config.yaml
+          volumeMounts:
+            - name: stats-exporter-mapping-config
+              mountPath: /statsd-exporter/
+              readOnly: true
+          resources:
+            {{- toYaml .Values.metrics.prometheusExporter.resources | nindent 12 }}
+        {{- end }}
+      volumes:
+        - name: secrets
+          secret:
+            secretName: {{ .Values.configSecret }}
+        - name: shared
+          persistentVolumeClaim:
+            claimName: {{ template "canvas.fullname" . }}
+        {{- if .Values.metrics.prometheusExporter.enabled }}
+        - name: stats-exporter-mapping-config
+          configMap:
+            name: {{ include "canvas.fullname" . }}-exporter-config
+            items:
+            - key: exporterConfiguration
+              path: mapping-config.yaml
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.topologySpreadConstraint.enabled }}
+      topologySpreadConstraints:
+        - maxSkew: {{ .Values.topologySpreadConstraint.maxSkew }}
+          topologyKey: {{ .Values.topologySpreadConstraint.topologyKey }}
+          whenUnsatisfiable: {{ .Values.topologySpreadConstraint.whenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              {{- include "canvas.selectorLabels" . | nindent 14 }}
+              type: worker
+      {{- end }}

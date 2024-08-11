@@ -1,0 +1,23 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: simpleservice-deploy-b
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: simpleservice-b
+    spec:
+      containers:
+      - name: simpleservice
+        image: luebken/simpleservice
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SIMPLE_SERVICE_VERSION
+          value: "0.0.1"
+        - name: SIMPLE_SERVICE_DOWNSTREAM_SERVICES
+          value: "http://simpleservice-service-c.mdl.svc.cluster.local/last-endpoint"
+        - name: SIMPLE_SERVICE_EXIT_LIKELY
+          value: "3"

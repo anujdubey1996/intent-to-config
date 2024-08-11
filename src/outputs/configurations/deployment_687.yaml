@@ -1,0 +1,78 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: training-deployment
+  labels:
+    app: training
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: training
+  template:
+    metadata:
+      labels:
+        app: training
+    spec:
+      containers:
+      - name: training
+        image: training:v1
+        imagePullPolicy: IfNotPresent
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          failureThreshold: 2
+          successThreshold: 1 # default
+          timeoutSeconds: 1 # default
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3 # default
+          successThreshold: 1 # default
+          timeoutSeconds: 1 # default
+        ports:
+        - containerPort: 3000
+        resources:
+            limits:
+              cpu: "0.5"
+            requests:
+              cpu: "0.25"
+        env:
+        # - name: SHOULD_FAIL_WITHIN
+        #   value: "30000"
+        - name: REDIS_URI
+          valueFrom:
+            secretKeyRef:
+              name: training-secrets
+              key: redis
+        envFrom:
+        - configMapRef:
+            name: training-config-production # training-config-staging
+        volumeMounts:
+        - mountPath: /data
+          name: data
+        - mountPath: /etc/config
+          name: config
+      - name: logging-agent
+        image: busybox
+        args: [/bin/sh, -c, 'tail -f /data/training.log']
+        volumeMounts:
+        - mountPath: /data
+          name: data
+        resources:
+          limits:
+            cpu: "0.5"
+          requests:
+            cpu: "0.25"
+      volumes:
+      - name: data
+        emptyDir: {}
+      - name: config
+        configMap:
+          name: training-config-volumes

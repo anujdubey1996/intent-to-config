@@ -1,0 +1,28 @@
+apiVersion: apps/v1 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: ack-cube # The name of the application. 
+  labels:
+    app: ack-cube
+spec:
+  replicas: 2 # The number of replicated pods. 
+  selector:
+    matchLabels:
+      app: ack-cube  # You must specify the same value for the selector of the Service that is used to expose the application. 
+  template:
+    metadata:
+      labels:
+        app: ack-cube
+    spec:
+      containers:
+      - name: ack-cube
+        image: registry.cn-hangzhou.aliyuncs.com/acr-toolkit/ack-cube:1.0 # Replace with the address of the image that you want to use in the format of <image_name:tags>. 
+        ports:
+        - containerPort: 80 # The container port that you want to open. 
+        resources:
+          limits: # The resource limits of the application. 
+            cpu: '1'
+            memory: 1Gi
+          requests: # The resource requests of the application.
+            cpu: 500m
+            memory: 512Mi        

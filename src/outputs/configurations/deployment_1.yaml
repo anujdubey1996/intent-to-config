@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: nginx-deploy
+  name: nginx-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-deploy
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nginx-deploy
+    spec:
+      containers:
+      - image: nginx:1.18
+        name: nginx
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - curl -f http://localhost/
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources: {}
+status: {}
