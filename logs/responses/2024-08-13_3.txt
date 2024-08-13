@@ -1,0 +1,85 @@
+
+Only return the configuration file in response, no other text.
+
+Create a Kubernetes deployment configuration for a Java microservice running on port 8080 with a MySQL database.
+<pre>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: example
+        version: v1
+    spec:
+      containers:
+      - name: example
+        image: my-example-image:v1.0
+        ports:
+        - containerPort: 8080
+        imagePullPolicy: Always
+      - name: mysql
+        image: mysql
+        ports:
+        - containerPort: 3306
+</pre>
+
+Create a Persistent Volume Claim YAML configuration.
+<pre>
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+</pre>
+
+Create a Persistent Volume YAML configuration.
+<pre>
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-volume
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /mnt/data
+</pre>
+
+Create a Volume YAML configuration.
+<pre>
+name: vol
+persistentVolumeClaim:
+  claimName: pv-claim
+</pre>
+
+Create a Service YAML configuration.
+<pre>
+apiVersion: apps/v1
+kind: Service
+metadata:
+  name: example
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    version: v1
+    name: example
+  type: ClusterIP
+</pre>
+

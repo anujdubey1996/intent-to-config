@@ -1,0 +1,4 @@
+
+Only return the configuration file in response, no other text.
+
+Create a Kubernetes deployment configuration for a Java microservice running on port 8080 with a MySQL database.

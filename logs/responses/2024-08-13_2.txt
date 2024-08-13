@@ -1,0 +1,38 @@
+
+Only return the configuration file in response, no other text.
+
+Create a Kubernetes deployment configuration for a Java microservice running on port 8080 with a MySQL database.
+
+Create a Dockerfile for maven application.
+
+The Dockerfile should 
+– Create a maven image from the local Docker Hub catalog
+– The JRE/JDK should be configured to build the Maven project
+
+– Add dependencies to a local .m2 directory
+
+– Add sources to the project
+
+– Build the project using the Maven build lifecycle
+
+– Add a JRE/JDK image to the container
+
+– Expose the container on port 8080
+
+– Commands to build the application in the context of Kubernetes
+
+The Dockerfile should also include build arguments for:
+
+– The Java release that should be used
+
+– The base URL for the Git repository
+
+– The repository branch
+
+– The name of the database and the MySQL username
+
+– The database URL
+
+– The number of seconds before the database connection fails
+
+

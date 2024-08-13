@@ -1,0 +1,49 @@
+
+Create a Kubernetes deployment configuration for a Java microservice running on port 8080.
+
+Here's a sample Kubernetes deployment configuration for a Java microservice running on port 8080:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-java-service
+  labels:
+    app: my-java-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-java-service
+  template:
+    metadata:
+      labels:
+        app: my-java-service
+    spec:
+      containers:
+      - name: my-java-service
+        image: my-java-service:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: JAVA_OPTS
+          value: -Xmx128m -Xms64m
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+```
+
+This configuration will create a Deployment called `my-java-service` with 3 replicas. The containers use the image `my-java-service:latest` and expose port 8080. The Java microservice is configured to use 128 MB of memory at startup and a minimum of 64 MB.
+
+The deployment also includes liveness and readiness probes, which are used to determine the health of the pods running the deployment. The `livenessProbe` checks the `/health` endpoint every 10 seconds to ensure the service is alive, while the `readinessProbe` checks the `/ready` endpoint to determine if the service is able to handle traffic.
+
+You can adjust the configuration as needed to fit your specific microservice and requirements.

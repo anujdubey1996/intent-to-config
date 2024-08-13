@@ -1,0 +1,14 @@
+Create a Kubernetes deployment configuration for a Node.js application
+--------------------------------------------------------------------------------
+
+### Goal
+
+The goal of this exercise is to create a Kubernetes deployment configuration that runs a Node.js application listening on port 8080.
+
+### Overview of Files in This Lab
+
+- `Dockerfile` - Dockerfile to create a custom image for containerization of project
+- `node.yml` - Kubernetes configuration file for deployment of application
+- `package.json` - file used to manage project's dependencies
+- `main.js` - file that contains the application's entry point
+- `package-lock.json` - file used to

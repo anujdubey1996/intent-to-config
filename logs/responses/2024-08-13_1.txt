@@ -1,0 +1,37 @@
+
+Create a Kubernetes deployment configuration for a Java microservice running on port 8080 with a MySQL database.
+
+## Answer
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+spec:
+  selector:
+    matchLabels:
+      app: payment-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+      - name: payment-service
+        image: kodekloud/event-simulator:v1
+        ports:
+        - containerPort: 8080
+      - name: mysql
+        image: mysql:8.2
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: root@123
+      volumeMounts:
+      - mountPath: /var/lib/mysql
+        name: mysql-volume
+  volumes:
+  - name: mysql-volume
+    emptyDir: {}
+```

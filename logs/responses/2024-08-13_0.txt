@@ -1,0 +1,91 @@
+
+Here are some examples of Kubernetes deployment configurations based on intent:
+
+Intent: "Create a Kubernetes deployment configuration for a Python web application running on port 5000 with 2 replicas."
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-web-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: python-web-app
+  template:
+    metadata:
+      labels:
+        app: python-web-app
+    spec:
+      containers:
+      - name: python-web-container
+        image: python:3.8-slim
+        ports:
+        - containerPort: 5000
+
+Intent: "Create a Kubernetes deployment configuration for a Node.js application running on port 3000 with environment variables."
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nodejs-app
+  template:
+    metadata:
+      labels:
+        app: nodejs-app
+    spec:
+      containers:
+      - name: nodejs-container
+        image: node:14
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: PORT
+          value: "3000"
+
+Now, based on the following intent, generate the corresponding Kubernetes deployment configuration:
+
+Intent: "Create a Kubernetes deployment configuration for a Java microservice running on port 8080 with a MySQL database."
+
+
+
+Answers:
+
+ApiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-microservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-microservice
+  template:
+    metadata:
+      labels:
+        app: java-microservice
+    spec:
+      containers:
+        - name: java-container
+          image: java
+          ports:
+            - containerPort: 8080
+        - name: mysql-container
+          image: mysql
+          volumeMounts:
+            - name mysql-volume
+              mountPath /var/lib/mysql
+            - name mysql-config
+              mountPath /etc/mysql/conf.d
+...
+
+
+
+

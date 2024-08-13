@@ -1,0 +1,72 @@
+
+Only return the configuration file in response, no other text.
+
+Create a Kubernetes deployment configuration for a Java microservice running on port 8080 with a MySQL database.
+
+For the Java microservice, let's assume it's named `my-java-service` and builds a docker image with the tag `latest`. Also, it exposes a single environment variable `MYSQL_PWD` for the database password. You'll also need to provide a configuration file `application.properties` that sets up the connection to the database. The deployment needs to be on a namespace called `my-namespace`.
+
+For the MySQL database, let's call it `my-mysql-db`. It should have a persistent volume `my-mysql-pvc` that has a size of `5Gi`. You'll also need to provide a `root-password` and `database-password` for the MySQL database.
+
+Here's the YAML configuration for both the Java microservice deployment and the MySQL database:
+
+```yml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-mysql-pvc
+  namespace: my-namespace
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-java-service
+  namespace: my-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-java-service
+  template:
+    metadata:
+      labels:
+        app: my-java-service
+    spec:
+      containers:
+      - name: my-java-service
+        image: my-java-service:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MYSQL_PWD
+          valueFrom:
+            secretKeyRef:
+              name: my-mysql-secret
+              key: database-password
+        volumeMounts:
+        - name: my-mysql-pvc
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: my-mysql-pvc
+        persistentVolumeClaim:
+          claimName: my-mysql-pvc
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-mysql-secret
+  namespace: my-namespace
+type: Opaque
+data:
+  root-password: {base64 encoded root password}
+  database-password: {base64 encoded database password}
+```

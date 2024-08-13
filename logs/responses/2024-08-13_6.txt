@@ -1,0 +1,79 @@
+
+Create a Kubernetes deployment configuration for a Java microservice running on port 8080.
+
+Here's a sample Kubernetes deployment configuration for a Java microservice running on port 8080:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-microservice
+  labels:
+    app: java-microservice
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: java-microservice
+  template:
+    metadata:
+      labels:
+        app: java-microservice
+    spec:
+      containers:
+      - name: java-microservice
+        image: your-docker-image:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "500m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: java-microservice
+spec:
+  selector:
+    app: java-microservice
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer
+```
+
+Replace `your-docker-image:latest` with the name and tag of your Docker image containing the Java microservice.
+
+This YAML file creates a Kubernetes deployment with 3 replicas of the specified Java microservice, using the provided Docker image. Each replica exposes port 8080 for accessing the Java microservice. The `Service` resource then creates a load balancer for the deployment, allowing access to the Java microservice on port 80 from external traffic.
+
+To apply this YAML configuration to your cluster, save it as `java-microservice-deployment.yaml` and run the following command:
+
+```sh
+kubectl apply -f java-microservice-deployment.yaml
+```
+
+After the deployment is created, you can check its status using:
+
+```sh
+kubectl get deployments java-microservice -o wide
+```
+
+And check the status of the service using:
+
+```sh
+kubectl get services java-microservice
+```
+
+You should see output similar to the following:
+
+```
+NAME           TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+java-microservice   LoadBalancer   10.xxx.xxx.x   <pending>    80:30394/TCP   5s
+```
+
+Once the `EXTERNAL-IP` field shows an IP, your Java microservice is accessible on port 80.
