@@ -1,0 +1,82 @@
+
+Create a Kubernetes deployment workload for a Java microservice running on port 8080.
+
+To create a Kubernetes deployment for a Java microservice running on port 8080, you can use the `kubectl` command-line tool to create a deployment, service, and possibly a container image. Here's an example using an arbitrary Java microservice called `my-java-service`.
+
+1. First, create a Dockerfile for your Java service that extends an appropriate base image (e.g., openjdk:11 or tomcat:8.5) and install any necessary dependencies. For this example, I'm assuming a base image with OpenJDK 11 and no additional dependencies.
+
+```Dockerfile
+# my-java-service Dockerfile
+FROM openjdk:11
+
+ARG APP_NAME=my-java-service
+
+WORKDIR /app
+COPY . /app
+RUN chmod +x ./${APP_NAME}
+
+EXPOSE 8080
+CMD ["./${APP_NAME}" ]
+```
+
+2. Build the Docker image and push it to a container registry such as Docker Hub or Google Container Registry.
+
+```bash
+# Assuming the Dockerfile and your Java microservice source code are present in the current directory
+docker build -t my-java-service .
+docker push my-docker-username/my-java-service
+```
+
+3. Create a `kubernetes/` folder with two YAML files: `my-java-deployment.yaml` and `my-java-service.yaml`.
+
+`my-java-deployment.yaml` (Deployment configuration):
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-java-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-java-service
+  template:
+    metadata:
+      labels:
+        app: my-java-service
+    spec:
+      containers:
+      - name: my-java-container
+        image: my-docker-username/my-java-service
+        ports:
+        - containerPort: 8080
+```
+
+`my-java-service.yaml` (Service configuration):
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-java-service
+spec:
+  selector:
+    app: my-java-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer
+```
+
+4. Apply the configurations:
+
+```bash
+kubectl apply -f kubernetes/my-java-deployment.yaml
+kubectl apply -f kubernetes/my-java-service.yaml
+```
+
+This will create a deployment with 3 replicas of your Java microservice and an exposure as a LoadBalancer service. In a few minutes, your service should be available and accessible on the provided load balancer IP address.
+
+You can check the status of the deployment, service, and pods using `kubectl` commands like `kubectl get deployments`, `kubectl get services`, and `kubectl get pods`.

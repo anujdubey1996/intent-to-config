@@ -1,4 +1,0 @@
-Create a Kubernetes deployment configuration for a Java microservice in your cluster.
-4. Make a change to the **Docker image** so you can see it get reloaded. In other words, if you modify the `Hello_from_docker` message, refresh the Docker image and ensure the change is reflected in the service; ideally there should be no disruption to connectivity or requests.
-5. Scale the deployment to 5 replicas and verify each replica is active before scaling back down to 4.
-6. Using `kubectl get services` to view the new endpoint URL, execute the new endpoint and view the response; a 200 is expected every time.
