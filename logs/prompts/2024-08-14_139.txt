@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy 2 replicas of the `wildwest` application in the `wildwest` namespace.

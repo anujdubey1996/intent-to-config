@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the Prometheus Operator with customized configuration, including support for TLS and various Prometheus components. The deployment ensures a single replica with specific resource limits and security settings. It is designed to handle monitoring tasks with options for custom image versions, logging configurations, and DNS settings, while integrating with a specified namespace and service account. The setup supports advanced features like TLS, secret management, and network policies based on the provided values.

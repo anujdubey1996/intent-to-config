@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-backend-svc
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-backend-svc
+  template:
+    metadata:
+      labels:
+        app: demo-backend-svc
+    spec:
+      containers:
+      - name: demo-backend-svc
+        image: <container_image_name>:latest
+        ports:
+        - containerPort: 8080
+        imagePullPolicy: Always
+      serviceAccountName: default

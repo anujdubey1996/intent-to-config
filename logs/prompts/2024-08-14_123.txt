@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Configure a Kubernetes deployment named vote-ui with 1 replica

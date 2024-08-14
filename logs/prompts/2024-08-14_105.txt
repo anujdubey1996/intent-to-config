@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration for a web sample application with rolling update strategy and health checks.

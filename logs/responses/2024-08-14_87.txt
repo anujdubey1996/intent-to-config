@@ -1,0 +1,50 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the auth-server on Kubernetes, ensuring that the configuration is templated for flexible deployment based on the Helm values provided.
+
+The helm values are below:
+
+```yaml
+auth-server:
+  replicas: 3
+  image: quay.io/poc-io/auth-server:latest
+  port: 8080
+  hostPort: 30008
+  env:
+    SEPARATOR: |
+      ,
+      :=
+```
+
+Deployment configuration file:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server
+  labels:
+    app: auth-server
+spec:
+  replicas: {{ .Values.authServer.replicas | quote }}
+  selector:
+    matchLabels:
+      app: auth-server
+  template:
+    metadata:
+      labels:
+        app: auth-server
+    spec:
+      containers:
+      - name: auth-server
+        image: {{ .Values.authServer.image }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.authServer.port }}
+          hostPort: {{ .Values.authServer.hostPort }}
+        env:
+        - name: SEPARATOR
+          value: |
+            {{ .Values.authServer.env.SEPARATOR | quote }}
+```

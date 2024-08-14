@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mxnet-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mxnet-operator
+  template:
+    metadata:
+      labels:
+        app: mxnet-operator
+    spec:
+      containers:
+      - name: mxnet-operator
+        image: your/mxnet-operator:version
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080

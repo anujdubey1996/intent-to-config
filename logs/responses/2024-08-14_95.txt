@@ -1,0 +1,75 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration with Helm templating to deploy a microservice with dynamic values.
+
+Prerequisites:
+1. Helm 3 installed (https://helm.sh/docs/intro/install/)
+2. A Kubernetes cluster to deploy the deployment.
+
+Components:
+1. Deployment resource file
+2. Helm template (Chart) for the microservice
+3. Values files for configuration
+
+Steps to create the deployment configuration:
+
+1. Create Helm chart for the microservice
+   ```sh
+   $ helm create my-microservice-chart
+   ```
+
+2. Navigate into the newly created chart (my-microservice-chart) directory
+   ```sh
+   $ cd my-microservice-chart
+   ```
+
+3. Create the deployment configuration in the template directory
+   ```sh
+   $ kubectl create deployment my-microservice --image=my-microservice-image
+   ```
+
+4. Get the Deployment YAML by applying the Deployment object and save it to a file as template
+   ```sh
+   $ kubectl get deployment my-microservice -o yaml > deployments/deployment.yaml
+   ```
+
+5. Update the deployment template file with Helm values references
+   ```yaml
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: my-microservice
+   spec:
+     replicas: {{ .Values.replicas }}
+     selector:
+       matchLabels:
+         app: my-microservice
+     template:
+       metadata:
+         labels:
+           app: my-microservice
+       spec:
+         containers:
+         - name: {{ .Chart.Name }}
+           image: {{ .Values.image }}
+           ports:
+           - containerPort: {{ .Values.service.port }}
+   ```
+   (Note: Replace `{{ .Values.replicas }}`, `{{ .Values.image }}`, and `{{ .Values.service.port }}` with placeholders that will be replaced by Helm with the values from helm values file)
+
+6. Create a values.yaml file with default configuration values
+   ```yaml
+   replicas: 1
+   image: my-microservice-image
+   service:
+     port: 80
+   ```
+   (Note: Update the values as necessary for your microservice)
+
+7. Install the Helm chart to deploy the microservice
+   ```sh
+   $ helm install my-microservice ./my-microservice-chart
+   ```
+
+Now, when you run the command to install the chart, Helm will replace the placeholders in the Deployment template with the values from the values.yaml file and create a Deployment on your Kubernetes cluster with the specified image, replicas, and other configuration options.

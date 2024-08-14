@@ -1,0 +1,166 @@
+Deploy a single instance of the flixpredix-admin service to manage the administration of the FlixPredix application. The deployment runs the latest version of the service from a container image hosted in a regional Docker registry, exposing it on port 8080.
+
+To deploy the flixpredix-admin service on a GCP VM using Terraform, follow these steps:
+
+1. Set up a GCP service account and install the gcloud SDK and Terraform.
+
+   Follow the [official Google Cloud documentation](https://cloud.google.com/docs/authentication/production#keyfile-json) to create a service account with the necessary roles for deploying Terraform.
+
+2. Install Terraform:
+
+   ```bash
+   wget https://releases.hashicorp.com/terraform/1.3.7/terraform_1.3.7_linux_amd64.zip
+   unzip terraform_1.3.7_linux_amd64.zip
+   sudo mv terraform /usr/local/bin
+   ```
+
+3. Add the service account credentials to your environment variables:
+
+   ```bash
+   export GOOGLE_APPLICATION_CREDENTIALS=<path_to_credentials.json>
+   ```
+
+   Replace `<path_to_credentials.json>` with the path to the JSON service account key file downloaded earlier.
+
+4. Set the project ID and region for the deployment:
+
+   ```bash
+   export PROJECT_ID=<your_project_id>
+   export REGION=us-central1
+   ```
+
+   Replace `<your_project_id>` with the ID of your GCP project.
+
+5. Write a Terraform configuration for the deployment:
+
+   Create a file named `main.tf` with the following content:
+
+   ```hcl
+   provider "google" {
+     version = "~> 4.0"
+     project = var.project_id
+     region  = var.region
+   }
+
+   locator "flxpredix-admin-locator" {
+     name = "flxpredix-admin-locator"
+     depends_on = [google_service_account.default, google_project.default]
+     project_id = var.project_id
+   }
+
+   data "dockerregistry_image" "flixpredix_admin" {
+     name = "gcr.io/<docker_registry>/flixpredix-admin:v1"
+     depends_on = [locator.flxpredix-admin-locator]
+   }
+
+   resource "google_container_cluster" "flixpredix-admin-cluster" {
+     name     = "flixpredix-admin-cluster"
+     location = var.region
+
+     node_config {
+       machine_type = "e2-medium"
+       disk_size_gb = 100
+     }
+
+     cluster_autoscaler {
+       enabled = true
+       min_node_count = 1
+     }
+
+     addons_config {
+       horizontal_pod_autoscaling = {
+         disabled = false
+       }
+     }
+   }
+
+   resource "kubernetes_deployment" "flixpredix-admin" {
+     metadata {
+       name = "flixpredix-admin"
+       labels = {
+         app = "flixpredix-admin"
+       }
+     }
+
+     spec {
+       replicas = 1
+       selector {
+         match_labels = {
+           app = "flixpredix-admin"
+         }
+       }
+
+       template {
+         metadata {
+           labels = {
+             app = "flixpredix-admin"
+           }
+         }
+
+         spec {
+           container {
+             image = data.dockerregistry_image.flixpredix_admin.image
+             name  = "flixpredix-admin"
+             port {
+               name = "http"
+               container_port = 8080
+             }
+           }
+         }
+       }
+     }
+   }
+   ```
+
+   Replace `<docker_registry>` with the name of the Docker registry region where the container image for the flixpredix-admin service is hosted.
+
+6. Initialize the Terraform working directory:
+
+   ```bash
+   terraform init -upgrade
+   ```
+
+   This command initializes and upgrades the Terraform modules used in the configuration.
+
+7. Plan the deployment:
+
+   ```bash
+   terraform plan
+   ```
+
+   This command shows the resources that will be created, updated, or destroyed during the deployment.
+
+8. Apply the Terraform plan:
+
+   ```bash
+   terraform apply
+   ```
+
+   This command creates the resources defined in the Terraform configuration, including a GCP project, container cluster, and Kubernetes deployment for the flixpredix-admin service.
+
+9. Verify the deployment:
+
+   ```bash
+   kubectl get pods -n kube-system
+   kubectl get services -n kube-system
+   kubectl get deployment flixpredix-admin -n <namespace>
+   kubectl get service flixpredix-admin -n <namespace>
+   ```
+
+   Replace `<namespace>` with the namespace where the flixpredix-admin deployment was created. By default, it is set as the project ID. You can check the namespace using:
+
+   ```bash
+   kubectl config view | grep namespace
+   ```
+
+   The command should show the flixpredix-admin deployment and service, and provide information about their status and IP address.
+
+10. Access the flixpredix-admin service:
+
+   ```bash
+   kubectl port-forward service/flixpredix-admin -n <namespace> 8080:8080
+   ```
+
+   Replace `<namespace>` with the namespace where the flixpredix-admin deployment was created. You should now be able to access the FlixPredix admin UI by visiting `http://localhost:8080` from your local machine.
+
+You have successfully deployed a single instance of the flixpredix-admin service on a GCP VM using Terraform.

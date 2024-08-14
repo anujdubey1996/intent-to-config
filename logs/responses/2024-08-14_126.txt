@@ -1,0 +1,30 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a frontend service with a single replica using the hjacobs/{{ .Release.Name }}:23.5.0 image
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ .Release.Name }}
+        image: hjacobs/{{ .Release.Name }}:23.5.0
+        ports:
+        - containerPort: 80
+```
+
+This is a Kubernetes Deployment configuration file that creates a workload for deploying a frontend service named `{{ .Release.Name }}`. The service runs with a single replica, utilizing the `hjacobs/{{ .Release.Name }}` image tagged as version `23.5.0`. The service exposes its container on port 80.

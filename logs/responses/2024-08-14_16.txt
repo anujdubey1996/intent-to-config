@@ -1,0 +1,56 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single instance of the demo-backend-svc backend service in the dev namespace, using the latest version of a specified container image. The service is exposed on port 8080 and utilizes the default service account.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-backend-deployment
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-backend
+  template:
+    metadata:
+      labels:
+        app: demo-backend
+    spec:
+      containers:
+      - name: demo-backend-container
+        image: <CONTAINER_IMAGE>
+        ports:
+        - containerPort: 8080
+        imagePullPolicy: Always
+      serviceAccountName: default
+```
+
+Replace `<CONTAINER_IMAGE>` with the appropriate container image name (e.g., `my-repo/demo-backend:v1`) that contains the latest version of the demo-backend service. After replacing, the final deployment configuration might look like:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-backend-deployment
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-backend
+  template:
+    metadata:
+      labels:
+        app: demo-backend
+    spec:
+      containers:
+      - name: demo-backend-container
+        image: my-repo/demo-backend:v1
+        ports:
+        - containerPort: 8080
+        imagePullPolicy: Always
+      serviceAccountName: default
+```

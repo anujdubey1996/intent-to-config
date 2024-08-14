@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roachui-deployment
+  labels:
+    app: roachdb
+    tier: ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: roachdb
+      tier: ui
+  template:
+    metadata:
+      labels:
+        app: roachdb
+        tier: ui
+    spec:
+      containers:
+      - name: roachui
+        image: cockroachdb/roachui:v21.2.1
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ROACH_DB_HOST
+          value: roach-db
+          valueFrom:
+            secretKeyRef:
+              name: roachdb- secrets
+              key: address
+        - name: ROACH_DB_PORT
+          value: "26257"
+      imagePullSecrets:
+      - name: docker-registry-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: roachui-service
+  labels:
+    app: roachdb
+    tier: ui
+spec:
+  selector:
+    app: roachdb
+    tier: ui
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: roachdb-secrets
+type: Opaque
+data:
+  address: <base64-encoded-roach-db-service-address>

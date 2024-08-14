@@ -1,0 +1,71 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a container running amazon/aws-cli with a service account that has read-only access to S3. The container will execute a sleep command to keep it running.
+
+Create a file called `s3-reader-deployment.yaml` and add the following content:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s3-reader
+  labels:
+    app: s3-reader
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: s3-reader
+  template:
+    metadata:
+      labels:
+        app: s3-reader
+    spec:
+      containers:
+      - name: s3-reader
+        image: amazon/aws-cli
+        env:
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: aws-s3-reader-sa
+                key: accessKey
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: aws-s3-reader-sa
+                key: secretKey
+        command: ["sleep"]
+        args: ["3600"] # Keep the container running for one hour
+      serviceAccountName: s3-reader-sa
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: s3-reader-sa
+  secrets:
+  - name: aws-s3-reader-sa
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-s3-reader-sa
+type: OAuth2ClientCredential
+data:
+  clientID: <Your AWS OAuth2 Client ID>
+  clientSecret: <Your AWS OAuth2 Client Secret>
+  token: <Your AWS OAuth2 Token>
+```
+
+Replace the `data` section content with your AWS OAuth2 Client ID, Client Secret, and Token. You can find these values in your AWS Developer Console under the 'Application Credentials'.
+
+After modifying the `s3-reader-deployment.yaml` file with your AWS OAuth2 credentials, apply the changes to your cluster using kubectl:
+
+```sh
+kubectl apply -f s3-reader-deployment.yaml
+```
+
+Now you have deployed a Kubernetes deployment that deploys an Amazon AWS-CLI container with a service account for read-only access to S3, and configured to keep running for one hour.

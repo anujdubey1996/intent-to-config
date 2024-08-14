@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a PostgreSQL database using Kubernetes Deployment, with environmental variables sourced from a secret, persistent volume for storage, and appropriate configuration for the container.

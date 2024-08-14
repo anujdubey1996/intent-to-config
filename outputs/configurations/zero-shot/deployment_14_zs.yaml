@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secrets
+type: Opaque
+data:
+  POSTGRES_PASSWORD: bWFzdGVyOnRlc3RwYXNzd29yZA==  # replace with your encrypted postgres password
+  POSTGRES_USERNAME: bWFzdGVyOnNlY3VyaXR5czowOw==  # replace with your encrypted postgres username
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-database
+  labels:
+    app: postgres
+    tier: database
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+      tier: database
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: postgres
+        tier: database
+    spec:
+      containers:
+      - name: postgres
+        image: postgres
+        envFrom:
+        - secretRef:
+            name: postgres-secrets
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: pgstorage
+          mountPath: /var/lib/postgresql/data/
+        readinessProbe:
+          exec:
+            command: ["pg_isready"]
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+      volumes:
+      - name: pgstorage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgres-pvc
+  labels:
+    app: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

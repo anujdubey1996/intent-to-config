@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration using Helm templating for deploying a Chrome node in a Selenium Grid, with conditional inclusion based on various Helm values and configurations.

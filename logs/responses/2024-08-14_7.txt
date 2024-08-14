@@ -1,0 +1,57 @@
+Deploy a single instance of the selenoid-chrome-vnc service to enable remote access to a Chrome browser via VNC. The deployment connects to a specified Selenium hub and is configured with resource limits for efficient operation. The service is exposed on port 5900 for VNC connections.
+
+```bash
+#!/bin/bash
+
+# Set environment variables
+export SELENIUM_HUB_URL=http://[selenium_hub_IP]:4444/wd/hub
+export SELENIUM_BROWSER=chrome
+
+# Update the service image
+docker pull selenoid/chrome-vnc:latest
+
+# Create a network for the service
+docker network create selenoid-vnc-network
+
+# Create the service container
+docker run -d \
+  --name selenoid-chrome-vnc \
+  --network selenoid-vnc-network \
+  --env DISPLAY=:0 \
+  --env TZ="UTC" \
+  --env GOOGLE_APPLICATION_CREDENTIALS=/etc/selenoid/credentials.json \
+  --publish 5900:5900 \
+  --publish 5901:5901 \
+  --publish 8080:8080 \
+  --cap-add SYS_PTRACE \
+  --cap-add SYS_ADMIN \
+  --security opt apparmor:unconfined \
+  --ulimit nofile=32768 \
+  --ulimit core=infinity \
+  -v /dev/shm:/dev/shm:rw \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /mnt/data/selenoid/logs:/var/log/selenoid \
+  -v /mnt/data/selenoid/vnc:/mnt/vnc \
+  -v /etc/timezone:/etc/timezone \
+  -v /etc/localtime:/etc/localtime \
+  selenoid/chrome-vnc:latest
+
+# Wait for the service container to be ready
+until docker exec selenoid-chrome-vnc vncpasswd > /dev/null 2>&1; do
+  echo "waiting for selenoid-chrome-vnc container to be ready"
+  sleep 1
+done
+
+# Output the VNC password
+docker exec selenoid-chrome-vnc vncpasswd
+```
+
+This script can be run on a machine running Docker, and it creates a container that serves as a remote Chrome browser via VNC. The `selenoid-chrome-vnc` container is configured to connect to the specified Selenium hub located at the `$SELENIUM_HUB_URL` variable.
+
+The service limits the number of open file descriptors, limits core files, uses the `docker.sock` for dynamic test container creation, logs messages to `/mnt/data/selenoid/logs`, stores VNC data in `/mnt/data/selenoid/vnc`, and runs with unconfined AppArmor rules. It is exposed on port 5900 for VNC connections, and port 5901 for Selenoid web UI access.
+
+After running this script, you can access the Chrome browser via VNC using a VNC client at `localhost:0` with the password outputted at the end of the script. The VNC password can be changed with this command:
+
+```bash
+docker exec selenoid-chrome-vnc vncpasswd
+```

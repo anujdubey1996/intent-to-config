@@ -1,0 +1,86 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the "my-app-v2" application with three replicas, ensuring high availability
+
+Here is a YAML file that deploys a replica set and a deployment with the specified intent:
+
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: my-app-v2
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app-v2
+  template:
+    metadata:
+      labels:
+        app: my-app-v2
+    spec:
+      containers:
+      - name: my-app-v2
+        image: my-app-v2:latest
+        ports:
+        - containerPort: 80
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-v2
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app-v2
+  template:
+    metadata:
+      labels:
+        app: my-app-v2
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: my-app-v2
+        image: my-app-v2:latest
+        ports:
+        - containerPort: 80
+      readinessProbe:
+        httpGet:
+          path: /readiness
+          port: 80
+      livenessProbe:
+        httpGet:
+          path: /liveness
+          port: 80
+```
+
+In this configuration, we have created a ReplicaSet and a Deployment for the "my-app-v2" application. The ReplicaSet ensures that the desired number of replicas is always running, while the Deployment serves to facilitate updating the containers within the replicas, rolling out updates, and managing the scaling of the application.
+
+Here's a brief explanation of the configuration values:
+
+- `apiVersion: apps/v1`: Specifies that we are using Kubernetes API version 1 for the application we're creating. Currently, most deployments are still using this version.
+
+- `kind: ReplicaSet` and `kind: Deployment`: Define the type of the resource to create.
+
+- `metadata.name`: The name of the resource.
+
+- `spec.replicas`: The number of replicas to run for the resource. In this case, we have three.
+
+- `spec.selector`: A label selector that ensures the replicas are selected.
+
+- `spec.template`: Configuration for the containers running in each replica, including labels, containers, ports, probes, etc.
+
+- `spec.template.metadata.labels`: Additional labels to apply to our containers.
+
+- `spec.template.containers`: The application containers that make up the replicas.
+
+- `spec.template.containers.ports`: Exposes the container's ports for external access.
+
+- `spec.template.containers.name`: The name of the container.
+
+- `spec.template.containers.image`: The Docker image to use for the container.
+
+- `spec.template.containers.readinessProbe` and `spec.template.containers.livenessProbe`: Probes to check the readiness and liveliness of the application container. We have configured the probes to send HTTP GET requests to `/readiness` and `/liveness`, respectively, on port 80. These are essential for monitoring and scaling our application appropriately.

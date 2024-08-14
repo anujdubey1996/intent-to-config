@@ -1,0 +1,32 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Deployment for helloworld
+
+Resources Requried: deployment.yaml
+
+Deployment Configuration:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hello-world
+  template:
+    metadata:
+      labels:
+        app: hello-world
+    spec:
+      containers:
+      - name: hello-world
+        image: username/helloworld:latest
+        ports:
+        - containerPort: 80
+```
+
+This deployment configuration creates a Kubernetes Deployment called "helloworld" that runs three replicas of a container named "hello-world" using the image "username/helloworld:latest". The container's port is set to 80, exposing the container's services to the cluster network. The deployment uses Selectors to label both the deployment itself and the replicated containers so that they can be selectively scaled, updated, and deleted.

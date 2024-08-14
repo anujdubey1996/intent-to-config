@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seldon-controller-manager
+  labels:
+    owner: mycompany
+    app: seldon
+    environment: production
+  annotations:
+    Monitoring.Prometheus: '{"k8s-target-port": 9080}'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      owner: mycompany
+      app: seldon
+      environment: production
+  template:
+    metadata:
+      labels:
+        owner: mycompany
+        app: seldon
+        environment: production
+    spec:
+      containers:
+      - name: seldon-controller-manager
+        image: seldonoctopus/seldon-controller-manager:v1.3.0
+        ports:
+        - containerPort: 9080
+        envFrom:
+        - configMapRef:
+            name: seldon-controller-manager-config
+        volumeMounts:
+        - name: seldon-controller-manager-conf
+          mountPath: /etc/seldon/controller-manager
+      volumes:
+      - name: seldon-controller-manager-conf
+        configMap:
+          name: seldon-controller-manager-config

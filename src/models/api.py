@@ -1,8 +1,10 @@
+import requests
 import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from dotenv import load_dotenv
+import torch
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,6 +17,9 @@ model_name = "mistralai/Mistral-7B-Instruct-v0.3"
 try:
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=api_token, use_fast=True)
     model = AutoModelForCausalLM.from_pretrained(model_name, use_auth_token=api_token)
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print("Device: ", device)
+    model = model.to(device)
 except ImportError as e:
     raise RuntimeError(f"Error loading model/tokenizer: {e}")
 
@@ -31,14 +36,13 @@ class ModelRequest(BaseModel):
 @app.post("/generate/")
 async def generate_code(request: ModelRequest):
     try:
-        # Tokenize the input and include the attention mask
-        inputs = tokenizer(request.prompt, return_tensors="pt", padding=True, truncation=True, max_length=request.max_length)
-        attention_mask = inputs.attention_mask
+        # Tokenize the input and move tensors to the appropriate device
+        inputs = tokenizer(request.prompt, return_tensors="pt", padding=True, truncation=True, max_length=request.max_length).to(device)
         
         # Generate the output with the attention mask and pad_token_id set
         outputs = model.generate(
             inputs.input_ids,
-            attention_mask=attention_mask,
+            attention_mask=inputs.attention_mask,
             max_length=request.max_length,
             num_return_sequences=1,
             pad_token_id=tokenizer.eos_token_id,

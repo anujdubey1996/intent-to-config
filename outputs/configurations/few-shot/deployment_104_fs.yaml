@@ -1,0 +1,203 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+  labels:
+    app: prometheus-operator
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-operator
+      k8s-app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus-operator
+        k8s-app: prometheus
+    spec:
+      serviceAccountName: prometheus-operator-sa
+      containers:
+      - name: prometheus-operator
+        image: quay.io/prometheus/prometheus-operator:v2.32.1
+        command:
+        - /prometheus-operator
+        args:
+        - --kubelet-serving-url=https://$POD_IP:10250
+        - --web.listener=0.0.0.0:8080
+        - --web.secureListener=0.0.0.0:443
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+        envFrom:
+        - secretRef:
+            name: prometheus-operator-settings
+        volumeMounts:
+        - name: tls-config
+          mountPath: /tmp/tls
+          readOnly: true
+      volumes:
+      - name: tls-config
+        secret:
+          secretName: tls-secret
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
+        privileged: false
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelAffinity:
+              term: app.kubernetes.io/name
+            inPredicate:
+              operator: NotIn
+              values:
+              - redis
+      hostNetwork: true
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: network.istio.io/v1alpha3
+kind: NetworkPolicy
+metadata:
+  name: prometheus-operator-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: prometheus-operator
+      k8s-app: prometheus
+  trafficPolicy:
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            svc: kubernetes
+    egress:
+    - to:
+      - podSelector:
+          matchLabels:
+            k8s-app: prometheus
+        ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 30800
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-operator-sa
+  namespaces:
+  - monitoring
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tls-secret
+type: Opaque
+data:
+  tls.crt: {base64encodedcertificate}
+  tls.key: {base64encodedprivatekey}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: prometheus-operator-settings
+type: Opaque
+data:
+  prometheus.yml: |
+    rule_files:
+    - rules_path/alertmanager_rules.yml
+rule_files:
+  - rules_path/prometheus_rules.yml
+    alerting:
+      alertmanagers:
+      - prometheus-operator-alertmanager.monitoring.svc.cluster.local
+    external_alerts:
+    - match:
+        alertname: KubernetesPods
+        namespace: kube-system
+        cluster: true
+        severity: warning
+    scrape_configs:
+    - job_name: prometheus-operator-kubelet-prometheus
+      honors: k8s_prometheus_config
+      honor_kubernetes_sd_configs: true
+      kubernetes_sd_configs:
+      - role: kubelet
+    - job_name: prometheus-operator-service-monitoring
+      honour_kubernetes_sd_configs: false
+      service_monitor_names: kube-state-metrics
+    reload_configs: false
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: your@email.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-key
+    tlsChallenges:
+    - dns01:
+        dnsClientConfig:
+          name: cloudflare
+          ignoreDns1185: false
+          dnsConfig:
+            provider: cloudflare
+            api: ""
+            server: "https://api.cloudflare.com/client/v4/zones/:zone_id/dns_records"
+            accountEmail: letsencrypt-email@example.com
+            accountApiKey: letsencrypt_api_key
+        dns01PropagationTime: 60s
+        dns01Ttl: 60s
+        dns01Logging: true
+        cname01: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: prometheus-operator-tls
+spec:
+  secretName: prometheus-operator-tls
+  issuerRef:
+    name: letsencrypt-prod
+    group: cert-manager.io
+  commonName: prometheus-operator
+  ipSans:
+  - <pod_ip>
+  dnsNames:
+  - <pod_name>.<namespace>.svc.cluster.local
+  ttl: 8760h
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus-operator-ingress
+  namespace: monitoring
+spec:
+  securityPolicy: Oauth2BearerToken
+  tls:
+  - secretName: prometheus-operator-tls
+  rules:
+  - host: prometheus-operator
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-operator
+            port:
+              name: https

@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a custom server application with a single replica, including the Docker image, exposed port, volume mounts for scripts and secrets, environment variable configuration, and command to start the server in debug mode.

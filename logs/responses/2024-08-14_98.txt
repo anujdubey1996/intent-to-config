@@ -1,0 +1,43 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration for deploying a web-client application with specific settings for resource requests, limits, and readiness probe.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-client-deployment
+  labels:
+    app: web-client
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-client
+  template:
+    metadata:
+      labels:
+        app: web-client
+    spec:
+      containers:
+      - name: web-client
+        image: web-client:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "384Mi
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+```

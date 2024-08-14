@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helloworld
+  labels:
+    app: helloworld
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: helloworld
+  template:
+    metadata:
+      labels:
+        app: helloworld
+    spec:
+      containers:
+      - name: helloworld
+        image: your-docker-image:your-tag
+        ports:
+        - containerPort: 8080
+      nodeSelector:
+        beta.kubernetes.io/os: linux # Replace with the desired operating system if needed
+        worker: your-desired-node-label # Replace with the desired worker node label

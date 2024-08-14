@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server-deployment
+  labels:
+    app: auth-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: auth-server
+  template:
+    metadata:
+      labels:
+        app: auth-server
+    spec:
+      containers:
+      - name: auth-server
+        image: auth-server:v1
+        ports:
+        - containerPort: 8080
+        env:
+        - name: APP_PORT
+          value: "8080"
+        - name: APP_NAME
+          value: "auth-server"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 8080

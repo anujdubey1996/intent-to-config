@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consul
+  labels:
+    app: consul
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: consul
+  template:
+    metadata:
+      labels:
+        app: consul
+    spec:
+      containers:
+      - name: consul
+        image: hashicorp/consul:latest
+        ports:
+        - name: http
+          containerPort: 8500
+        - name: https
+          containerPort: 8501
+        - name: gossip
+          containerPort: 8600
+        env:
+        - name: CONSUL_BIND_ADDR
+          value: 0.0.0.0
+        readinessProbe:
+          httpGet:
+            path: /health/status/leadership
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 3
+        livenessProbe:
+          httpGet:
+            path: /health/status/leadership
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 3
+      imagePullSecrets:
+      - name: regcred
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - consul
+            preferredDividingSibling:
+              podFitExpressions:
+              - containerName: consul
+              weight: 100
+              beforePreferred:
+                podName:
+              preferSameNodeAntiAffinityPods: true
+      nodeSelector:
+        zone: high
+      resources:
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+        requests:
+          memory: "512Mi"
+          cpu: "500m"
+      securityContext:
+        privileged: true
+      serviceAccountName: istio-service-account
+      istio:
+        sidecar:
+          env:
+          - name: ISTIO_META_POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: ISTIO_META_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: ISTIO_META_CONSUL_ADDR
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+          - name: CONSUL_HTTP_ADDR
+            value: "$(ISTIO_META_POD_NAME):8500"
+          - name: CONSUL_HTTPS_ADDR
+            value: "$(ISTIO_META_POD_NAME):8501"
+          - name: CONSUL_HTTP_TOKEN
+            value: <your_consul_token>
+          - name: CONSUL_HTTP_DC
+            value: dev

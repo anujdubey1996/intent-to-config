@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment with a sidecar container for the controller manager. The sidecar container acts as an HTTP proxy that performs RBAC authorization using SubjectAccessReviews. The deployment includes a primary container for the manager and a sidecar container for the proxy.

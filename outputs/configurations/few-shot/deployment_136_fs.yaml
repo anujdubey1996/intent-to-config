@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-api
+  labels:
+    app: airbyte
+    component: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airbyte
+      component: api
+  template:
+    metadata:
+      labels:
+        app: airbyte
+        component: api
+    spec:
+      containers:
+      - name: airbyte-api
+        image: airbyte/airbyte-api:<version>
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 200m
+            memory: 64Mi
+        env:
+        - name: AMBASSADOR_HOST
+          value: airbyte-api.service.internal
+        - name: AMBASSADOR_PORT
+          value: 80
+      imagePullSecret: <image-pull-secret>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-dbt-core
+  labels:
+    app: airbyte
+    component: dbt-core
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airbyte
+      component: dbt-core
+  template:
+    metadata:
+      labels:
+        app: airbyte
+        component: dbt-core
+    spec:
+      containers:
+      - name: airbyte-dbt-core
+        image: airbyte/airbyte-dbt-core:<version>
+        resources:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 200m
+            memory: 64Mi
+        env:
+        - name: DB_URL
+          value: <database-url>
+        - name: DB_USER
+          value: <database-user>
+        - name: DB_PASSWORD
+          value: <database-password>
+        command: ["dbt", "run"]
+      imagePullSecret: <image-pull-secret>

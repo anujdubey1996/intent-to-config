@@ -1,0 +1,46 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment to manage the deployment of a PM2-based application with specific configurations for replicas, image details, environment variables, resource requests, and node affinity. This deployment uses Helm templating to dynamically set values based on the Helm chart configuration.
+
+Prerequisites:
+1. Have Helm CLI installed and configured. (https://helm.sh/docs/intro/install/)
+2. kubectl CLI is installed and configured. (https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+3. Helm chart for the PM2-based application is available and configured.
+
+Steps:
+
+1. Assuming you have a Helm chart named `my-pm2-app` with the values specified below, let's create the deployment configuration file using Helm template.
+
+First, navigate to theHelm chart directory:
+```
+cd my-pm2-app
+```
+
+2. To generate the Deployment YAML files, you can use the Helm template command:
+
+```
+helm template my-pm2-app my-pm2-app > deployment.yaml
+```
+
+This command will generate a new YAML file called `deployment.yaml` based on the Helm chart containing the specified deployment configuration.
+
+3. Now let's inspect the generated `deployment.yaml` and validate if the values are set correctly based on your given intent.
+
+4. Assuming that the generated `deployment.yaml` file is correct, you can apply it to the cluster using the `kubectl` command:
+
+```
+kubectl apply -f deployment.yaml
+```
+
+This command will create the deployment with the specified configuration in the Kubernetes cluster.
+
+5. To verify the status of the created deployment, execute the following command:
+
+```
+kubectl get deployments
+```
+
+You should see the deployment named `my-pm2-app` listed with the replicas, node affinity, and other specified configurations applied.
+
+**Note:** If you need to modify the Helm chart to match your specific application requirements, update the chart accordingly, and re-generate the `deployment.yaml` file by running the Helm template command again. Additionally, ensure that the values provided in the Helm chart's example configuration or the default values match the desired configuration settings.

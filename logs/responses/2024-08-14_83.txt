@@ -1,0 +1,56 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment for a Consul service, deploying a single replica with specific annotations, port configurations, and resource limits.
+
+Here is your generated Kubernetes deployment configuration file:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consul-deployment
+  labels:
+    app: consul
+  annotations:
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: consul-0.1.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consul
+  template:
+    metadata:
+      labels:
+        app: consul
+    spec:
+      containers:
+      - name: consul
+        image: hashicorp/consul:latest
+        ports:
+        - containerPort: 8500
+          name: consul-http
+        - containerPort: 8600
+          name: consul-rrp
+        - containerPort: 8080
+          name: consul-ui
+        readinessProbe:
+          httpGet:
+            path: /v1/health/service/consul
+            port: 8500
+        livenessProbe:
+          httpGet:
+            path: /v1/health/service/consul
+            port: 8500
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+        requests:
+          memory: "64Mi"
+          cpu: "250m"
+status: {}
+```
+
+This YAML file creates a Kubernetes Deployment called `consul-deployment`. The deployment has one replica running a single container based on the official Consul image from Hashicorp. The container exposes three ports for Consul's HTTP, RRAP, and UI services, respectively. It includes readiness and liveness probes to check the health of the Consul instance. Additionally, it sets resource limits for memory (128 Mi) and CPU (500 m) while requesting 64 Mi of memory and 250 m of CPU.

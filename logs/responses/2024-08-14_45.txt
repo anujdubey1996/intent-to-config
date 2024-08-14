@@ -1,0 +1,141 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment using Helm templates with dynamic values for various configurations. The deployment includes options for autoscaling, image pulling, security settings, resource management, and additional configurations like volumes, node selectors, affinities, and tolerations.
+
+Content:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-deployment
+  labels:
+    app: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      volumes:
+      - name: config-volume
+        configMap:
+          name: my-app-config
+      containers:
+      - name: my-app-container
+        image: my-registry-url/my-app:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 80
+        env:
+        - name: ENV_VAR_1
+          valueFrom:
+            configMapKeyRef:
+              name: my-app-config
+              key: app_env_var_1
+        - name: ENV_VAR_2
+          valueFrom:
+            secretKeyRef:
+              name: my-secret
+              key: app_env_var_2
+        envFrom:
+        - configMapRef:
+            name: my-app-config
+        - secretRef:
+            name: my-secret
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "500m"
+            memory: "256Mi"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      nodeSelector:
+        zone: us-west
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - my-app
+            topologyKey: kubernetes.io/hostname
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - my-app
+            topologyKey: kubernetes.io/hostname
+
+---
+
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-app-deployment
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+```
+
+This Deployment configuration specifies a Kubernetes workload named `my-app-deployment` which will have 3 replicas running. The containers within the Deployment use the image `my-registry-url/my-app:latest`, with optional settings for imagePullPolicy, ports, environment variables, resources, livenessProbe, readinessProbe, nodeSelector, affinity, and tolerations. The HorizontalPodAutoscaler specifies the scaling behavior for the deployment, configuring minimum and maximum replica counts as well as the target CPU utilization (70%).
+
+The Deployment and HPA make use of Helm chart values to dynamically provide configuration for certain settings. The names and keys of these values are defined within the `apiVersion`, `configMap`, and `secret` references in the Deployment. The chart defining these values would look something like this:
+
+```yaml
+app:
+  name: my-app
+
+env:
+  app_env_var_1: ENV_VAR_1_VALUE
+  app_env_var_2: ENV_VAR_2_VALUE
+
+secrets:
+  my-secret:
+    app_env_var_2: SECRET_ENV_VAR_2_VALUE
+
+config:
+  app_config:
+    app_env_var_1: CONFIG_ENV_VAR_1_VALUE
+```
+
+Then, when using Helm to apply the chart and deploy the Deployment, you can set specific values for these variables, such as:
+
+```sh
+$ helm install my-app my-app-chart --set env.app_env_var_1=OVERRIDE_ENV_VAR_1_VALUE --set config.app_config.app_env_var_1=OVERRIDE_CONFIG_ENV_VAR_1_VALUE
+```
+
+This would create a deployment with the specified overrides for `app_env_var_1` across the environment variables, config map and container environment variables.

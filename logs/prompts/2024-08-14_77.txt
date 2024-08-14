@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Prometheus Operator with detailed configurations, including optional settings for security, resource management, and network configurations

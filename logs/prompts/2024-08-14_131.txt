@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Kubernetes named deploy-nginx-update with an annotation kubernetes.io/change-cause set to "version 1.15"

@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: youth-conn-demo
+  labels:
+    app: youth-conn-demo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: youth-conn-demo
+  template:
+    metadata:
+      labels:
+        app: youth-conn-demo
+    spec:
+      containers:
+      - name: youth-conn-demo
+        image: youthconn/demo:latest
+        ports:
+        - containerPort: 8080

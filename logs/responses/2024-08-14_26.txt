@@ -1,0 +1,90 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Configure and execute a test scenario for Kubernetes deployment with performance measurements, including pod startup latency, deployment creation, and pod deletion.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test-app
+  template:
+    metadata:
+      labels:
+        app: test-app
+    spec:
+      containers:
+      - name: test-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+        startupProbe:
+          exec:
+            command: ["/bin/sh", "-c", "sleep 30; echo success"]
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: test-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: test-deployment
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: test-prometheus-rule
+spec:
+  groups:
+  - name: pod-metrics
+    matches:
+    - alert: PodLatencyOverload
+      expr: histogram_quantile(0.99, iostream_bytes_received_seconds{pod=~".*",container=.".*"}) > 1000000
+    - alert: PodCPUUtilization
+      expr: vector(kube_cpu_usage_seconds_total{pod=~".*",container=.".*",usage_period_s=1m}) / vector(kube_cpu_usage_millicore_seconds{pod=~".*",container=.".*",usage_period_s=1m}) * 100 > 70
+  rules:
+  - alert: PodLatencyOverload
+    annotations:
+      description: The average data input rate of a pod's container exceeds 1000000 bytes in a second
+    expr: histogram_quantile(0.99, iostream_bytes_received_seconds{pod=~".*",container=.".*"}) > 1000000
+    for: 1m
+    labels:
+      severity: critical
+    notifications:
+    - name: Test-LatencyAlerts
+  - alert: PodCPUUtilization
+    annotations:
+      description: A pod's container CPU utilization exceeds 70 for 1 minute
+    expr: vector(kube_cpu_usage_seconds_total{pod=~".*",container=.".*",usage_period_s=1m}) / vector(kube_cpu_usage_millicore_seconds{pod=~".*",container=.".*",usage_period_s=1m}) * 100 > 70
+    for: 1m
+    labels:
+      severity: warning
+    notifications:
+    - name: Test-CPUAlerts
+```
+
+This Kubernetes configuration file defines a deployment named `test-deployment` that uses the nginx:latest image, and sets up three replicas (pods) of the deployment. The deployment is configured with readiness, startup, and liveness probes to monitor pod health and ensure that it is ready to serve requests before assigning traffic and to automatically restart unhealthy pods. Additionally, a horizontal pod autoscaler (HPA) is defined to adjust the number of replicas based on CPU utilization, ensuring that the deployment can handle increased demand and avoid overloading resources. Furthermore, a PrometheusRule is defined to create alerts for high latency (over 1MB/s) and high CPU utilization (over 70%). These alerts will trigger notifications when they occur, which is useful for monitoring the performance of the deployment.

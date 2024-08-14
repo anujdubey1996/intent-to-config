@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secondary-container-deployment
+  labels:
+    app: secondary-container
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: secondary-container
+  template:
+    metadata:
+      labels:
+        app: secondary-container
+    spec:
+      containers:
+      - name: secondary-container
+        image: <ACR_NAME>.azurecr.io/secondary-container:latest
+        imagePullPolicy: Always
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+      imagePolicy:
+        automaticUpdate:
+          tagUpdatePolicy: IfNotPresent
+          maximumNumberOfUniqueTags: 3
+      volumes:
+      - name: logs
+        configMap:
+          name: secondary-container-logs
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: secondary-container
+        image: <ACR_NAME>.azurecr.io/secondary-container:latest
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log
+          subPath: logs

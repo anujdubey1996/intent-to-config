@@ -1,0 +1,40 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy users-deployment to run 3 replicas of the users application.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: users
+  template:
+    metadata:
+      labels:
+        app: users
+    spec:
+      containers:
+      - name: users
+        image: busybox
+        command: ["sleep", "3600"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: users-service
+spec:
+  selector:
+    app: users
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+```
+Here I created a `Deployment` and `Service` object for the users-deployment. The Deployment manages the desired number of replicas (3) for the users application container, which runs on the BusyBox image and sleeps for 1 hour (3600 seconds). In this example, I used the BusyBox image for simplicity, but you should replace it with the appropriate Docker image for your users application.
+
+The Service creates an accessible endpoint for other Kubernetes services or pods to interact with the users-deployment, by exposing traffic to the users-deployment service on port 80. The selector matches the label in the users-deployment pods, and traffic is forwarded to the users application container on port 8080.

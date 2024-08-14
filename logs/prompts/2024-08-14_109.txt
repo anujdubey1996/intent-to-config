@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Define a Kubernetes deployment for Cloudflare's cloudflared tunnel, configured with liveness probes and volume mounts for configuration and credentials.

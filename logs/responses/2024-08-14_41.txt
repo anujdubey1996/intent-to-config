@@ -1,0 +1,219 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment for a Fullstack API application using Helm templates. This configuration sets up the deployment with dynamic values for metadata, replicas, container details, environment variables, and more.
+
+**Deployment configuration file using Helm templates**
+
+To create this Kubernetes deployment using Helm templates, you will first need to create the following Helm Chart repository. Then, create and apply a values.yaml file under the charts directory. In this example, the Helm chart repository is called `fullstack-api` and the deployment is called `fullstack-api-deployment`.
+
+1. First, create a `fullstack-api` helm chart directory and add the following structure within it:
+
+```
+fullstack-api/
+├── charts
+│   └── fullstack-api-deployment
+│       ├── templates
+│       │   ├── deployment.yaml
+│       │   ├── environment.yaml
+│       │   ├── replicaSet.yaml
+│       │   ├── service.yaml
+│       │   └── secrets.yaml
+│       ├── values.yaml
+│       └── README.md
+├── charts.yaml
+└── helm-repo.yaml
+```
+
+2. Add the following content to the `helmet-repo.yaml` and `charts.yaml` files:
+
+**helms-repo.yaml**
+```
+apiVersion: v1
+kind: List
+items:
+- apiVersion: v1
+  kind: Repository
+  metadata:
+    name: fullstack-api
+    namespace: kube-system
+  spec:
+    chart: https://path/to/fullstack-api
+    interval: 300
+    sourceRef:
+      git:
+        branch: main
+        repository: https://github.com/your-username/fullstack-api
+        revision: HEAD
+```
+
+**charts.yaml**
+```
+apiVersion: helm.ci.helm.sh/v2
+repoUrl: https://my-repository.com/helm-charts
+```
+
+3. Now create the values.yaml file with required settings:
+
+**values.yaml**
+
+```
+replicaCount: 3
+image:
+  repository: your-image-repository
+  tag: latest
+  pullPolicy: IfNotPresent
+service:
+  type: LoadBalancer
+ ports:
+   - name: http
+     port: 80
+     targetPort: 8080
+ environment:
+   APP_ENV: production
+   APP_SECRET: your-secret-key
+ secrets:
+   fullstack-api-secret:
+     fromSecret:
+       name: your-secret-name
+```
+
+4. Create the deployment-related template files within the `templates` directory. Replace the placeholders with the appropriate container information:
+
+**deployment.yaml**
+```
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "fullstack-api.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "fullstack-api.name" . }}
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: {{ include "fullstack-api.name" . }}
+        tier: frontend
+    spec:
+      containers:
+      - name: {{ include "fullstack-api.containers.name" .| titler}}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        ports:
+        - containerPort: {{ .Values.service.ports.http.targetPort }}
+          name: http
+        env:
+        - name: APP_ENV
+          value: {{ .Values.environment.APP_ENV }}
+        - name: APP_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secrets.fullstack-api-secret.fromSecret.name }}
+              key: your-secret-key
+      serviceAccountName: {{ include "fullstack-api.serviceAccountName" . }}
+      imagePullSecrets:
+      - name: your-registry-secret
+```
+
+**replicaSet.yaml**
+
+```
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: {{ include "fullstack-api.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "fullstack-api.name" . }}
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: {{ include "fullstack-api.name" . }}
+        tier: frontend
+    spec:
+      containers:
+      - name: {{ include "fullstack-api.containers.name" .| titler}}
+        container:
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          ports:
+          - containerPort: {{ .Values.service.ports.http.targetPort }}
+            name: http
+          env:
+          - name: APP_ENV
+            value: {{ .Values.environment.APP_ENV }}
+          - name: APP_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secrets.fullstack-api-secret.fromSecret.name }}
+                key: your-secret-key
+      serviceAccountName: {{ include "fullstack-api.serviceAccountName" . }}
+      imagePullSecrets:
+      - name: your-registry-secret
+```
+
+**service.yaml**
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "fullstack-api.fullname" . }}
+spec:
+  selector:
+    app: {{ include "fullstack-api.name" . }}
+    tier: frontend
+  type: {{ .Values.service.type }}
+  ports:
+    {{ range $idx, $port := .Values.service.ports }}
+    {{ toYaml $$port | indent 12 }}
+    {{- end }}
+```
+
+**environment.yaml**
+
+```
+{{- range $key, $value := .Values.environment }}
+{{ $name := $key | title }}: {{ $value }}
+{{- end }}
+```
+
+**secrets.yaml**
+
+```
+{{- range $key, $value := .Values.secrets }}
+{{ $name := $key }}
+{{- if .Values.secrets.$name.fromSecret }}
+{{ $fromSecretName := .Values.secrets.$name.fromSecret.name }}
+{{ $secretExist := command "kubectl" "get" "secret" $fromSecretName -n kube-system -o json" | @amap "items" }}
+{{ if not $secretExist }}
+error: Secret {{ $fromSecretName }} not found.
+{{ else if eq (index $secretExist.0 "kind") "apiError" }}
+error: Secret {{ $fromSecretName }} invalid.
+{{ else }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $name }}
+type: Opaque
+data:
+{{ range $key, $value := index $secretExist.0.data }}
+  {{ $key | b64enc }}={{ index (.Values.secrets.$name.fromSecret.jsonData) $key | b64enc }}
+{{ end }}
+{{ end }}
+{{ end }}
+```
+
+5. Finally, you can install the fullstack-api Helm chart with the following command, replacing `your_release_name` with the desired deployment name:
+
+```
+helm install your_release_name fullstack-api/fullstack-api-deployment
+```
+
+This Helm chart configuration creates a Kubernetes deployment with the specified settings. You can customize it further as needed according to your application requirements.

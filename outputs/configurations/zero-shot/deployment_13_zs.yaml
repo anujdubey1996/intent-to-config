@@ -1,0 +1,46 @@
+# Chart: mongodb
+# Description: Helm chart for installing MongoDB
+
+# Global MongoDB installation configurations
+global:
+  image:
+    repository: <your-container-registry>
+    tag: latest
+  replicas: 3
+  service:
+    type: ClusterIP
+  persistence:
+    storageClass: <your-storageclass>
+    size: 20Gi
+
+# Kubernetes Deployment configuration using template files
+deploy:
+  template: deployments.yaml
+  file: deploy/templates/deployment.yaml
+
+# Kubernetes Service configuration using template files
+services:
+  template: services.yaml
+  file: deploy/templates/service.yaml
+
+# Kubernetes PersistentVolumeClaim configuration using template files
+pvc:
+  template: pvc.yaml
+  file: deploy/templates/pvc.yaml
+
+# Kubernetes NodeSelector, Affinity, and Toleration configuration using template files
+nodeSelector:
+  template: nodeSelector.yaml
+  file: deploy/templates/nodeSelector.yaml
+
+# Kubernetes Helm values for autoscaling, security settings, and additional configurations
+values:
+  autoScaling:
+    enabled: false
+  imagePullSecrets:
+    - name: <your-docker-registry-secret>
+  resources:
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+  terminationGracePeriodSeconds: 30

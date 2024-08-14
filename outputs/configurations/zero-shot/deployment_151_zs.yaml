@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: cert-controller
+  name: cert-controller
+  labels:
+    app: cert-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cert-controller
+  template:
+    metadata:
+      labels:
+        app: cert-controller
+    spec:
+      containers:
+      - name: cert-controller
+        image: jetstack/cert-manager:v1.1.0
+        ports:
+        - name: webhook
+          containerPort: 8080
+        readinessProbe:
+          tcpSocket:
+            port: webhook
+        livenessProbe:
+          tcpSocket:
+            port: webhook
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CERT_MANAGER_SERVER_TLS_KEY_SECRET_NAME
+          value: cert-manager
+        - name: CERT_MANAGER_SERVER_TLS_CERTIFICATE_SECRET_NAME
+          value: cert-manager
+        - name: CERT_MANAGER_WEBHOOK_SERVER_CERTIFICATE_SECRET_NAME
+          value: webhook-certs
+        - name: CERT_MANAGER_WEBHOOK_SERVER_KEY_SECRET_NAME
+          value: webhook-certs
+        - name: CERT_MANAGER_AUTO_ISSUING_CERT_MANAGER_NAME
+          value: letsencrypt-staging
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+        tolerationSeconds: 300

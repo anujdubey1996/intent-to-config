@@ -1,0 +1,207 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: instascan-vault-deployment
+  labels:
+    app: instascan-vault
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: instascan-vault
+  template:
+    metadata:
+      labels:
+        app: instascan-vault
+    spec:
+      containers:
+      - name: instascan-vault
+        image: your_docker_image:your_tag
+        envFrom:
+        - configMapRef:
+            name: instascan-vault-config
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8443
+          name: https
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+      imagePullSecrets:
+        - name: registry-creds
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: instascan-vault-service
+  labels:
+    app: instascan-vault
+spec:
+  selector:
+    app: instascan-vault
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  - name: https
+    port: 443
+    targetPort: 8443
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: instascan-vault-config
+data:
+  VAULT_ADDR: http://instascan-vault-service:8200
+  VAULT_LISTEN_ADDRESS: 0.0.0.0:8080
+  VAULT_CERTIFICATE: |
+    -----BEGIN CERTIFICATE-----
+    <!-- Base64-encoded TLS certificate -->
+    -----END CERTIFICATE-----
+  VAULT_KEY: |
+    -----BEGIN PRIVATE KEY-----
+    <!-- Base64-encoded TLS private key -->
+    -----END PRIVATE KEY-----
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres
+        envFrom:
+        - secretRef:
+            name: postgres-secret
+        ports:
+        - containerPort: 5432
+        readinessProbe:
+          tcpSocket:
+            port: 5432
+        imagePullSecrets:
+        - name: registry-creds
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+type: Opaque
+data:
+  POSTGRES_PASSWORD: base64encoded_password_value
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  labels:
+    app: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: instascan-vault-with-postgres-deployment
+  labels:
+    app: instascan-vault
+    postgres: true
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: instascan-vault
+      postgres: true
+  template:
+    metadata:
+      labels:
+        app: instascan-vault
+        postgres: true
+    spec:
+      containers:
+      - name: instascan-vault
+        image: your_docker_image:your_tag
+        envFrom:
+        - configMapRef:
+            name: instascan-vault-config
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        env:
+        - name: POSTGRES_HOST
+          value: postgres-service
+        - name: POSTGRES_PORT
+          value: "5432"
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8443
+          name: https
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+      imagePullSecrets:
+        - name: registry-creds
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: instascan-vault-with-postgres-service
+  labels:
+    app: instascan-vault
+    postgres: true
+spec:
+  selector:
+    app: instascan-vault
+    postgres: true
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  - name: https
+    port: 443
+    targetPort: 8443
+  type: LoadBalancer
+  externalTrafficPolicy: Local

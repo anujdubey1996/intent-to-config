@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airbyte-api
+  template:
+    metadata:
+      labels:
+        app: airbyte-api
+    spec:
+      containers:
+      - name: airbyte-api
+        image: docker.io/airbyte/airbyte-api:latest
+        envFrom:
+        - configMapRef:
+            name: airbyte-api-config
+        resources:
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "500m"
+      imagePullSecrets:
+      - name: registry-secret
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airbyte-worker
+  template:
+    metadata:
+      labels:
+        app: airbyte-worker
+    spec:
+      containers:
+      - name: airbyte-worker
+        image: docker.io/airbyte/airbyte-worker:latest
+        envFrom:
+        - configMapRef:
+            name: airbyte-worker-config
+        resources:
+          limits:
+            memory: "3584Mi"
+            cpu: "12"
+          requests:
+            memory: "3584Mi"
+            cpu: "12"
+      imagePullSecrets:
+      - name: registry-secret
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-ui
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: airbyte-ui
+  template:
+    metadata:
+      labels:
+        app: airbyte-ui
+    spec:
+      containers:
+      - name: airbyte-ui
+        image: docker.io/airbyte/airbyte-ui:latest
+        envFrom:
+        - configMapRef:
+            name: airbyte-ui-config
+        resources:
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "500m"
+      imagePullSecrets:
+      - name: registry-secret

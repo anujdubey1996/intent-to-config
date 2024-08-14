@@ -1,0 +1,1 @@
+Deploy the kuard application with 10 replicas to ensure high availability, utilizing a rolling update strategy for seamless updates. The deployment includes readiness probes to confirm that the application is ready to handle traffic, ensuring smooth operation during rollouts

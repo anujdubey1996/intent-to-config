@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8sdemo-deployment
+  labels:
+    app: k8sdemo
+  namespace: default
+spec:
+  replicas: {{ replicas | int }}
+  selector:
+    matchLabels:
+      app: k8sdemo
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: k8sdemo
+      annotations:
+        kubernetes.io/limit-ranger: "LimitRange"
+    spec:
+      serviceAccountName: {{ serviceAccount }}
+      containers:
+        - name: k8sdemo-container
+          image: {{ containerImage }}
+          imagePullPolicy: {{ imagePullPolicy }}
+          ports:
+            - containerPort: {{ containerPort }}
+          env:
+            - name: APP_ENVIRONMENT
+              value: {{ env }}
+          livenessProbe:
+            httpGet:
+              path: /health-check
+              port: {{ containerPort }}
+            initialDelaySeconds: {{ livenessProbeInitialDelaySeconds }}
+            periodSeconds: {{ livenessProbePeriodSeconds }}
+            timeoutSeconds: {{ livenessProbeTimeoutSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: {{ containerPort }}
+            initialDelaySeconds: {{ readinessProbeInitialDelaySeconds }}
+            periodSeconds: {{ readinessProbePeriodSeconds }}
+            timeoutSeconds: {{ readinessProbeTimeoutSeconds }}
+          securityContext:
+            runAsUser: {{ securityContextRunAsUser }}
+          resources:
+            limits:
+              cpu: {{ containerLimitCPU }}
+              memory: {{ containerLimitMemory }}
+            requests:
+              cpu: {{ containerRequestCPU }}
+              memory: {{ containerRequestMemory }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - myapp
+                topologyKey: kubernetes.io/hostname
+      schedulerName: {{ schedulerName }}
+      nodeSelector:
+        myapp: mynode
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+          tolerationSeconds: {{ toleranceSeconds }}

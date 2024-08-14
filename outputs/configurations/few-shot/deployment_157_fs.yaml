@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-session-store
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-session-store
+  template:
+    metadata:
+      labels:
+        app: redis-session-store
+    spec:
+      containers:
+      - name: redis
+        image: bitnami/redis:latest
+        ports:
+        - name: redis
+          containerPort: 6379
+        volumeMounts:
+          - name: redis-persistence
+            mountPath: /bitnami/redis
+        env:
+        - name: ALLOW_EMPTY_PASSWORD
+          value: "yes"
+      volumes:
+      - name: redis-persistence
+        persistentVolumeClaim:
+          claimName: redis-session-store-pvclaim
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-session-store-pvclaim
+  storageClass: standard
+  labels:
+    app: redis-session-store
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi

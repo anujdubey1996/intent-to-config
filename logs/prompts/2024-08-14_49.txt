@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment for the flagger service with specific configuration for the container. This Deployment sets up the flagger application with its required arguments for logging, label inclusion, mesh provider, and metrics server.

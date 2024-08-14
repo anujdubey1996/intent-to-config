@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the cert-controller in a Kubernetes cluster when the certController is to be created and the certManager is not enabled for the webhook

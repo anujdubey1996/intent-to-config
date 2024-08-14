@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Execute a series of steps to measure pod startup latency, create and manage a deployment, wait for pods to reach a running state, and clean up the environment by deleting the pods in a Kubernetes namespace.

@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single instance of the demo-backend-svc backend service in the dev namespace, using the latest version of a specified container image. The service is exposed on port 8080 and utilizes the default service account.

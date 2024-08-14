@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Define a Kubernetes deployment with specific configurations for a container running the containous/whoami image.

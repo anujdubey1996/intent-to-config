@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+    chart: {{ .Chart }}
+    release: {{ .Release.Namespace }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    helm.sh/chart: {{ .Chart }}
+    helm.sh/chart-version: {{ .ChartVersion }}
+    helm.sh/created-by: Helm
+  ownerReferences:
+  - apiVersion: v1
+    kind: ServiceAccount
+    name: {{ include "serviceaccount.name" . }}
+    uid: {{ .Values.serviceAccount.secrets.SA_SECRET_NAME }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+      chart: {{ .Chart }}
+      release: {{ .Release.Namespace }}
+      heritage: {{ .Release.Service }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.strategy.maxSurge }}
+      maxUnavailable: {{ .Values.strategy.maxUnavailable }}
+    type: Recreate
+  serviceAccountName: {{ include "serviceaccount.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+        chart: {{ .Chart }}
+        release: {{ .Release.Namespace }}
+        heritage: {{ .Release.Service }}
+        helm.sh/chart: {{ .Chart }}
+        helm.sh/chart-version: {{ .ChartVersion }}
+        helm: {{ .Release.Namespace }}/{{ .Release.Name }}
+    spec:
+      securityContext:
+        podSecurityContext:
+          fsGroup: {{ .Values.podSecurityContext.fsGroup }}
+          runAsUser: {{ .Values.podSecurityContext.runAsUser }}
+          runAsGroup: {{ .Values.podSecurityContext.runAsGroup }}
+          seLinuxOptions:
+            type: {{ .Values.podSecurityContext.seLinuxOptions.type }}
+        containerSecurityContext:
+          readOnlyRootFilesystem: {{ .Values.containerSecurityContext.readOnlyRootFilesystem }}
+          runAsUser: {{ .Values.containerSecurityContext.runAsUser }}
+          runAsGroup: {{ .Values.containerSecurityContext.runAsGroup }}
+          seLinuxOptions:
+            type: {{ .Values.containerSecurityContext.seLinuxOptions.type }}
+          seccompProfile:
+            type: RuntimeDefault
+     volumes:
+        {{ range .Values.persistentVolumeClaim.enabled }}
+        - name: {{ index .name . }}
+          persistentVolumeClaim:
+            claimName: {{ include "persistentvolumeclaim. claimName" . }}
+        {{ end }}
+      containers:
+        - name: {{ .Release.Name }}
+          args:
+            - --arg1={{ .Values.container.args.0 }}
+            - --arg2={{ .Values.container.args.1 }}
+            - --argN={{ .Values.container.args.slice 2 | join " " }}
+          image: "{{ .Values.container.image }}"
+          imagePullPolicy: {{ .Values.container.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.container.ports.http.containerPort }}
+              protocol: TCP
+            - name: ssl
+              containerPort: {{ .Values.container.ports.https.containerPort }}
+              protocol: TCP
+          env:
+            {{ toYaml .Values.container.env | indent 12 }}
+          volumeMounts:
+            {{ range .Values.container.volumeMounts }}
+            - name: {{ index .mountPath .name }}
+              mountPath: {{ index .mountPath .mountPath }}
+              subPath: {{ index .subPath .subPath }}
+            {{ end }}
+      nodeSelector:
+        {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            {{- range .Values.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution.requiredDuringSchedulingIgnoredDuringExecution }}
+            - weight: {{ index .weight }}
+              preference: {{ index .preference }}
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    {{- range $key, $values := $tagLabel }}
+                    - key: {{ $key }}
+                      operator: In
+                      values:
+                        {{- range $value := $values }}
+                          - {{ $value }}
+                        {{ end }}
+                topologyKey: {{ index .topologyKey .topology }}
+            {{ end }}
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            {{- range .Values.podAffinity.requiredDuringSchedulingIgnoredDuringExecution.podAffinityTerms }}
+            - labelSelector:
+                matchExpressions:
+                  {{- range $key, $values := $tagLabel }}
+                  - key: {{ $key }}
+                    operator: In
+                    values:
+                      {{- range $value := $values }}
+                        - {{ $value }}
+                      {{ end }}
+                matchLabels:
+                  {{- range $key, $values := .matchLabels }}
+                  - key: {{ $key }}
+                    operator: In
+                    values:
+                      {{- range $value := $values }}
+                        - {{ $value }}
+                      {{ end }}
+                {{- if .topologyKey }}
+                topologyKey: {{ .topologyKey }}
+                {{- end }}
+            {{- end }}
+      tolerations:
+        {{- range .Values.tolerations }}
+        - effect: {{ .effect }}
+          operator: {{ .operator }}
+          key: {{ .key }}
+          value: {{ .value }}
+          {{- if .tolerationSeconds }}
+          tolerationSeconds: {{ .tolerationSeconds }}
+          {{- end }}
+        {{ end }}

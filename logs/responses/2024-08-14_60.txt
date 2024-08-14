@@ -1,0 +1,46 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a ConfigMap named vault-config from the vault.conf file and deploy a Kubernetes Deployment resource named instascan-vault.
+
+Resources:
+- vault.conf is a file containing the configuration required for Instascan-VAULT
+- docker image: instascan/instascan-vault:latest or any specified version
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-config
+  labels:
+    app: instascan-vault
+data:
+  vault.hcl: |
+    # Your Vault configuration here
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: instascan-vault
+  labels:
+    app: instascan-vault
+spec:
+  selector:
+    matchLabels:
+      app: instascan-vault
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: instascan-vault
+    spec:
+      containers:
+      - name: instascan-vault
+        image: instascan/instascan-vault:latest
+        ports:
+        - containerPort: 8200
+        envFrom:
+        - configMapRef:
+            name: vault-config
+```

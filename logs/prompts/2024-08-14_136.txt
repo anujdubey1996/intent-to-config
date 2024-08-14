@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Configure a Helm chart-based deployment, highlighting the dynamic aspects and customizable settings that can be adjusted through the Helm chart values.

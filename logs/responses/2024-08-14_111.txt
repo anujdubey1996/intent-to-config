@@ -1,0 +1,33 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Define a Kubernetes deployment for a container running the lalyos/12factor image with environment variables sourced from a secret.
+
+Example configuration file:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+spec:
+  selector:
+    matchLabels:
+      app: example
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: example
+    spec:
+      containers:
+      - name: example
+        image: lalyos/12factor
+        envFrom:
+        - secretRef:
+            name: example-config
+      imagePullSecrets:
+        - name: regcred
+```
+
+This configuration creates a deployment named `example-deployment` with three replicas running the lalyos/12factor image. It sources environment variables from the `example-config` secret in the same namespace as the deployment, and uses an imagesecret named `regcred`. Replace the `name`, `replicas`, `image`, `secretRef.name`, and `imagePullSecrets[0].name` values as appropriate for your needs.

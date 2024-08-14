@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podinfo
+  labels:
+    app: podinfo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: podinfo
+      tier: frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: podinfo
+        tier: frontend
+    spec:
+      containers:
+      - name: podinfo
+        image: k8s.gcr.io/pod-info:v4
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "1"
+            memory: "256Mi"
+          requests:
+            cpu: "500m"
+            memory: "64Mi"
+      readinessProbe:
+        httpGet:
+          path: /healthz
+          port: 8080
+        initialDelaySeconds: 5
+        periodSeconds: 10
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 8080
+        initialDelaySeconds: 15
+        periodSeconds: 10

@@ -1,0 +1,61 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Kubernetes application named helloworld with a specified container and node selector
+
+Prerequisites:
+1. Ensure you have Kubernetes installed and running.
+2. Generate a `random` `namespace` and `nodeSelector`.
+
+Command:
+
+```bash
+kubectl create namespace helloworld
+kubectl label node --all node-role.kubernetes.io/worker nodeSelector
+
+kubectl create deployment helloworld --namespace=helloworld \
+--image=<image-name>:<version> \
+--replicas=3 \
+--port=80 \
+--node-selector=nodeSelector=true \
+--dry-run -o yaml > helloworld.yaml
+
+cat helloworld.yaml
+```
+
+Description:
+
+1. Create a new namespace for the application with the name `helloworld`.
+
+```bash
+kubectl create namespace helloworld
+```
+
+2. Label all nodes with the `node-role.kubernetes.io/worker` label for a Kubernetes worker node, which is used in the node selector in our next step.
+
+```bash
+kubectl label node --all node-role.kubernetes.io/worker nodeSelector
+```
+
+3. Create a deployment configuration for the application named `helloworld` with the specified container image, set the number of replicas to 3, listen on port 80, and use the previously created `nodeSelector` label. To avoid applying the actual configuration to the cluster, use the `--dry-run` flag, save the output to a YAML configuration file, and then cat the file to review the generated manifest.
+
+```bash
+kubectl create deployment helloworld --namespace=helloworld \
+--image=<image-name>:<version> \
+--replicas=3 \
+--port=80 \
+--node-selector=nodeSelector=true \
+--dry-run -o yaml > helloworld.yaml
+```
+
+4. Finally, print the generated YAML configuration file `helloworld.yaml` to ensure it satisfies your requirements:
+
+```bash
+cat helloworld.yaml
+```
+
+Replace `<image-name>:<version>` with the appropriate container image name and version you'd like to use for the deployment. Upon verifying the generated YAML file, apply the configuration with the `kubectl apply` command to deploy the application:
+
+```bash
+kubectl apply -f helloworld.yaml
+```

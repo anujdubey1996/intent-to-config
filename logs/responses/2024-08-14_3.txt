@@ -1,0 +1,138 @@
+Deploy an Nginx web server with high availability and basic health checks with Amazon Elastic Container Service (ECS) and Amazon Elastic Load Balancer (ELB).
+
+In this guide, I will walk you through the steps to deploy an Nginx web server with high availability and basic health checks on AWS using:
+
+1. Amazon Elastic Container Service (ECS)
+2. Amazon Elastic Load Balancer (ELB)
+3. Application Load Balancer (ALB)
+
+In this example, we'll use the `amazon/amazonlinux2` Docker image with Nginx pre-installed. We'll then deploy identical containers into an ECS Cluster across multiple Availability Zones (AZs) to ensure high availability.
+
+For the purpose of simplicity, I'll use the ECS Fargate launch type, but you can also deploy the same setup using EC2 instances. I hope this guide helps you and gives you a good starting point for building more complex containerized applications on AWS.
+
+## Prerequisites
+
+Before getting started, ensure you have the following resources set up and the necessary permissions configured:
+
+* An AWS account with a working IAM user (e.g., a programmatic AWS management user).
+* Install and configure the `aws cli` tool on your local machine.
+* The recommended AWS `eksctl` tool to create ECS Fargate clusters.
+
+## Step 1: Create an ECS Cluster
+
+We will create a new ECS Cluster to host our Nginx containers, and since high availability is one of our requirements, we will select the Fargate launch type.
+
+```sh
+# Install EKS CLI if you haven't already
+curl --silent --location https://eksctl.io/latest/install.sh | sh
+
+# Create an ECS Cluster
+eksctl create cluster --name nginx-cluster --region us-east-1 --fargate
+```
+
+## Step 2: Create Task Definition for Nginx Containers
+
+Create a file named `nginx-taskdef.json` and add the following configuration:
+
+```sh
+cat > nginx-taskdef.json << EOF
+{
+    "family": "nginx-taskdef",
+    "containerDefinitions": [{
+        "name": "nginx",
+        "image": "amazon/amazonlinux2:latest",
+        "essential": true,
+        "portMappings": [{
+            "containerPort": 80,
+            "hostPort": 80,
+            "protocol": "tcp"
+        }],
+        "memory": 256,
+        "cpu": 512
+    }],
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "512",
+    "memory": "256"
+}
+EOF
+```
+
+This task definition uses the official `amazon/amazonlinux2` Docker image and installs the Nginx web server. You can replace the image name and update the configurations like CPU, memory, and exposed ports according to your use case.
+
+## Step 3: Create ECS Service to Deploy Containers
+
+Now, let's create a new ECS service to deploy our Nginx containers across the available nodes in the cluster.
+
+```sh
+# Check task definition exists
+aws ecs describe-task-definition --cluster-name nginx-cluster --family-name nginx-taskdef
+
+# Deploy 3 replicas of the service
+aws ecs run-task --cluster-name nginx-cluster --task-definition nginx-taskdef --count 3
+```
+
+After successfully deploying the containers, you'll receive a list of tasks with their ARN, cluster, and other details. Now we have the service running with 3 replicas.
+
+## Step 4: Configure Application Load Balancer (ALB)
+
+Create a new ALB that forwards traffic to our Nginx containers:
+
+```sh
+# Create Application Load Balancer
+aws elasticloadbalancing create-load-balancer --name nginx-alb --type application --listeners "Protocol=HTTP,SSLCertificateId=arn:aws:acm:region:account-id:certificate/certificate-arn" --security-groups nginx-sg
+```
+
+Replace `arn:aws:acm:region:account-id:certificate/certificate-arn` with the ARN of a valid SSL certificate from Amazon Certificate Manager (ACM) in your account. Please note that the `nginx-sg` security group needs to allow inbound and outbound traffic on port 80 and 443, and it should be associated with the Fargate task's network profiles.
+
+Next, register the Service's tasks as targets for the ALB:
+
+```sh
+# Describe Service to get the tasks' ARNs
+taskList=$(aws ecs list-services --cluster-name nginx-cluster --query 'serviceArns' --output text)
+
+# Register tasks as targets for the ALB
+for taskarn in $taskList; do
+    aws elasticloadbalancing register-targets --load-balancer-name nginx-alb --port 80 --target-type ip --targets "[{\"TargetArn\":\"${taskarn}\"}]"
+done
+```
+
+## Step 5: Configure Health Checks on ALB
+
+To ensure the ALB checks the health of our containers, we'll create a basic health check configuration:
+
+```sh
+cat > path-based-health-check.json << EOF
+{
+    "Path": "/",
+    "MatchCase": false,
+    "Interval": 30,
+    "Timeout": 5,
+    "UnhealthyThreshold": 2,
+    "HealthyThreshold": 2,
+    "ForwardedValues": {
+        "QueryStringValues": [{}],
+        "Headers": [
+            {
+                "Name": "Is-Debugging-Enabled",
+                "Values": [
+                    "false"
+                ]
+            }
+        ]
+    }
+}
+EOF
+
+aws elasticloadbalancing put-health-check --load-balancer-name nginx-alb --path-based-health-check path-based-health-check.json
+```
+
+## Step 6: Test the Application
+
+Finally, you can test your deployment by visiting the ALB's DNS name in your browser. You should be able to access the Nginx default welcome page.
+
+```sh
+# Get the ALB's DNS name
+echo $(aws elasticloadbalancing describe-load-balancers --load-balancer-names nginx-alb --query 'LoadBalancers[0].DNSName' --output text)
+```
+
+You've now successfully deployed an Nginx web server with high availability across AZs using Amazon ECS Fargate and the Application Load Balancer on AWS. You can further extend this setup to connect to a database or add additional features as needed.

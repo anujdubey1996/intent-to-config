@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a sinks component of an application with configurable environment variables, database settings, and logging levels. The deployment includes a single replica, manages secrets and configuration through environment variables, and ensures the use of appropriate image tags and pull policies. It also specifies ports for HTTP and additional services, along with a restart policy to maintain service availability.

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hw-deployment
+  labels:
+    app: hw-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hw-app
+  template:
+    metadata:
+      labels:
+        app: hw-app
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      serviceAccountName: monitoring-service-account
+      containers:
+      - name: hw-container
+        image: docker.mycompany.com/hw-image:latest
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+          - name: hw-config-volume
+            mountPath: /opt/app/config
+            subPath: app-config.yml
+          - name: hw-logs-volume
+            mountPath: /var/log/hw-app
+            subPath: hw-app.log
+      volumes:
+        - name: hw-config-volume
+          configMap:
+            name: hw-config
+        - name: hw-logs-volume
+          emptyDir: {}
+      lifecycle:
+        preStop:
+          exec:
+            command: ['/bin/sh', '-c', 'echo "Shutting down gracefully..." && sleep 10']
+      readinessProbe:
+        httpGet:
+          path: /healthz
+          port: 8080
+        initialDelaySeconds: 5
+        periodSeconds: 5
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 8080
+        initialDelaySeconds: 30
+        periodSeconds: 10

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echoservicedeployment
+spec:
+  selector:
+    matchLabels:
+      app: echoservice
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: echoservice
+    spec:
+      containers:
+      - name: echoservicedockercfg
+        image: k8s.gcr.io/echoservice:latest
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10

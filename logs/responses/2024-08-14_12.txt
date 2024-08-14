@@ -1,0 +1,43 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the kuard application with 10 replicas to ensure high availability, utilizing a rolling update strategy for seamless updates. The deployment includes readiness probes to confirm that the application is ready to handle traffic, ensuring smooth operation during rollouts
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kuard
+  labels:
+    app: kuard
+spec:
+  replicas: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  selector:
+    matchLabels:
+      app: kuard
+  template:
+    metadata:
+      labels:
+        app: kuard
+    spec:
+      containers:
+      - name: kuard
+        image: gcr.io/google-samples/kuard-amd64:blue
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+```
+
+This deployment configuration creates a `kuard` Kubernetes deployment with 10 replicas. It utilizes a RollingUpdate strategy with a maximum of 25% unavailable replicas during updates and a maximum surge of 25% new replicas while updates are in progress.
+
+The readiness probe for the `kuard` container is set to check the healthz endpoint on port 8080, with an initial delay of 5 seconds and a period of 10 seconds between checks. This ensures that the deployment probes the application for readiness after it starts and continues to check its readiness periodically, providing high availability and ensuring seamless operation during rollouts and updates.

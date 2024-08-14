@@ -1,0 +1,68 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a search service using the following Kubernetes Deployment configuration. Ensure that the deployment is properly labeled and configured.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search-deployment
+  labels:
+    app: search-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: search-app
+  template:
+    metadata:
+      labels:
+        app: search-app
+    spec:
+      containers:
+      - name: search-container
+        image: nginx:1.22.3
+        ports:
+        - containerPort: 80
+```
+
+Save the defined Deployment in a file named `search-deployment.yaml`.
+
+```bash
+touch search-deployment.yaml
+```
+
+Now, edit the `search-deployment.yaml` file with the provided intent:
+
+```bash
+nano search-deployment.yaml
+```
+
+Paste and save the provided deployment configuration, and your `search-deployment.yaml` should look like:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search-deployment
+  labels:
+    app: search-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: search-app
+  template:
+    metadata:
+      labels:
+        app: search-app
+    spec:
+      containers:
+      - name: search-container
+        image: nginx:1.22.3
+        ports:
+        - containerPort: 80
+```
+
+Now you have the required Kubernetes Deployment definition for a search service named `search-deployment` with the specified configuration. You can proceed to apply and deploy this configuration using `kubectl` or any other Kubernetes management tool.

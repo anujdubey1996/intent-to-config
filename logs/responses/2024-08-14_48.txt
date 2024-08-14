@@ -1,0 +1,94 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create Kubernetes Deployments for the harvester application and the harvester-webhook service. These deployments configure the harvester application with various environment variables, container settings, and health probes, and set up the harvester-webhook with its own configurations.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harvester-app
+  labels:
+    app: harvester
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: harvester
+  template:
+    metadata:
+      labels:
+        app: harvester
+    spec:
+      containers:
+      - name: harvester-container
+        image: "<IMAGE_NAME>:<TAG>"
+        ports:
+        - containerPort: 8080
+        env:
+        - name: API_KEY
+          value: "<API_KEY>"
+        - name: ADMIN_PASSWORD
+          value: "<ADMIN_PASSWORD>"
+        - name: RABBITMQ_USER
+          value: "<RABBITMQ_USER>"
+        - name: RABBITMQ_PASS
+          value: "<RABBITMQ_PASS>"
+        - name: DB_USER
+          value: "<DB_USER>"
+        - name: DB_PASS
+          value: "<DB_PASS>"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harvester-webhook
+  labels:
+    app: harvester-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: harvester-webhook
+  template:
+    metadata:
+      labels:
+        app: harvester-webhook
+    spec:
+      containers:
+      - name: harvester-webhook-container
+        image: "<IMAGE_NAME_WEBHOOK>:<TAG>"
+        ports:
+        - containerPort: 9000
+        env:
+        - name: API_KEY
+          value: "<API_KEY>"
+        - name: HARVESTER_URL
+          value: "http://<HARVESTER_APP_SERVICE_NAME>.<namespace>.svc.cluster.local:8080"
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 9000
+```
+
+Replace the placeholders with your actual values:
+
+- `<IMAGE_NAME>`: The Docker image name for the harvester application.
+- `<TAG>`: The tag for the harvester application Docker image.
+- `<API_KEY>`: The API key for the harvester application.
+- `<ADMIN_PASSWORD>`: The admin password for the harvester application.
+- `<RABBITMQ_USER>`: The RabbitMQ user for the harvester application.
+- `<RABBITMQ_PASS>`: The RabbitMQ password for the harvester application.
+- `<DB_USER>`: The database user for the harvester application.
+- `<DB_PASS>`: The database password for the harvester application.
+- `<IMAGE_NAME_WEBHOOK>`: The Docker image name for the harvester-webhook service.
+- `<TAG>`: The tag for the harvester-webhook Docker image.
+- `<HARVESTER_APP_SERVICE_NAME>`: The service name for the harvester application, this should be the same as the `metadata.name` of the harvester-app Deployment.

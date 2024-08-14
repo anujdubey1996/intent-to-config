@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-deployment
+  labels:
+    app: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      volumes:
+      - name: config-volume
+        configMap:
+          name: my-app-config
+      containers:
+      - name: my-app-container
+        image: my-registry-url/my-app:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 80
+        env:
+        - name: ENV_VAR_1
+          valueFrom:
+            configMapKeyRef:
+              name: my-app-config
+              key: app_env_var_1
+        - name: ENV_VAR_2
+          valueFrom:
+            secretKeyRef:
+              name: my-secret
+              key: app_env_var_2
+        envFrom:
+        - configMapRef:
+            name: my-app-config
+        - secretRef:
+            name: my-secret
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "500m"
+            memory: "256Mi"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      nodeSelector:
+        zone: us-west
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - my-app
+            topologyKey: kubernetes.io/hostname
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - my-app
+            topologyKey: kubernetes.io/hostname
+
+---
+
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-app-deployment
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

@@ -1,0 +1,43 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single-replica React web application, including the Docker image and port configuration.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-react-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-react-app
+  template:
+    metadata:
+      labels:
+        app: my-react-app
+    spec:
+      containers:
+      - name: my-react-app
+        image: my-registry/my-react-app:latest
+        ports:
+        - containerPort: 3000
+```
+
+In this YAML manifest, we create a Kubernetes Deployment for a single-replica React web application. The application uses the `my-registry/my-react-app:latest` image, and it exposes port 3000 within the container.
+
+Here's a brief explanation of the configuration:
+
+1. `apiVersion` specifies the API version we are using for this Deployment. In our case, it is `apps/v1` for standard Kubernetes application deployment.
+2. `kind` defines the object being created, in this case, it is a Deployment.
+3. `metadata` contains meta-data (such as name, labels, etc.) about the Deployment.
+4. `spec` defines the desired state that the Deployment will manage.
+
+   - `replicas` represents the number of replicas of the Pod to run.
+   - `selector` is used to label the Pods managed by the Deployment, so it can correctly select them.
+     - `matchLabels` are labels used to identify the Pods that belong to this Deployment.
+   - `template` defines the template for the Pods that the Deployment will create.
+     - `metadata` defines additional metadata for the Pod template and is used to label the Pod.
+     - `spec` defines the specifications for the container(s) running in the Pod, including the container's image, ports, and other settings.
+     - `containers` is a list of containers running in the Pod. Each container contains details like its name, image, ports, and any environment variables or command it needs to run.

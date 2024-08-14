@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy an Nginx container with a continuous health check loop using the following Kubernetes Deployment configuration. Ensure that the deployment is properly labeled and configured.

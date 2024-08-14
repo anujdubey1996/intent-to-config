@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create and manage a deployment for the CockroachDB UI (roach-ui) service in a development environment.

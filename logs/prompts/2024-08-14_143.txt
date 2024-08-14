@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy 2 replicas of an `nginx` application using the Docker image `390102656945.dkr.ecr.us-west-2.amazonaws.com/cicdpipelineapp:latest`

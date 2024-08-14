@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a scalable k8sdemo application with configurable replicas, image details, and resource requirements. The deployment uses a specified service account, implements security contexts, and configures liveness and readiness probes for health checks. It also supports advanced scheduling and resource management with optional node selectors, affinity, and tolerations. The deployment ensures controlled image pulling and maintains the specified container and pod settings for robust operation.

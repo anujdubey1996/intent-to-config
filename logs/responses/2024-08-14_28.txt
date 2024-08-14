@@ -1,0 +1,127 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the web-application with two replicas, configured with environment variables, secret management, volume mounts, and both liveness and readiness probes. Configure resource requests and limits for the containers.
+
+**YAML manifests**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-deployment
+spec:
+  selector:
+    matchLabels:
+      app: webapp
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - name: webapp
+        image: my-webapp:latest
+        env:
+        - name: MY_APP_KEY
+          valueFrom:
+            secretKeyRef:
+              name: my-secret
+              key: app-key
+        - name: MY_DB_USERNAME
+          value: "user123"
+        ports:
+        - containerPort: 80
+          name: http
+        livenessProbe:
+          httpGet:
+            path: /health-check
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health-check
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        volumeMounts:
+        - name: webapp-config
+          mountPath: /usr/local/webapp/config
+      volumes:
+      - name: webapp-config
+        configMap:
+          name: webapp-config
+```
+
+**Explanation**
+
+1. Type: Deployment
+   - The deployment type defines a managed, scalable collection of pods that are rolled out, scaled, and updated in collaboration with the Kubernetes architecture.
+
+2. Metadata
+   - name: webapp-deployment
+   - The metadata defines the unique name and namespace of the deployment resource.
+
+3. Spec
+   - replicas: 2
+   - The number of replica pods to be created for the deployment.
+
+4. Template
+   - The spec of the template section defines the Pod specification that will be used to create the deployed versions of the replica pods.
+
+5. Metadata
+   - The labels in the metadata define selector labels for targeting pods managed by this particular deployment.
+
+6. Containers
+   - name: webapp
+   - image: my-webapp:latest
+   - The container type defines the application container or microservice that will be launched as part of the pod.
+
+7. Env
+   - The environment variables are used to pass configuration data for the application container as it runs in a pod.
+   - Here, we use a secret key ref to access environment variables securely from the Kubernetes secret object.
+
+8. Ports
+   - containerPort: 80
+   - The exposed port for the application container, where it will listen to incoming requests.
+
+9. LivenessProbe
+   - The liveness probe is used to determine whether the deployment's container is operating correctly. In this case, it checks the /health-check path.
+   - initialDelaySeconds: 5
+   - periodSeconds: 10
+   - The duration before the first liveness probe is run and the time between subsequent probes.
+
+10. ReadinessProbe
+    - The readiness probe checks whether the configured application or service is ready to start serving traffic.
+    - initialDelaySeconds: 15
+    - periodSeconds: 5
+    - The duration before the first readiness probe is run and the time between subsequent probes.
+
+11. Resources
+    - requests:
+      - cpu: 100m
+      - memory: 128Mi
+    - limits:
+      - cpu: 250m
+      - memory: 256Mi
+    - The requests and limits defined for the container in terms of CPU and memory usage.
+
+12. VolumeMounts
+    - name: webapp-config
+    - mountPath: /usr/local/webapp/config
+    - The volume mounts mount the defined volumes into the containers in the pod, in this case, the webapp-config volume.
+
+13. Volumes
+    - name: webapp-config
+    - configMap:
+      - name: webapp-config
+    - The config map that will be mounted as a volume for the application container. In this case, it contains additional configuration data or files needed for the application to run.

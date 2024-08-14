@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bibbi-backend-api
+  labels:
+    app: bibbi-backend-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bibbi-backend-api
+  template:
+    metadata:
+      labels:
+        app: bibbi-backend-api
+    spec:
+      containers:
+      - name: bibbi-backend-api
+        image: bibbi/bibbi-backend-api:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DATABASE_URL
+          value: "mongodb+srv://username:password@cluster.amazonaws.com/db?retryWrites=true&w=majority"
+        - name: ACCESS_TOKEN_SECRET
+          value: "mysecret"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20

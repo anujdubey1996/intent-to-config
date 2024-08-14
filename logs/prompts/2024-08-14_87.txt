@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the auth-server on Kubernetes, ensuring that the configuration is templated for flexible deployment based on the Helm values provided.

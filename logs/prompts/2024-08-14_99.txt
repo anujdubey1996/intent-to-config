@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration for deploying a front-end application with dynamic image tags based on Git branch and commit, and with readiness, liveness, and startup probes configured.

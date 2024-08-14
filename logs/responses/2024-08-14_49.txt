@@ -1,0 +1,41 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment for the flagger service with specific configuration for the container. This Deployment sets up the flagger application with its required arguments for logging, label inclusion, mesh provider, and metrics server.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flagger-deployment
+  labels:
+    app: flagger
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: flagger
+  template:
+    metadata:
+      labels:
+        app: flagger
+    spec:
+      containers:
+      - name: flagger
+        image: flagger/flagger:v0.36.0
+        ports:
+        - containerPort: 8000
+        env:
+        - name: FLAGGER_LOG_LEVEL
+          value: INFO
+        - name: FLAGGER_LOG_FORMAT
+          value: text
+        - name: FLAGGER_LOG_FILE_SIZE_BYTES
+          value: "1m"
+        - name: FLAGGER_ALLOW_LIST_LABELS
+          value: '{"kubernetes.io": ["kubernetes.io/cluster", "kubernetes.io/hostname"], "app": "flagger"}'
+        - name: FLAGGER_MESH_PROVIDER
+          value: envoy
+        - name: FLAGGER_METRICS_SERVER_PUSH_ENABLED
+          value: "true"
+```

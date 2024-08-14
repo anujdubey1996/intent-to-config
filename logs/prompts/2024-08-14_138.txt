@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy 6 replicas of the `myweb` application using the Docker image `kammana/myweb`.

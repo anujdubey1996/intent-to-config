@@ -1,0 +1,64 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Kubernetes application with dynamic configuration for the worker component using Helm templating.
+
+A Helm deployment for a Kubernetes application "cool-app" has been provided. It includes two components, the API server and the worker. The API server has static configuration that doesn't change, but the worker component requires dynamic configuration that can be provided through Helm template file.
+
+The dynamic configuration variable for worker nodes is `CITY`. It specifies the city where the worker node will be deployed. This configuration should be used to set the environment variable `CITY` in the worker container.
+
+Create a Helm template file (`templates/worker-env.yaml`) for the `cool-app` Helm chart that sets the `CITY` environment variable based on the value of its configured dynamic variable.
+
+File: `templates/worker-env.yaml`
+```yaml
+{{- with .Values.worker.city }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cool-app.fullname" . }}-worker-env
+  labels:
+    {{ include "cool-app.labels" . | nindent 8 }}
+data:
+  CITY: {{ . }}
+{{- end }}
+```
+
+Now that the `worker-env.yaml` file is created, update the `worker.yaml` file (which is already provided in the Helm chart) to include the previously created ConfigMap as an environment for the worker container.
+
+File: `worker/worker.yaml`
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cool-app
+    component: worker
+  name: {{ include "cool-app.fullname" . }}
+spec:
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+      type: RollingUpdate
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        {{ include "cool-app.labels" . | nindent 8 }}
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: {{ include "cool-app.names.configMap" . }}
+        - configMapRef:
+            name: {{ include "cool-app.names.worker-env" . }}
+        name: {{ include "cool-app.fullname" . }}
+        image: cool-app:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 8080
+        - containerPort: 5001
+      restartPolicy: Always
+```
+
+This change to the `worker.yaml` file adds the `worker-env` ConfigMap to the list of environment variables for the worker container. The environment variables in the ConfigMap are accessible in the container and the `CITY` value will be set accordingly to what was provided when helm upgrade or helm deploy is run.

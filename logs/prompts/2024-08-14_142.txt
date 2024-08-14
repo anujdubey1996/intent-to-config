@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Set up a single replica of a MySQL instance using the `mysql:latest` image. Retrieve database configuration details such as root password, user password, database name, and user credentials from a ConfigMap named `app-config`

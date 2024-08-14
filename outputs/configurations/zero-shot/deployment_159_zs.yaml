@@ -1,0 +1,165 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+  labels:
+    app: prometheus-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-operator
+  template:
+    metadata:
+      labels:
+        app: prometheus-operator
+    spec:
+      serviceAccountName: prometheus-operator
+      containers:
+        - name: prometheus-operator
+          image: prom/prometheus-operator:v2.6.3
+          resources:
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+            requests:
+              cpu: "100m"
+              memory: "512Mi"
+          ports:
+            - name: metrics
+              containerPort: 30000
+              targetPort: 9090
+          command: ["--webhook-server=false"]
+          securityContext:
+            runAsUser: 1001
+            fsGroup: 1001
+          env:
+            - name: RBAC_CREATE
+              value: "false"
+            - name: KubernetesServiceAccountName
+              value: "prometheus-operator"
+            - name: SERVICE_ACCOUNT_ANNOTATIONS
+              value: "kubectl.kubernetes.io/serviceaccount-namespace:prometheus"
+          volumeMounts:
+            - name: prometheus-config
+              mountPath: /etc/prometheus/
+            - name: prometheus-alertmanager
+              mountPath: /alertmanager/
+            - name: prometheus-secrets
+              mountPath: /etc/secrets/
+            - name: prometheus-configmaps
+              mountPath: /etc/configmaps/
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: prometheus-config
+        - name: prometheus-alertmanager
+          configMap:
+            name: prometheus-alertmanager
+        - name: prometheus-secrets
+          secret:
+            secretName: prometheus-secrets
+        - name: prometheus-configmaps
+          configMap:
+            name: prometheus-configmaps
+        - name: prometheus-persistence
+          persistentVolumeClaim:
+            claimName: prometheus-storage
+            readOnly: true
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-operator
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: prometheus-operator
+  labels:
+    app: prometheus-operator
+Role:
+  rules:
+    - apiGroups: ["*"]
+      resources: ["*"]
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    - apiGroups: ["", "extensions"]
+      resources: ["deployments", "daemonsets", "statefulsets", "poddisruptionbudgets"]
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    - apiGroups: ["apps"]
+      resources: ["jobs"]
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: prometheus-operator
+  labels:
+    app: prometheus-operator
+Subjects:
+- kind: ServiceAccount
+  name: prometheus-operator
+RoleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: prometheus-operator
+
+---
+
+apiVersion: prometheus.io/v1alpha1
+kind: Prometheus
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+spec:
+  ruleNamespace: prometheus
+  kubernetesServices:
+    - name: kube-system
+      namespace: kube-system
+      port: metrics
+  resources:
+    operatorNamespace: prometheus
+  serviceAccountName: prometheus
+  serviceMonitorNamespace: prometheus
+  alerting:
+    alertmanagers:
+      - name: alertmanager.prometheus
+        namespace: alertmanager
+        service: telegraf-alertmanager
+        port: web
+        honourTz: false
+        externalURL: http://prometheus-alertmanager:9093
+  relocations:
+    - action: keep
+      service: telegraf-alertmanager
+      port: telegraf
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  labels:
+    app: prometheus-ingress
+spec:
+  rules:
+  - host: prometheus.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 9090

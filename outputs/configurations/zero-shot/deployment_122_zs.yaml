@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geolocationdb
+  labels:
+    app: geolocationdb
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: geolocationdb
+      role: worker
+  template:
+    metadata:
+      labels:
+        app: geolocationdb
+        role: worker
+    spec:
+      volumes:
+      - name: geolocation-data
+        persistentVolumeClaim:
+          claimName: geolocation-pv-claim
+      containers:
+      - name: geolocationdb
+        image: geolocationdb/geolocationdb:latest
+        env:
+        - name: DB_HOST
+          value: "geolocationdb"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: geolocationdb-secrets
+              key: db-user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: geolocationdb-secrets
+              key: db-pass
+        - name: NODE_ENV
+          value: "production"
+        volumeMounts:
+        - name: geolocation-data
+          mountPath: /data/geolocation
+        ports:
+        - containerPort: 3000
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+        beta.kubernetes.io/instance-type: m5.large
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: geolocationdb-secrets
+type: Opaque
+data:
+  db-user: VG8xMjM0NTY3ODkwSEFlbWFzdGVyOm9yZ0BvdGhlciBleGFtcGxlLm9yZ5Jvb2w=
+  db-pass: VG8xNTYzNjg5Mzk0

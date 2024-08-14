@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration for a microservice. The deployment should be parameterized to accommodate various deployment scenarios and should use Helm templating to fill in dynamic values.

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-deployment
+  labels:
+    app: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: my-app
+        tier: frontend
+    spec:
+      containers:
+      - name: my-app-container
+        image: my-image:v1
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 1
+            memory: 128Mi
+          requests:
+            cpu: 500m
+            memory: 64Mi
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        imagePullPolicy: Always
+        rolls:
+          maxSurge: 1
+          maxUnavailable: 0

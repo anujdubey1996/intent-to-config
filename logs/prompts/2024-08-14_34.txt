@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a containerized application with specific environment variables. The deployment configuration specifies a single container using an image built from a Dockerfile and sets various environment variables.

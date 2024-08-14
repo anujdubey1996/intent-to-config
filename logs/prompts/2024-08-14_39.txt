@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment with a rolling update strategy to manage deployment of a containerized application. The deployment specifies 3 replicas and utilizes a rolling update strategy to manage updates with defined surge and availability constraints.

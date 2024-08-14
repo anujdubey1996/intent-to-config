@@ -1,0 +1,42 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Containerized Application with Health Checks
+
+Resources:
+1. Container Image: `k8s.gcr.io/echoservice:latest`
+2. Port: 8080
+3. Readiness Probe: Checks that the HTTP response's status code is 200.
+4. Liveness Probe: Checks that the HTTP response's status code is 200 after 10 seconds of the container starting up.
+5. Number of Replicas: 3
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echoservicedeployment
+spec:
+  selector:
+    matchLabels:
+      app: echoservice
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: echoservice
+    spec:
+      containers:
+      - name: echoservicedockercfg
+        image: k8s.gcr.io/echoservice:latest
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+```

@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a ConfigMap named vault-config from the vault.conf file and deploy a Kubernetes Deployment resource named instascan-vault.

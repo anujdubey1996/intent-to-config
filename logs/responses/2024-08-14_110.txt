@@ -1,0 +1,66 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Define a Kubernetes deployment with specific configurations for a container running the containous/whoami image.
+
+The deployment resources need to have the following configurations:
+
+- Replica count: 3
+- Deployment strategy: Rolling update
+- Image: containous/whoami@sha256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+- Service to be exposed: ClusterIP
+- Container name: whoami
+- Service account: whoami-sa
+- Pod security context: runAsUser: 9999
+
+Refer to the provided manifest file (example.yaml) and adjust it accordingly.
+
+---
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whoami
+  labels:
+    app: whoami
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: whoami
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+    # Specify update strategy subresources here.
+
+  template:
+    metadata:
+      labels:
+        app: whoami
+    spec:
+      serviceAccountName: whoami-sa
+      securityContext:
+        runAsUser: 9999
+      containers:
+      - name: whoami
+        image: containous/whoami@sha256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        ports:
+        - containerPort: 8080
+        # Add any other container configurations here, such as volumes, etc.
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: whoami
+spec:
+  selector:
+    app: whoami
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+```

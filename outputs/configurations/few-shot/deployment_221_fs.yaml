@@ -1,0 +1,11 @@
+apiVersion: k8s.upbound.io/v1beta2
+kind: WorkloadPrometheusOperator
+metadata:
+  name: prometheus-operator
+  namespace: monitoring
+spec:
+  server:
+    service: prometheus
+    port: 9090
+  webhook:
+    scheduler: custom-webhook-scheduler

@@ -1,0 +1,263 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Configure a deployment for the Prometheus Operator with the following Helm chart settings
+
+- Use Helm 3 as the dependency manager.
+- Use the `stable/prometheus-operator` Helm chart version 0.39.0.
+- Use a deployment configuration called "prometheus"
+- Expose the Prometheus server to the cluster at port 9090 (TCP)
+- Use the default Prometheus service type (ClusterIP) with a class for the service if it doesn't exist.
+- Use the default storage with the provided persistent volume configuration in a separate YAML file `prometheus-pv.yaml`
+- Define a service account for the Prometheus deployment and bind it to the following roles and role bindings:
+  * ClusterRole `prometheus-service-account` that allows Prometheus to scrape pods, kubelet, and service monitoring resources.
+  * ClusterRoleBinding `prometheus-service-account-role-binding` binding the `prometheus` service account to its corresponding ClusterRole.
+- If a ResourceQuota object exists for the default namespace, apply the quota of 20 CPU and 20 memory for the Prometheus deployment
+- The storage class for the persistent volume should be `nfs`
+
+Here is an example of what the output YAML should look like:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-service-account
+rules:
+- apiGroups:
+  - ""
+  resources:
+    - pods
+    - namespaces
+    - nodes
+    - persistentvolumeclaims
+    - persistendvolumes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+    - servicemonitors
+    - alerts
+    - profiles
+    - rules
+    - records
+    - prometheusrules
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apisix.omnichain.org
+  resources:
+    - routes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+    - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps/v1
+  resources:
+    - deployments
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - batch
+  resources:
+    - jobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - extensions
+  resources:
+    - deploymentjobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-service-account-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-service-account
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: default
+spec:
+  serviceAccountName: prometheus
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: prometheus
+  template:
+    metadata:
+      labels:
+        k8s-app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: quay.io/prometheus/prometheus:v2.31.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: prometheus-storage
+          mountPath: /etc/prometheus
+        - name: prometheus-tmp
+          mountPath: /tmp
+      volumes:
+      - name: prometheus-storage
+        persistentVolumeClaim:
+          claimName: prometheus-storage-claim
+      - name: prometheus-tmp
+        emptyDir: {}
+status: {}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-storage-claim
+  storageClass: nfs
+  accessModes:
+  - ReadWriteMany
+reclaimPolicy: Retain
+volumeName: prometheus-storage
+---
+```
+
+**Note:** You can find the provided `prometheus-pv.yaml` here:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: prometheus-storage
+  labels:
+    type: pvc-pvc
+    app: prometheus
+spec:
+  capacity:
+    storage: 20Gi
+  nfs:
+    path: /nfs/prometheus-storage
+    server: nfs.example.com
+```
+
+To create the deployment configuration file with helm, you can use the following script:
+
+```bash
+#!/bin/sh
+
+# Define the persistent volume claim
+ cat > prometheus-pv-claim.yaml << EOF
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-storage-claim
+  storageClass: nfs
+  accessModes:
+  - ReadWriteMany
+reclaimPolicy: Retain
+volumeName: prometheus-storage
+EOF
+
+# Install the appropriate storage class for NFS
+kubectl create -f https://raw.githubusercontent.com/kubernetes-sigs/nfs-subpath-provisioner/master/deploy/examples/rbac.yaml
+kubectl create -f https://raw.githubusercontent.com/kubernetes-sigs/nfs-subpath-provisioner/master/deploy/examples/deploy.yaml
+
+# Apply the persistent volume definition using kubectl
+kubectl apply -f prometheus-pv.yaml
+
+# Define the Helm repositories and the release information
+cat > prometheus-operator-values.yaml << EOF
+helmRepo:
+  - name: stable
+    url: https://charts.helm.sh/stable
+
+image:
+  repository: quay.io/prometheus
+  tag: v2.31.0
+
+deploy:
+  serviceType: ClusterIP
+  serviceClassName: prometheus
+
+persistence:
+  enabled: true
+  storageClass: nfs
+  accessModes:
+    - ReadWriteMany
+  reclaimPolicy: Retain
+  volumeName: prometheus-storage
+
+rbac:
+  create: true
+
+role:
+  - prometheus-service-account
+
+roleBinding:
+  - prometheus-service-account-role-binding
+
+serviceAccountName: prometheus
+   EOF
+
+# Install the Prometheus Operator using helm
+helm install prometheus stable/prometheus-operator --version 0.39.0 -f prometheus-operator-values.yaml
+
+# Create service account, ClusterRole, and ClusterRoleBinding
+kubectl apply -f prometheus-svc-account.yaml
+kubectl apply -f prometheus-role.yaml
+kubectl apply -f prometheus-role-binding.yaml
+
+# Remove the persistent volume definition and storage class if you want to clean up resources
+# kubectl delete -f prometheus-pv.yaml
+# kubectl delete -f rbac.yaml
+# kubectl delete -f deploy.yaml
+
+```
+
+After running the script, the prometheus deployment is configured with the specified settings, including helm 3, specific Helm chart version, service account, roles, role binding, storage, and service type.

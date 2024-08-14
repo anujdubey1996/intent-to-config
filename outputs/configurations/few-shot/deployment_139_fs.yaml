@@ -1,0 +1,10 @@
+{{- with .Values.worker.city }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cool-app.fullname" . }}-worker-env
+  labels:
+    {{ include "cool-app.labels" . | nindent 8 }}
+data:
+  CITY: {{ . }}
+{{- end }}

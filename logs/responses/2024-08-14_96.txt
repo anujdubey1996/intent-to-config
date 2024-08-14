@@ -1,0 +1,61 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration using Helm templating for deploying a Chrome node in a Selenium Grid, with conditional inclusion based on various Helm values and configurations.
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chrome-node
+  namespace: selenium
+  labels:
+    app: selenium-grid
+spec:
+  replicas: {{ if .Values.chromeGridReplicas }}{{ .Values.chromeGridReplicals }}  (If chromeGridReplicas is set in the Helm values file)
+  {{ else }}
+  1 (Default to 1 replica if chromeGridReplicas is not set in the Helm values file)
+  {{  end }}
+
+  Selector:
+    matchLabels:
+      app: selenium-grid
+
+  Template:
+    metadata:
+      labels:
+        app: selenium-grid
+
+    spec:
+      containers:
+      - name: chrome-node
+        imagePullPolicy: Always
+        image: selenium/node-docker:5.0.0-ondemand-chrome
+        ports:
+        - containerPort: 4444
+        env:
+          WD_HOST: "0.0.0.0"
+          WD_PORT: 4444
+          GRID_URL: "http://{{ .Release.Name }}-master:4444/wd/hub"
+          HUB_HOST: "{{ .Release.Name }}-master"
+          HUB_PORT: 4444
+        command:
+          - sh
+          - -c
+          - sleep 30
+          - until nc -z -w 1 localhost {{ .Values.chromeGridWdPort }} && node_start
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - selenium-hub
+            topologyKey: kubernetes.io/hostname
+```
+
+This Kubernetes deployment configuration file is built using Helm templating for creating a Chrome node in a Selenium Grid setup. It is set to use the Selenium node image `selenium/node-docker:5.0.0-ondemand-chrome` by default, but the container image can be easily customized based on the actual needs by overriding the image property in the Helm values file. The `replicas` field is set to `chromeGridReplicas` value from the Helm values file, with a default value of 1 if `chromeGridReplicas` is not defined. Other important elements of the configuration are the environment variables used for setting up Selenium hub communication, the port that the Chrome node will be listening on, the command to start the node, and the node selector for scheduling the node onto Linux hosts only. The pod anti-affinity part is crucial for ensuring that only one pod with the `app: selenium-hub` label is scheduled on each node, as this is a common strategy for the Selenium Grid setup.

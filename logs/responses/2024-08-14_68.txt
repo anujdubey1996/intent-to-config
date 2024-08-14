@@ -1,0 +1,68 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create cert-controller Deployment for External Secrets
+
+Assumptions:
+1. The deployment is created in the provided namespace 'external-secrets'.
+2. The deployment uses the image 'quay.io/external-secrets/cert-controller:v1.5.1'.
+3. Environment Variables:
+   - EXTERNAL_SECRETS_CA_CERT: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+   - EXTERNAL_SECRETS_SERVICE_ACCOUNT_NAME: 'cert-controller'
+   - EXTERNAL_SECRETS_TELEMETRY_ADDRESS: ':6009'
+   - EXTERNAL_SECRETS_LOG_FORMAT: 'quarkus,io.quarkus.output.log.LoggingOptions = {"logLevel":"INFO", "logFormat":"quarkus"}'
+   - EXTERNAL_SECRETS_LOG_APPENDER: 'quarkus,io.quarkus.log.Appender = {"class":"io.quarkus.logging.console.ConsoleLog"}'
+   - EXTERNAL_SECRETS_LOG_LOGGER_ROOT: 'quarkus,io.quarkus.log.LoggingFilter = {"level":"INFO"}'
+   - EXTERNAL_SECRETS_TELEMETRY_LOGGER_ROOT: 'quarkus,io.quarkus.telemetry.log.LoggingFilter = {"level":"INFO"}'
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-controller
+  namespace: external-secrets
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cert-controller
+      app.kubernetes.io/part-of: external-secrets
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cert-controller
+        app.kubernetes.io/part-of: external-secrets
+    spec:
+      containers:
+        - name: cert-controller
+          image: quay.io/external-secrets/cert-controller:v1.5.1
+          envFrom:
+            - configMapRef:
+                name: cert-controller-env
+              secretRef:
+                name: cert-controller-secrets
+          ports:
+          - name: telemetry
+            containerPort: 6009
+          volumeMounts:
+          - name: cert-controller-config
+            mountPath: /config
+          - name: cert-controller-secrets
+            mountPath: /secrets
+      volumes:
+      - name: cert-controller-config
+        configMap:
+          name: cert-controller-config
+      - name: cert-controller-secrets
+        secret:
+          secretName: cert-controller-secrets
+```
+
+Now, create a ConfigMap and Secret named `cert-controller-config` and `cert-controller-secrets` respectively, to store the environment variables. You may create them using the following commands:
+
+```
+kubectl create configmap cert-controller-config --from-literal EXTERNAL_SECRETS_CA_CERT='/var/run/secrets/kubernetes.io/serviceaccount/ca.crt' -n external-secrets
+kubectl create secret generic cert-controller-secrets --from-env-file=$(realpath $(pwd)/environments/cert-controller.env) -n external-secrets
+```
+
+Replace `$(realpath $(pwd))` with your current working directory path during execution.

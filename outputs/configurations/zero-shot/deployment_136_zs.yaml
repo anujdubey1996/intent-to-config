@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: airbyte-data-integrations
+  name: airbyte-source
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: airbyte-source
+  template:
+    metadata:
+      labels:
+        app: airbyte-source
+    spec:
+      containers:
+      - name: airbyte-source
+        image: airbyte/airbyte:v0.42.0
+        resources:
+          limits:
+            cpu: "2"
+            memory: "512Mi"
+        env:
+        - name: AIRBYTE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: airbyte-api-keys
+              key: source-api-key
+        - name: AIRBYTE_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: airbyte-api-keys
+              key: source-api-secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: airbyte-data-integrations
+  name: airbyte-transform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airbyte-transform
+  template:
+    metadata:
+      labels:
+        app: airbyte-transform
+    spec:
+      containers:
+      - name: airbyte-transform
+        image: airbyte/airbyte:v0.42.0
+        resources:
+          limits:
+            cpu: "2"
+            memory: "512Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: airbyte-data-integrations
+  name: airbyte-destination
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airbyte-destination
+  template:
+    metadata:
+      labels:
+        app: airbyte-destination
+    spec:
+      containers:
+      - name: airbyte-destination
+        image: airbyte/airbyte:v0.42.0
+        resources:
+          limits:
+            cpu: "2"
+            memory: "512Mi"
+        env:
+        - name: AIRBYTE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: airbyte-api-keys
+              key: destination-api-key
+        - name: AIRBYTE_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: airbyte-api-keys
+              key: destination-api-secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: airbyte-data-integrations
+  name: airbyte-worker
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: airbyte-worker
+  template:
+    metadata:
+      labels:
+        app: airbyte-worker
+    spec:
+      containers:
+      - name: airbyte-worker
+        image: airbyte/airbyte-worker:v0.42.0
+        resources:
+          limits:
+            cpu: "2"
+            memory: "512Mi"
+        env:
+        - name: AIRBYTE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: airbyte-api-keys
+              key: worker-api-key
+        - name: AIRBYTE_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: airbyte-api-keys
+              key: worker-api-secret

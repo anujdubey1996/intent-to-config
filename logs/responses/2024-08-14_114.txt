@@ -1,0 +1,47 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a frontend application on Kubernetes with multiple replicas to ensure high availability.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  labels:
+    app: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: username/frontend-image:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name:NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20
+```
+
+This configuration file creates a Kubernetes deployment with the name "frontend-deployment" and labels it with the app name "frontend". The deployment will have 3 replicas to ensure high availability. It defines a container with the specified image (replace `username/frontend-image:latest` with your own Docker image).
+
+The container is set to expose port 80 and run in production mode by setting the `NODE_ENV` environment variable. It includes readiness and liveness probes to check the health of the container and ensure it is ready to serve traffic and recover if it fails.

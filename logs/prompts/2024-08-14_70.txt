@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy Grafana 8.5.5 in the monitoring namespace with a single replica

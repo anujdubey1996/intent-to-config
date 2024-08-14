@@ -1,0 +1,56 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the "ml-pipeline-ui" application with a single replica.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-pipeline-ui
+  labels:
+    app: ml-pipeline-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-pipeline-ui
+  template:
+    metadata:
+      labels:
+        app: ml-pipeline-ui
+    spec:
+      containers:
+      - name: ml-pipeline-ui
+        image: <ml-pipeline-ui-container-image>
+        ports:
+        - containerPort: 8080
+```
+
+Replace `<ml-pipeline-ui-container-image>` with the appropriate container image name and tag, for example, `<username>/ml-pipeline-ui:latest`.
+
+Example:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-pipeline-ui
+  labels:
+    app: ml-pipeline-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-pipeline-ui
+  template:
+    metadata:
+      labels:
+        app: ml-pipeline-ui
+    spec:
+      containers:
+      - name: ml-pipeline-ui
+        image: johndoe/ml-pipeline-ui:latest
+        ports:
+        - containerPort: 8080
+```

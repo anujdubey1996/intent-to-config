@@ -1,0 +1,134 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment using Helm templates with configurable values for autoscaling, labels, annotations, security contexts, and resource management. The deployment includes settings for image, ports, volumes, and other configurations as specified in the Helm chart values.
+
+In this example, I will create a deployment using the Helm chart for `bitnami/wordpress` with additional configurations for autoscaling, resources, labels, security contexts, and annotations.
+
+1. Install Helm
+
+If you don't have Helm installed, refer to the official Helm installation guide: https://helm.sh/docs/intro/install/
+
+2. Add the Bitnami Helm chart repository (bitnami-charts)
+
+```
+helm repo add bitnami https://charts.bitnami.com/bitnami
+```
+
+3. Upgrade `values.yaml` with the desired configuration. In this example, I use the following values.yaml file:
+
+```yaml
+global:
+  postgresqlPassword: mysecretpassword
+
+service:
+  type: LoadBalancer
+  externalIP: your-ip
+   ports:
+     http:
+       port: 80
+       targetPort: 80
+     https:
+       port: 443
+       targetPort: 443
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+
+resources:
+  limits:
+    cpu: "1"
+  requests:
+    cpu: "500m"
+
+nodeSelector:
+  beta.kubernetes.io/os: linux
+
+annotations:
+  kubernetes.io/ingress.class: "nginx"
+
+securityContext:
+  runAsUser: 1001
+  runAsGroup: 1001
+```
+
+Replace `mysecretpassword` with a secure password for the PostgreSQL database, and `your-ip` with the IP address for the LoadBalancer service type.
+
+4. Create a Kubernetes namespace
+
+```
+kubectl create namespace my-wordpress-namespace
+```
+
+5. Deploy the WordPress application using the Helm chart:
+
+```
+helm install my-wordpress bitnami/wordpress --namespace my-wordpress-namespace -f values.yaml
+```
+
+After the deployment is complete, you should see the following output:
+
+```
+NAME: my-wordpress
+LAST DEPLOYED: Thu Jan  5 16:48:38 2023
+NAMESPACE: my-wordpress-namespace
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+   ```
+   kubectl get services -n my-wordpress-namespace
+   ```
+   Note the external IP, PORT and NAME for the service.
+   Open a browser at `http(s)://<EXTERNAL-IP>:<PORT>/` to access the application.
+
+   To access the admin page, add /wp-admin to the end of the URL:
+   ```
+   http(s)://<EXTERNAL-IP>:<PORT>/wp-admin/
+   ```
+2. To see the logs for the my-wordpress deployment, run:
+   ```
+   kubectl logs -f my-wordpress-56bfd7fb9c-8n86l -n my-wordpress-namespace
+   ```
+
+   To see the logs for the php-fpm service, run:
+   ```
+   kubectl logs -f my-wordpress-56bfd7fb9c-8n86l --container php-fpm -n my-wordpress-namespace
+   ```
+   To see the logs for the mariadb service, run:
+   ```
+   kubectl logs -f mariadb-0 -n my-wordpress-namespace
+   ```
+
+   To see the logs for the wordpress-mariadb service, run:
+   ```
+   kubectl logs -f wordpress-mariadb-0 -n my-wordpress-namespace
+   ```
+```
+
+6. Verify the deployment by getting the service's external IP:
+
+```
+kubectl get services -n my-wordpress-namespace
+```
+
+Output:
+
+```
+NAME            TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+my-wordpress     LoadBalancer   10.104.244.130   <your-ip>     80/TCP    2m
+mariadb          ClusterIP      10.109.158.95    <none>        3306/TCP  2m
+wordpress-mariadb ClusterIP      None             <none>        3306/TCP  2m
+```
+
+7. Access the WordPress application by visiting the external IP in a web browser:
+
+```
+http://<your-ip>
+```
+
+By following these steps, you can create a Kubernetes Deployment using Helm templates with specific configurations for autoscaling, labels, annotations, security contexts, and resource management.
+
+To customize the deployment further, you can modify the `values.yaml` file with additional settings or change the chart values directly in the Helm chart's source code if needed.

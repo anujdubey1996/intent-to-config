@@ -1,0 +1,104 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Prometheus Operator with various configuration options for image, arguments, ports, resources, and network settings.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+  labels:
+    app: prometheus-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-operator
+  template:
+    metadata:
+      labels:
+        app: prometheus-operator
+    spec:
+      containers:
+      - name: prometheus-operator
+        image: quay.io/prometheus/prometheus-operator:v2.32.0
+        ports:
+        - containerPort: 9090
+          name: prometheus-web
+        - containerPort: 9093
+          name: prometheus-push
+        command:
+        - /bin/prometheus-operator
+        args:
+        - --web.listen-address=0.0.0.0:9090
+        - --storage=tsdb
+        - --tsdb.path=/data/prometheus
+        - --rules-path=/rules
+        - --rule-paths=rule-files
+        - --web.enable-admin-api
+        - --tsdb.enable-client-auth
+        - --tsdb.ca-file=/etc/tls/ca.crt
+        - --tsdb.cert-file=/etc/tls/server.crt
+        - --tsdb.key-file=/etc/tls/server.key
+        resources:
+          requests:
+            cpu: 250m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      - operator: Exists
+        effect: PreferNoSchedule
+      - operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 300
+      imagePullSecrets:
+      - name: prometheusci-imagepullsecret
+      serviceAccountName: prometheus-operator
+      volumeMounts:
+      - name: prometheus-operator-data
+        mountPath: /data/prometheus
+        subPath: prometheus
+      - name: prometheus-rules
+        mountPath: /rules
+        subPath: rule-files
+      - name: tls-secret
+        mountPath: /etc/tls
+      restartPolicy: Always
+      volumes:
+      - name: prometheus-operator-data
+        persistentVolumeClaim:
+          claimName: prometheus-operator-pvc
+      - name: prometheus-rules
+        configMap:
+          name: prometheus-rule-files
+      - name: tls-secret
+        secret:
+          secretName: tls-secret
+```
+
+This YAML file creates a Kubernetes Deployment with the name `prometheus-operator`. The deployment replicas is set to 1, meaning that there will be only one replica running at a time.
+
+The deployment's selector matches containers with the label `app: prometheus-operator` in order to manage them.
+
+The template defines a container named `prometheus-operator` using the image `quay.io/prometheus/prometheus-operator:v2.32.0`. It exposes the Prometheus web interface on port 9090 and the push gateway on port 9093. The container's command is `/bin/prometheus-operator`, and the arguments passed to the command are defined in the `args` section.
+
+The `--web.listen-address=0.0.0.0:9090` argument sets the address for the web server to listen on.
+
+The `--storage=tsdb` argument enables the Timescale Database (TSDB) for storing time series data. The `--tsdb.path=/data/prometheus` argument sets the path for the TSDB on the host filesystem. The `--rules-path=/rules` and `--rule-paths=rule-files` arguments set the path to the rules files.
+
+The `--web.enable-admin-api` argument enables the administrative API for managing the Prometheus Operator. The `--tsdb.enable-client-auth` argument enables client authentication for the TSDB. The remaining arguments specify the paths to the certificate and key files for client authentication.
+
+The container's resource requests and limits are set for CPU and memory.
+
+The deployment is tolerant of Exists tolerations, which allows it to be scheduled on nodes that match the tolerations. The tolerations have an `effect` of NoSchedule, PreferNoSchedule, or NoExecute and have tolerationSeconds specified.
+
+The deployment uses an image pull secret named `prometheusci-imagepullsecret`. The service account for this deployment is named `prometheus-operator`.
+
+The container mounts several volumes, including a PersistentVolumeClaim to store TSDB data, a ConfigMap to store Prometheus rule files, and a Secret to store the TLS certificate and key files.
+
+Finally, the container's restart policy is set to Always, meaning that it will be restarted if it exits for any reason.

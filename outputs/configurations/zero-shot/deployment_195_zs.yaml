@@ -1,0 +1,30 @@
+global:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi
+
+telegraf:
+  args:
+    - --config /etc/telegraf/telegraf.conf
+    - --intervals 10s
+    - --input-filter cpu
+    - --input-filter disk
+    - --input-filter host
+    - --input-filter influxdb
+    - --input-filter meminfo
+    - --input-filter net
+    - --input-filter proc
+    - --input-filter system
+    - --output-plugin influxdb
+    - --output-influxdb-url "http://influxdb:8086"
+    - --output-influxdb-database "telegraf"
+    - --output-influxdb-retention-policy "autogen"
+
+env:
+  TELEGRAF_INFLUXDB_URL: "http://influxdb:8086"
+  TELEGRAF_INFLUXDB_DATABASE: "telegraf"
+  TELEGRAF_INFLUXDB_RETENTION_POLICY: "autogen"

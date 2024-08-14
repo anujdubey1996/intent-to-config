@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <appName>
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: <appName>
+  template:
+    metadata:
+      labels:
+        app: <appName>
+    spec:
+      containers:
+        - name: <appName>
+          image: <imageName>
+          env:
+          - name: <key1>
+            value: <value1>
+          - name: <key2>
+            value: <value2>
+          volumeMounts:
+          - name: volume1
+            mountPath: /var/volume1
+      resources:
+        limits:
+          cpu: <cpu>
+          memory: <memory>

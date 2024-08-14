@@ -1,0 +1,189 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create Kubernetes Deployments for different Airbyte components with specific configurations for container resource limits and environment variables.
+
+Example configuration file (`airbyte-deployments.yaml`):
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-api
+spec:
+  selector:
+    matchLabels:
+      app: airbyte-api
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: airbyte-api
+    spec:
+      containers:
+      - name: airbyte-api
+        image: airbyte/airbyte-api:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: AIRBYTE_API_JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: airbyte-jwt-secret
+              key: jwt-secret
+        resources:
+          limits:
+            memory: "64Mi"
+            cpu: "250m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-api-webui
+spec:
+  selector:
+    matchLabels:
+      app: airbyte-api-webui
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: airbyte-api-webui
+    spec:
+      containers:
+      - name: airbyte-api-webui
+        image: airbyte/airbyte-api-webui:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: AIRBYTE_API_URL
+          value: "http://airbyte-api:80"
+        - name: AIRBYTE_API_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: airbyte-api-secret-key
+              key: api-secret-key
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-worker
+spec:
+  selector:
+    matchLabels:
+      app: airbyte-worker
+  replicas: 10
+  template:
+    metadata:
+      labels:
+        app: airbyte-worker
+    spec:
+      containers:
+      - name: airbyte-worker
+        image: airbyte/airbyte-worker:latest
+        env:
+        - name: AIRBYTE_API_URL
+          value: "http://airbyte-api:80"
+        - name: AIRBYTE_API_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: airbyte-api-secret-key
+              key: api-secret-key
+        - name: AIRBYTE_WORKER_MAX_ parallel_connections
+          value: "4"
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "500m"
+        command: ["airbyte", "run", "--config", "/airbyte.yml"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-pipeline-manager
+spec:
+  selector:
+    matchLabels:
+      app: airbyte-pipeline-manager
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: airbyte-pipeline-manager
+    spec:
+      containers:
+      - name: airbyte-pipeline-manager
+        image: airbyte/airbyte-pipeline-manager:latest
+        env:
+        - name: AIRBYTE_API_URL
+          value: "http://airbyte-api:80"
+        - name: AIRBYTE_API_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: airbyte-api-secret-key
+              key: api-secret-key
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        command: ["airbyte", "run", "--config", "/airbyte.yml"]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: airbyte-api
+spec:
+  selector:
+    app: airbyte-api
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: airbyte-api-webui
+spec:
+  selector:
+    app: airbyte-api-webui
+  ports:
+  - name: http
+    port: 3000
+    targetPort: 3000
+```
+
+This configuration file defines four different deployments for an Airbyte system:
+
+1. `airbyte-api`: handles the API requests, has three replicas, uses the `airbyte/airbyte-api` image, and limits memory to 64Mi and CPU to 250m.
+2. `airbyte-api-webui`: serves the web UI, has two replicas, uses the `airbyte/airbyte-api-webui` image, and limits memory to 512Mi and CPU to 500m.
+3. `airbyte-worker`: responsible for workers, has ten replicas, uses the `airbyte/airbyte-worker` image, limits memory to 2Gi and CPU to 500m. The number of max parallel connections can be adjusted as needed.
+4. `airbyte-pipeline-manager`: manages the pipelines, has one replica, uses the `airbyte/airbyte-pipeline-manager` image, limits memory to 1Gi and CPU to 500m.
+
+Each deployment is configured with corresponding environment variables using secrets and references to the API and worker-specific secrets.
+
+The deployment configurations also include readiness and liveness probes to ensure the deployments are in a healthy state.
+
+Finally, two services are defined (`airbyte-api` and `airbyte-api-webui`) to expose the respective deployments on ports 80 and 3000, respectively.

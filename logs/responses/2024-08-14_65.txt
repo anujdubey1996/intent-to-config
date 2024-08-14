@@ -1,0 +1,61 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create cert-controller Deployment
+
+Kubectl command:
+
+```
+kubectl create deployment cert-controller --image=quay.io/cert-manager/cert-controller:v0.20.0
+```
+
+Deployment configuration yaml:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-controller
+  labels:
+    app: cert-manager
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cert-manager
+  template:
+    metadata:
+      labels:
+        app: cert-manager
+    spec:
+      containers:
+      - name: cert-controller
+        image: quay.io/cert-manager/cert-controller:v0.20.0
+        ports:
+        - name: http-bootstrap
+          containerPort: 8080
+        - name: https-webhook
+          containerPort: 8443
+        livenessProbe:
+          httpGet:
+            path: /readyz
+            port: http-bootstrap
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http-bootstrap
+```
+
+Save the above content as a file named `cert-controller-deployment.yaml` and apply it using:
+
+```
+kubectl apply -f cert-controller-deployment.yaml
+```
+
+This will create a deployment object named `cert-controller` which will manage and automate TLS certificate handling for your Kubernetes services.

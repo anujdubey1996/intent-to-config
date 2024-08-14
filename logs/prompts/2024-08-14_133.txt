@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Define a Kubernetes Deployment for the WSO2 API Manager (APIM) in the wso2 namespace.

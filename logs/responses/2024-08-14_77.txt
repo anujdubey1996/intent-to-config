@@ -1,0 +1,166 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Prometheus Operator with detailed configurations, including optional settings for security, resource management, and network configurations
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+  labels:
+    app: prometheus-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-operator
+  template:
+    metadata:
+      labels:
+        app: prometheus-operator
+    spec:
+      containers:
+      - name: prometheus-operator
+        image: quay.io/prometheus/prometheus-operator:v2.43.0
+        ports:
+        - containerPort: 9090
+          name: prometheus-port
+        - containerPort: 9091
+          name: prometheus-operators-webconsole-port
+        command: ["--config", "/etc/prometheus/prometheus.yml"]
+        securityContext:
+          runAsUser: 1000
+          fsGroup: 3000
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /etc/prometheus
+        - name: prometheus-alertmanager-cert
+          mountPath: /etc/tls/local
+        - name: prometheus-prometheus-cert
+          mountPath: /etc/tls/local/prometheus
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        envFrom:
+        - secretRef:
+            name: prometheus-operator-secrets
+        volumes:
+        - name: prometheus-config
+          configMap:
+            name: prometheus-config
+        - name: prometheus-alertmanager-cert
+          secret:
+            secretName: prometheus-alertmanager-tls
+        - name: prometheus-prometheus-cert
+          secret:
+            secretName: prometheus-prometheus-tls
+      terminationGracePeriodSeconds: 30
+      serviceAccountName: prometheus-operator-service-account
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-operator-service-account
+---
+
+# Service for Prometheus Operator's web console
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-operator-admin-service
+  labels:
+    app: prometheus-operator
+spec:
+  selector:
+    app: prometheus-operator
+  ports:
+    - port: 80
+      targetPort: 9091
+  type: ClusterIP
+
+---
+
+# ClusterRole for Prometheus Operator
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-operator-cluster-role
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+---
+# ClusterRoleBinding for Prometheus Operator
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-operator-cluster-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-operator-cluster-role
+subjects:
+- kind: ServiceAccount
+  name: prometheus-operator-service-account
+
+---
+# Role for Alertmanager Webhook
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: alertmanager-webhook
+  labels:
+    app: alertmanager
+spec:
+  apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+---
+
+# RoleBinding for Alertmanager Webhook
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: alertmanager-webhook-role-binding
+subjects:
+- kind: ServiceAccount
+  name: webhook
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: alertmanager-webhook
+```
+
+This YAML defines a Kubernetes Deployment for the Prometheus Operator with configuration details and optional settings for:
+
+1. Namespace and labels (defaulted if not provided)
+2. Replicas (set to 1 in this example)
+3. ServiceAccount (for authentication)
+4. ClusterRole and ClusterRoleBinding (to allow access to Kubernetes resources)
+5. Container image
+6. Container ports
+7. Container command and arguments
+8. Container security context (changing the user and group)
+9. Container resource utilization requests and limits
+10. Volumes for Prometheus configuration, Alertmanager TLS secret, and Prometheus TLS secret
+11. Environment variables to utilize secrets
+12. Service for the Prometheus Operator web console's exposure as a ClusterIP.

@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example-app
+  template:
+    metadata:
+      labels:
+        app: example-app
+    spec:
+      containers:
+      - name: app-container
+        image: lalyos/12factor
+        envFrom:
+        - secretRef:
+            name: example-secret
+      imagePullPolicy: Always

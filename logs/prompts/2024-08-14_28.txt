@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the web-application with two replicas, configured with environment variables, secret management, volume mounts, and both liveness and readiness probes. Configure resource requests and limits for the containers.

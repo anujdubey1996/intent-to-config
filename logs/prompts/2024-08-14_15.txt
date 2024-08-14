@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single instance of the selenoid-chrome-vnc service to enable remote access to a Chrome browser via VNC. The deployment connects to a specified Selenium hub and is configured with resource limits for efficient operation. The service is exposed on port 5900 for VNC connections

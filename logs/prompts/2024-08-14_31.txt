@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the consul service with the latest Consul image, exposing multiple ports and utilizing specific Istio sidecar configurations. Ensure the deployment has resource limits and requests configured.

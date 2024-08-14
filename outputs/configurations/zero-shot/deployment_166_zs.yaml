@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consul
+  labels:
+    app: consul
+  annotations:
+    # example annotation used for filtering deployment in other commands
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: consul
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consul
+  template:
+    metadata:
+      labels:
+        app: consul
+    spec:
+      containers:
+      - name: consul
+        image: hashicorp/consul:latest
+        ports:
+        - name: server
+          containerPort: 8500
+          protocol: TCP
+        - name: service
+          containerPort: 8600
+          targetPort: 8500
+          protocol: TCP
+        readinessProbe:
+          tcpSocket:
+            port: 8600
+        livenessProbe:
+          tcpSocket:
+            port: 8600

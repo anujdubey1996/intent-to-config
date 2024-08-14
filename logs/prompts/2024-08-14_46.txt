@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment for a Redis instance. This deployment specifies the use of a single replica of the Redis container, with resource requests and limits for CPU and memory, and exposes the Redis service on port 6379.

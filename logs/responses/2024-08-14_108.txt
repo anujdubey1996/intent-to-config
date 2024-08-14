@@ -1,0 +1,165 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Define a test setup for evaluating deployment performance and pod startup latency. This includes phases for creating deployments, measuring pod startup latency, and managing pod lifecycle.
+
+Prerequisites:
+1. Kubernetes cluster environment is up and running, with access to `kubectl` CLI.
+2. The required `yaml` files for `test-deployment.yaml`, `metrics-service.yaml`, `test-service.yaml`, and `secret.yaml` are already set up in your working directory.
+
+To follow along in this example, create the corresponding YAML files (templates) in your local machine with the content as follows:
+
+Create the test deployment YAML file (test-deployment.yaml):
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+  labels:
+    app: test-app
+spec:
+  selector:
+    matchLabels:
+      app: test-app
+  replicas: 5
+  template:
+    metadata:
+      labels:
+        app: test-app
+    spec:
+      containers:
+      - name: test-app
+        image: nginx:alpine
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: 80
+        command: ["nginx", "-g", "daemon off;"]
+      imagePullSecrets:
+      - name: secret
+```
+
+Create the metrics service YAML file (metrics-service.yaml):
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-service
+spec:
+  selector:
+    app: test-metrics-provider
+  ports:
+    - name: http
+      port: 8080
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-metrics-provider
+  labels:
+    app: test-metrics-provider
+spec:
+  selector:
+    matchLabels:
+      app: test-metrics-provider
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: test-metrics-provider
+    spec:
+      containers:
+      - name: metrics-service
+        image: prometheus/prometheus:v2.29.0
+        ports:
+        - name: metrics
+          containerPort: 9090
+        - name: metrics-http
+          containerPort: 8080
+        args: ["--config.file=/etc/prometheus/prometheus.yml"]
+        env:
+        - name: PROM_ALERTMANAGER_URL
+          value: "http://alertmanager-prometheus-stack-manager.monitoring.svc:8080"
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /etc/prometheus
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: 9090
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: 9090
+      imagePullSecrets:
+      - name: secret
+      volumes:
+      - name: prometheus-config
+        configMap:
+          name: prometheus-config-cm
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config-cm
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 5s
+      evaluation_interval: 5s
+
+    rules:
+    - host: test-metrics-provider
+```
+
+Create the test service YAML file (test-service.yaml):
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: test-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+```
+
+Create the secret YAML file (secret.yaml):
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: myregistrysecret
+type: kubernetes.io/dockerregistry
+data:
+  .dockerhub.password: <Base64encodedDockerhubPassword>
+  .dockerhub.username: <Base64encodedDockerhubUsername>
+```
+
+Make sure to replace the `Base64encodedDockerhubUsername` and `Base64encodedDockerhubPassword` with your own Docker Hub account credentials.
+
+After setting up the required YAML files, you can create the Kubernetes workload using `kubectl`:
+
+```sh
+# Navigate to your working directory containing the YAML files
+$ cd <path-to-yaml-files>
+
+# Apply the test deployment, metrics service, test service, and secret YAML files
+$ kubectl apply -f test-deployment.yaml -f metrics-service.yaml -f test-service.yaml -f secret.yaml
+
+# Check the status of the workloads
+$ kubectl get all -n <namespaces>
+```

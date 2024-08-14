@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Configure a single replica of the `customer` application using the Docker image `chmatvey/customer:latest` and set an environment variable `SPRING_PROFILES_ACTIVE` with the value `kube`

@@ -1,0 +1,173 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+  labels:
+    app: prometheus-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-operator
+  template:
+    metadata:
+      labels:
+        app: prometheus-operator
+    spec:
+      containers:
+      - name: prometheus-operator
+        image: quay.io/prometheus/prometheus-operator:v2.35.2
+        ports:
+        - containerPort: 9090
+        - name: web
+          containerPort: 3081
+          protocol: TCP
+          publication: kubernetes
+        - name: kube-state-metrics
+          containerPort: 8001
+          protocol: TCP
+          publication: kubernetes
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 9090
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 9090
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      imagePullSecrets:
+      - name: harbor-secret
+      volumeMounts:
+      - name: config
+        mountPath: /etc/prometheus
+      - name: alerts
+        mountPath: /var/lib/alertmanager
+      - name: prometheus-rules
+        mountPath: /etc/prometheus/prometheus.rules
+        subPath: prometheus.rules
+      - name: prometheus-values
+        mountPath: /etc/prometheus/prometheus.yaml
+        subPath: prometheus.yaml
+      - name: external-secrets-config
+        mountPath: /etc/external-secrets/config-manager.yaml
+        subPath: config-manager.yaml
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-config
+      - name: alerts
+        persistentVolumeClaim:
+          name: alertmanager-volume-claim
+      - name: prometheus-rules
+        configMap:
+          name: prometheus-rules-config
+      - name: prometheus-values
+        secret:
+          secretName: prometheus-secrets
+      - name: external-secrets-config
+        configMap:
+          name: external-secrets-config-manager
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+        key: node-role.kubernetes.io/master
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelAffinity:
+              terminatingPodAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                    - prometheus-operator
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              weight: 100
+            podAffinityTerm:
+              labelAffinity:
+                terminatingPodAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                      - prometheus-operator
+              topologyKey: kubernetes.io/hostname
+    containers:
+    - name: prometheus
+      image: quay.io/prometheus/prometheus:v2.35.2
+      envFrom:
+      - secretRef:
+          name: prometheus-secrets
+      ports:
+      - containerPort: 9090
+        name: web
+        protocol: TCP
+        publication: kubernetes
+      command:
+      - prom
+      - --config.file=/etc/prometheus/prometheus.yaml
+      - --storage.tsdb.path=/var/lib/prometheus
+      - --web.port=9090
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 9090
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 9090
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: config
+        mountPath: /etc/prometheus
+      - name: prometheus-values
+        mountPath: /etc/prometheus/prometheus.yaml
+      - name: prometheus-rules
+        mountPath: /etc/prometheus/prometheus.rules
+        subPath: prometheus.rules
+      - name: persistent-volume-claim
+        persistentVolumeClaim:
+          claimName: prometheus-storage-pvc
+
+    - name: alertmanager
+      image: quay.io/prometheus/alertmanager:v2.35.2
+      envFrom:
+      - secretRef:
+          name: prometheus-secrets
+      ports:
+      - containerPort: 9091
+        name: web
+        protocol: TCP
+        publication: kubernetes
+      command:
+      - alertmanager
+      - --config.file=/etc/alertmanager/alertmanager.yaml
+      - --storage.path=/var/lib/alertmanager
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 9091
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 9091
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: config
+        mountPath: /etc/alertmanager
+      - name: alerts
+        persistentVolumeClaim:
+          claimName: alertmanager-volume-claim

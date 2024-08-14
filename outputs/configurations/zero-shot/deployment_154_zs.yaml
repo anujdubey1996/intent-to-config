@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-session-store
+  labels:
+    app: redis-session-store
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-session-store
+  template:
+    metadata:
+      labels:
+        app: redis-session-store
+    spec:
+      containers:
+      - name: redis
+        image: redis
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-password
+              key: password
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - name: redis-storage
+          mountPath: /data
+      volumes:
+      - name: redis-storage
+        persistentVolumeClaim:
+          claimName: redis-pv-claim
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pv-claim
+  labels:
+    app: redis-session-store
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi

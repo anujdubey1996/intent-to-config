@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-pipeline-ui-deployment
+  labels:
+    app: ml-pipeline-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-pipeline-ui
+  template:
+    metadata:
+      labels:
+        app: ml-pipeline-ui
+    spec:
+      containers:
+      - name: ml-pipeline-ui
+        image: your-docker-hub-username/ml-pipeline-ui:latest
+        ports:
+        - containerPort: 8080

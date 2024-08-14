@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy two versions of a GraphQL service in the graphql-example namespace. Ensure that both deployments are configured with readiness probes and environment variables sourced from ConfigMaps and Secrets.

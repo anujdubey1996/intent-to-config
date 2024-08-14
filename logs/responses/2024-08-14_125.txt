@@ -1,0 +1,46 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a server application with 3 replicas
+
+Resource: Deployment
+
+File: `server-deployment.yaml`
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-server-deployment
+  labels:
+    app: web-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-server
+  template:
+    metadata:
+      labels:
+        app: web-server
+    spec:
+      containers:
+      - name: web-server
+        image: your-docker-image:latest
+        ports:
+        - containerPort: 8080
+```
+
+Replace `your-docker-image:latest` with the Docker image you want to use for the server application.
+
+Save the configuration file and use `kubectl apply` command to create the deployment.
+
+```
+kubectl apply -f server-deployment.yaml
+```
+
+To check the status of the deployed deployment, you can use `kubectl get deployments` command.
+
+```
+kubectl get deployments web-server-deployment
+```

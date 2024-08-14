@@ -1,0 +1,88 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Define a Kubernetes Deployment for the WSO2 API Manager (APIM) in the wso2 namespace.
+
+Prerequisites:
+
+* A `wso2` namespace should be created before creating the Deployment
+* Docker image of WSO2 APIM is available and tagged
+
+Deployment Manifest:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wso2-apim
+  namespace: wso2
+spec:
+  selector:
+    matchLabels:
+      app: wso2-apim
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wso2-apim
+    spec:
+      containers:
+      - name: wso2-apim
+        image: <DOCKER_IMAGE_NAME>:<DOCKER_IMAGE_TAG>
+        ports:
+        - name: wso2-apim-manager
+          containerPort: 8243
+        - name: wso2-apim-publisher
+          containerPort: 8280
+        - name: wso2-apim-store
+          containerPort: 9443
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8243
+          initialDelaySeconds: 15
+          periodSeconds: 5
+      volumes:
+      - name: wso2-config
+        configMap:
+          name: wso2-apim-config
+      nodeSelector:
+        worker-role: main
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelAffinity:
+              labelSelector:
+                matchExpressions:
+                - key: worker-role
+                  operator: In
+                  values:
+                  - main
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: worker-role
+                    operator: In
+                    values:
+                    - main
+                topologyKey: kubernetes.io/host
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wso2-apim-config
+data:
+  managing.xml: |-
+    <ApplicationManager>
+      ...
+      <Property name="APIM_ADMIN_USERNAME">wso2carbon</APIM_ADMIN_USERNAME>
+      <Property name="APIM_ADMIN_PASSWORD">wso2carbon</APIM_ADMIN_PASSWORD>
+      ...
+    </ApplicationManager>
+```

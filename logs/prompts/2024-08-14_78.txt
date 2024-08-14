@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a pedido-ms service with specified resource requests and limits, and set up liveness and readiness probes to ensure the application's health and availability

@@ -1,0 +1,112 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Kubernetes configuration for an auth-server application. It includes metadata, specifications, and container configurations with placeholders for dynamic values.
+
+Prerequisites:
+1. To use this guide effectively, you will need Kubernetes (minikube is a good choice) or any other Kubernetes cluster up and running.
+2. Make sure you have `kubectl` installed on your machine.
+
+Steps to be performed:
+
+1. Create a folder on your local machine for our deployment configuration files. eg: `auth-server-deploy`
+
+```
+mkdir auth-server-deploy
+cd auth-server-deploy
+```
+
+2. Create a YAML file for metadata information: `auth-server-deployment.yaml`
+
+```
+vi auth-server-deployment.yaml
+```
+
+Add the following content to the file:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server
+  labels:
+    app: auth-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-server
+  template:
+    metadata:
+      labels:
+        app: auth-server
+    spec:
+      containers:
+      - name: auth-server
+        image: "your_auth_server_image"
+        ports:
+        - containerPort: 8080
+          name: auth-server
+        env:
+        - name: DATABASE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: auth-secret
+              key: username
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: auth-secret
+              key: password
+```
+
+Replace `your_auth_server_image` with the actual Docker image containing your auth-server application.
+
+3. Create a secret YAML file for storing sensitive info like database credentials. `auth-secret.yaml`
+
+```
+vi auth-secret.yaml
+```
+
+Add the following content to the file:
+
+```yaml
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: auth-secret
+data:
+  username: base64encoded_username
+  password: base64encoded_password
+```
+
+Replace `base64encoded_username` and `base64encoded_password` with your actual base64-encoded database username and password respectively.
+
+4. Use `kubectl` to apply both Deployment and Secret files:
+
+```
+kubectl apply -f auth-server-deployment.yaml
+kubectl apply -f auth-secret.yaml
+```
+
+5. Check if the deployment is running:
+
+```
+kubectl get deployments
+```
+
+You should see output like this:
+
+```
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
+auth-server           1/1     1            1           5m
+```
+
+6. Check the logs of deployments to see if everything is working correctly:
+
+```
+kubectl logs deployment/auth-server
+```
+
+If everything is set up correctly, you should see logs related to the Auth Server application.

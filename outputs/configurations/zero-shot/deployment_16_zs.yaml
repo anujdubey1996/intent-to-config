@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pedido-ms
+  labels:
+    app: pedido
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pedido
+  template:
+    metadata:
+      labels:
+        app: pedido
+    spec:
+      containers:
+      - name: pedido-ms
+        image: pedido-ms:latest
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "1"
+            memory: "128Mi"
+          requests:
+            cpu: "1"
+            memory: "128Mi"
+        livenessProbe:
+          httpGet:
+            path: "/health"
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 5
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 3
+          failureThreshold: 3

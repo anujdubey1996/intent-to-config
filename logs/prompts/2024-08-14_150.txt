@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single replica of a "test-deployment" application, include an initialization container that checks for the availability of a MySQL server before the main application starts. 

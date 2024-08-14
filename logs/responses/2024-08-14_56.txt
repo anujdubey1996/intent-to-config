@@ -1,0 +1,115 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a PostgreSQL database using Kubernetes Deployment, with environmental variables sourced from a secret, persistent volume for storage, and appropriate configuration for the container.
+
+1. Create a secret file named `postgresql-secret.yaml`
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgresql-secret
+type: Opaque
+data:
+  POSTGRES_PASSWORD: bXlzZWFyY2hhcmFsQGZjZ2JhY2NlcHQ=
+  POSTGRES_USER: bXlzZWFyY2hhcmVfc3lzdGVtKCrnZXRSbWFzdGVy
+  POSTGRES_DB: bXlzZWFyY2g=
+```
+
+2. Create a persistent volume and a persistent volume claim yaml files
+
+```yaml
+# pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+```
+
+```yaml
+# pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgresql-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  volumeMode: Filesystem
+  hostPath:
+    path: /mnt/data/postgresql
+```
+
+3. Create a deployment configuration file named `postgresql-deployment.yaml`
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      containers:
+      - name: postgresql
+        image: postgres:13-alpine
+        environmentVariables:
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgresql-secret
+                key: POSTGRES_PASSWORD
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: postgresql-secret
+                key: POSTGRES_USER
+          - name: POSTGRES_DB
+            valueFrom:
+              secretKeyRef:
+                name: postgresql-secret
+                key: POSTGRES_DB
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgresql-pvc
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgresql-pvc
+        persistentVolumeClaim:
+          claimName: postgresql-pvc
+```
+
+4. Apply the configurations using kubectl:
+
+```sh
+kubectl apply -f postgresql-secret.yaml
+kubectl apply -f pvc.yaml
+kubectl apply -f pv.yaml
+kubectl apply -f postgresql-deployment.yaml
+```
+
+5. Deleted the persistent volume and claims after cleanup
+
+```sh
+kubectl delete -f pvc.yaml
+kubectl delete -f pv.yaml
+```

@@ -1,0 +1,41 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy an Nginx application with a Kubernetes Deployment. The deployment specifies a single replica, includes health checks for both liveness and readiness, and exposes port 80.
+
+**kubernetes-deployment.yaml**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+      healthProbe:
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+```
+
+You can apply the deployment configuration using `kubectl apply -f kubernetes-deployment.yaml`. This will create a deployment named `nginx-deployment`, which runs a single nginx container and sets up liveness and readiness probes on port 80. Once deployed, you can check the status of your deployment using `kubectl get deployments`.

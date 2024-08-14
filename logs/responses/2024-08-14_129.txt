@@ -1,0 +1,48 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Kubernetes named details-v1 for managing the details application, specifically version v1.
+
+The details application has a single container named `details` that uses the official Docker image `library/details:v1`. The container should scale to 3 replicas, expose the application on port 8080, and set an environment variable `APP_NAME` to the value details-v1. Also, define a service of type `ClusterIP` with a label `app` of `details-v1` and use the service's `NodePort` to allow traffic to the pods.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: details-v1
+  labels:
+    app: details-v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: details-v1
+  template:
+    metadata:
+      labels:
+        app: details-v1
+    spec:
+      containers:
+      - name: details
+        image: library/details:v1
+        env:
+        - name: APP_NAME
+          value: details-v1
+        ports:
+        - containerPort: 8080
+        imagePullPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: details-v1
+  labels:
+    app: details-v1
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+  selector:
+    app: details-v1
+```

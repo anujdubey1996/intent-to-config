@@ -1,0 +1,162 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Generate a Kubernetes Deployment configuration file with Helm templates to handle dynamic values for microservice deployment.
+
+## Solutions
+
+Below are 3 code solutions for the intent. You may vote for the solution which fits your need.
+
+### Solution 1: Create a Kubernetes Deployment configuration file using Helm templates and dynamic values
+
+**Description:** This solution will create a Kubernetes Deployment configuration file using Helm templates and dynamic values. The Helm chart will contain the microservice YAML configuration and variables for dynamic values.
+
+```sh
+# helm create my-chart
+# cd my-chart
+# cp templates/deployment.yaml.tmpl deployment.yaml
+```
+
+Edit the `values.yaml` file and add the dynamic values:
+
+```yaml
+replicas: 3
+image: my-microservice:latest
+
+env:
+  APP_NAME: my-app
+  APP_VERSION: v1
+```
+
+Modify `deployment.yaml.tmpl` file with Helm template to handle dynamic values:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ . Release.Name }}
+  labels:
+    App: {{ . Release.Name }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      App: {{ . Release.Name }}
+  template:
+    metadata:
+      labels:
+        App: {{ . Release.Name }}
+    spec:
+      containers:
+        - name: {{ . Release.Name }}
+          image: {{ .Values.image }}
+          env:
+            - name: APP_NAME
+              value: {{ .Values.env.APP_NAME }}
+            - name: APP_VERSION
+              value: {{ .Values.env.APP_VERSION }}
+      imagePullSecrets:  - secretRef:
+          name: docker-registry
+```
+
+Now you can use Helm to create the Deployment:
+
+```sh
+helm install my-deploy my-chart
+```
+
+This solution allows you to easily manage dynamic values for the microservice deployment and leverage Helm's capabilities to deploy, update, and scale the Kubernetes deployment.
+
+### Solution 2: Create a Kubernetes Deployment configuration file with dynamic values using kustomize
+
+**Description:** This solution will create a Kubernetes Deployment configuration file using kustomize for handling dynamic values. It's similar to the Helm approach but based on kustomize rather than Helm templates.
+
+Install kustomize first:
+
+```sh
+kubectl kustomize install kustomize/kubectl@v4.5.3
+```
+
+Create a `deployment.yaml` file:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment
+spec:
+  replicas: {{.Values.replicas}}
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: my-container
+          image: {{"registry/my-image:{{.Values.tag}}" | quote}}
+          env:
+            - name: APP_NAME
+              value: {{.Values.appName}}
+            - name: APP_VERSION
+              value: {{.Values.appVersion}}
+```
+
+Create a `my-deployment.yaml` file for dynamic values:
+
+```yaml
+replicas: 3
+tag: latest
+appName: my-app
+appVersion: v1
+```
+
+Now you can use kustomization to apply the Deployment configuration with dynamic values:
+
+```sh
+kubectl apply -k kustomization.yaml
+```
+
+This solution utilizes kustomize to handle the dynamic values, which is another popular and simpler method compared to Helm for managing Kubernetes deployments.
+
+### Solution 3: Create a Kubernetes Deployment configuration file with directly handled dynamic values
+
+**Description:** This solution will create a Kubernetes Deployment configuration file with directly handled dynamic values without using Helm or kustomize. This method involves manually setting the dynamic values in the `kubectl apply` command.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynamic-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: my-container
+          image: my-registry/my-image
+          env:
+            - name: APP_NAME
+              value: {{my_app_name}}
+            - name: APP_VERSION
+              value: {{my_app_version}}
+```
+
+Set the dynamic values before applying the configuration:
+
+```sh
+my_app_name=my-app
+my_app_version=v1
+
+kubectl apply -f my-deployment.yaml
+```
+
+This solution directly defines the dynamic variables in the Deployment YAML configuration file, and you need to manually set the dynamic values before deploying. This approach is straightforward but less reliable and flexible compared to the Helm and kustomize methods.

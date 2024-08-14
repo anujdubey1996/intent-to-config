@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server
+  annotations:
+    helm.sh/charts: stable/auth-server-charts
+    helm.sh/resource-version: "1"
+    helm.sh/value-hash: md5:"xxxx"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: auth-server
+  template:
+    metadata:
+      labels:
+        app: auth-server
+    spec:
+      containers:
+      - name: auth-server
+        image: registry.example.com/auth-server:v1
+        ports:
+        - containerPort: 8080
+        env:
+        - name: APP_ENV
+          value: "production"
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: auth-server-keys
+              key: dbusername
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: auth-server-keys
+              key: dbpassword
+      service:
+        type: ClusterIP
+        name: auth-server
+      readinessProbe:
+        tcpSocket:
+          port: 8080
+      livenessProbe:
+        httpGet:
+          path: /api/health-check
+          port: 8080
+      volumeMounts:
+      - name: auth-server-logs
+        mountPath: /var/log/auth-server
+      volumes:
+      - name: auth-server-logs
+        configMap:
+          items:
+          - type: json
+            path: logs
+            apiVersion: v1
+            data:
+              logfmt: |
+                {
+                  app: "auth-server"
+                  level: "{level}"
+                  message: "{message}"
+                }

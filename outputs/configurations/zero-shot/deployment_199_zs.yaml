@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vsftpd-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vsftpd
+  template:
+    metadata:
+      labels:
+        app: vsftpd
+    spec:
+      containers:
+      - name: vsftpd
+        image: fauria/vsftpd:latest
+        ports:
+        - containerPort: 21
+          name: ftp
+        volumeMounts:
+        - name: vsftpd-config
+          mountPath: /etc/vsftpd
+        env:
+        - name: PASSIVE_IP
+          value: 10.0.0.0/24
+      volumes:
+      - name: vsftpd-config
+        configMap:
+          name: vsftpd-configmap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vsftpd-configmap
+data:
+  ftpusers: |
+    user: vsftpd
+    password: vsftpd
+    passwd-file: /etc/vsftpd/vsftpd.passwd
+  vsftpd.conf: |
+    anonymous_enable=NO
+    local_enable=YES
+    write_enable=YES
+    chroot_local_user=YES
+    ftpd_banner=Welcome to my awesome FTP server!

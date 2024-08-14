@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-controller
+  namespace: external-secrets
+  labels:
+    app: cert-controller
+spec:
+  selector:
+    matchLabels:
+      app: cert-controller
+  template:
+    metadata:
+      labels:
+        app: cert-controller
+    spec:
+      containers:
+      - name: cert-controller
+        image: bitnami/secrets-manager:latest
+        ports:
+        - name: http
+          containerPort: 8080
+        env:
+        - name: SECRETS_MANAGER_API_URL
+          value: https://secrets-api:30644
+        - name: SECRETS_MANAGER_API_CA_CERT
+          value: |
+            -----BEGIN CERTIFICATE-----
+            YOUR_CERTIFICATE_HERE
+            -----END CERTIFICATE-----
+        - name: SECRETS_MANAGER_API_CLIENT_KEY
+          value: |
+            -----BEGIN PRIVATE KEY-----
+            YOUR_PRIVATE_KEY_HERE
+            -----END PRIVATE KEY-----
+      imagePullSecrets:
+      - name: regcred
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cert-controller
+  namespace: external-secrets
+  labels:
+    app: cert-controller
+spec:
+  selector:
+    app: cert-controller
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  type: ClusterIP

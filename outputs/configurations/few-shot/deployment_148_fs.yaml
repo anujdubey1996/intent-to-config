@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-controller
+  labels:
+    app: cert-manager
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cert-manager
+  template:
+    metadata:
+      labels:
+        app: cert-manager
+    spec:
+      containers:
+      - name: cert-controller
+        image: quay.io/cert-manager/cert-controller:v0.20.0
+        ports:
+        - name: http-bootstrap
+          containerPort: 8080
+        - name: https-webhook
+          containerPort: 8443
+        livenessProbe:
+          httpGet:
+            path: /readyz
+            port: http-bootstrap
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http-bootstrap

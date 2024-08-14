@@ -1,0 +1,30 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment for the helloworld application
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helloworld
+  labels:
+    app: helloworld
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: helloworld
+  template:
+    metadata:
+      labels:
+        app: helloworld
+    spec:
+      containers:
+      - name: helloworld
+        image: k8s.gcr.io/echolives-helloworld:v1
+        ports:
+        - containerPort: 8080
+```
+
+This YAML Manifest will create a Deployment named `helloworld` that deploys and manages 3 replicas of the `helloworld` container, which uses the `k8s.gcr.io/echolives-helloworld:v1` Docker image. The container exposes port `8080` for networking. The Deployment will label the replica sets, pods and containers with the `app: helloworld` label.

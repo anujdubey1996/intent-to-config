@@ -1,0 +1,64 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Update the hw-deployment manifest to ensure pods are launched under the monitoring service account. Include necessary volume mounts, lifecycle hooks, and probes for the deployment.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hw-deployment
+  labels:
+    app: hw
+    environment: production
+  annotations:
+    monitoring.kubernetes.io/port: "8080"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hw
+      environment: production
+  template:
+    metadata:
+      labels:
+        app: hw
+        environment: production
+      annotations:
+        monitoring.kubernetes.io/server: prometheus
+        monitoring.kubernetes.io/port: "8080"
+    spec:
+      serviceAccountName: monitoring-serviceaccount
+      containers:
+      - name: hw
+        image: hw:latest
+        env:
+        - name: ENVIRONMENT
+          value: production
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+         httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 15
+      volumeMounts:
+      - name: hw-data
+        mountPath: /opt/hw-data
+      volumes:
+      - name: hw-data
+        emptyDir: {}
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      lifecycle:
+        preStop:
+          exec:
+            command: ["/app/shutdown.sh"]
+```

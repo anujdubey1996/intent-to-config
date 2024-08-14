@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+  labels:
+    app: example-app
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: example-app
+  template:
+    metadata:
+      labels:
+        app: example-app
+    spec:
+      containers:
+        - name: example-container
+          image: {{ .Values.image }}
+          ports:
+            - containerPort: {{ .Values.containerPort }}
+          envFrom:
+            - configMapRef:
+                name: example-configmap
+      imagePullSecrets:
+        - name: registry-secret

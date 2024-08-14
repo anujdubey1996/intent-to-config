@@ -1,0 +1,33 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Configure a Kubernetes deployment named redisbank-deployment
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redisbank-deployment
+  labels:
+    app: redisbank
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: redisbank
+  template:
+    metadata:
+      labels:
+        app: redisbank
+    spec:
+      containers:
+        - name: redisbank
+          image: redis:6.2.7
+          ports:
+            - containerPort: 6379
+          env:
+            - name: ALLOW_EMPTY_PASSWORD
+              value: "yes"
+```
+
+This YAML configuration file represents a Kubernetes deployment with the name `redisbank-deployment`. The `app` label is used as both a metadata label for identifying the deployment as well as a selector. The deployment has 3 replicas of the Redis container, each listening on port 6379, and allowing empty passwords.

@@ -1,0 +1,91 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create cert-controller Deployment Conditional on Values
+
+Task: Create a Kubernetes Deployment configuration file that creates a `cert-controller` Deployment and ensures that the deployment is only created if the specific values `cert-manager-crds` and `cert-manager-image` are found in a `CertManager` CustomResourceDefinition and `cert-manager-image` is set to a specific value.
+
+Solution:
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cert-controller
+  labels:
+    app: cert-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cert-manager
+      component: cert-controller
+  template:
+    metadata:
+      labels:
+        app: cert-manager
+        component: cert-controller
+    spec:
+      containers:
+        - name: cert-controller
+          image: <replace-with-cert-manager-image>
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-controller-deploy
+spec:
+  selector:
+    matchLabels:
+      app: cert-manager
+      component: cert-controller
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: cert-manager
+        component: cert-controller
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: cert-controller
+          args:
+            - --install
+            - --cert-manager
+            - --webhook
+            - --v=2
+            - --config=/cert-manager.yaml
+          env:
+            - name: CERT_MANAGER_CRDS
+              valueFrom:
+                secretKeyRef:
+                  name: cert-manager
+                  key: cert-manager-crds
+            - name: CERT_MANAGER_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: cert-manager-image
+                  key: cert-manager-image
+          image: alpine:latest
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - |
+              if [ "$(kubectl api-resources --runtime=cert-manager | grep crds | grep -c certificates.cert-manager.io)" == "3" && echo "$(kubectl get cm cert-manager-image -o jsonpath='{.data.cert-manager-image}' | tr -d '"')" == "<replace-with-specific-cert-manager-image>"; then
+              \   kubectl apply --filename /usr/local/src/cert-controller.yaml;
+              \   echo "Cert-controller Deployment created.";
+              \   exit 0;
+              else
+              \   echo "Cert-controller Deployment not created. Values not met.";
+              \   exit 1;
+              fi
+```
+
+Replace `<replace-with-cert-manager-image>` with the specific image name or registry (with tag) for cert-manager you want to use. Also, replace the conditional logic accordingly if the custom resource definition and image location vary.
+
+This approach uses a Kubernetes Deployment with a rolling update strategy to ensure seamless updates. When the deployment is created, it checks the cert-manager's CustomResourceDefinition (CRDs) for the `certificates.cert-manager.io` API group (should contain 3 resources), and the value of `cert-manager-image` in a ConfigMap named `cert-manager-image`. If both conditions are met, it applies the cert-controller configuration from `/usr/local/src/cert-controller.yaml`. If not, it prints an error message and exits.

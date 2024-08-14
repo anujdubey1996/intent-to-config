@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-app
+  labels:
+    app: example
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: example
+    spec:
+      containers:
+      - name: example-app
+        image: <IMAGE_REPO>:<TAG>
+        ports:
+        - containerPort: 80
+        envFrom:
+        - secretRef:
+            name: example-app-config
+        volumeMounts:
+        - name: example-app-volume
+          mountPath: /var/example-app/config
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 1000
+        resources:
+          requests:
+            cpu: 500m
+            memory: "128Mi"
+          limits:
+            cpu: 1
+            memory: "256Mi"
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20
+      volumes:
+      - name: example-app-volume
+        configMap:
+          name: example-app-config
+      nodeSelector:
+        app: example-node
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - example-node
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - example-node
+              topologyKey: kubernetes.io/hostname
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+        key: node-role.kubernetes.io/master

@@ -1,0 +1,76 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cert-controller
+  labels:
+    app: cert-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cert-manager
+      component: cert-controller
+  template:
+    metadata:
+      labels:
+        app: cert-manager
+        component: cert-controller
+    spec:
+      containers:
+        - name: cert-controller
+          image: <replace-with-cert-manager-image>
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-controller-deploy
+spec:
+  selector:
+    matchLabels:
+      app: cert-manager
+      component: cert-controller
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: cert-manager
+        component: cert-controller
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: cert-controller
+          args:
+            - --install
+            - --cert-manager
+            - --webhook
+            - --v=2
+            - --config=/cert-manager.yaml
+          env:
+            - name: CERT_MANAGER_CRDS
+              valueFrom:
+                secretKeyRef:
+                  name: cert-manager
+                  key: cert-manager-crds
+            - name: CERT_MANAGER_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: cert-manager-image
+                  key: cert-manager-image
+          image: alpine:latest
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - |
+              if [ "$(kubectl api-resources --runtime=cert-manager | grep crds | grep -c certificates.cert-manager.io)" == "3" && echo "$(kubectl get cm cert-manager-image -o jsonpath='{.data.cert-manager-image}' | tr -d '"')" == "<replace-with-specific-cert-manager-image>"; then
+              \   kubectl apply --filename /usr/local/src/cert-controller.yaml;
+              \   echo "Cert-controller Deployment created.";
+              \   exit 0;
+              else
+              \   echo "Cert-controller Deployment not created. Values not met.";
+              \   exit 1;
+              fi

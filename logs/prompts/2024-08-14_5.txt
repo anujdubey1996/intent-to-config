@@ -1,0 +1,1 @@
+Deploy a single replica of the kao-service application in a production environment. The deployment integrates with Dapr for enhanced observability and service communication, specifying configurations for tracing and logging in JSON format. The service is exposed on port 8777, with the image pulled from a local registry to ensure the latest version is always used.

@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-web-tier
+  labels:
+    app: web-tier
+spec:
+  selector:
+    matchLabels:
+      app: web-tier
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+      minReadySeconds: 10
+    scale:
+      type: Recreate
+  template:
+    metadata:
+      labels:
+        app: web-tier
+    spec:
+      containers:
+      - name: web-tier-1
+        image: nginx:1.21.0
+        env:
+        - name: POD_STARTUP_METRICS_ENABLED
+          value: "true"
+        - name: PERFORMANCE_METRICS_ENABLED
+          value: "true"
+        resources:
+          requests:
+            cpu: 200m
+            memory: 128Mi
+          limits:
+            cpu: 300m
+            memory: 256Mi
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - mountPath: /data
+          name: web-tier-pvc
+      volumes:
+      - name: web-tier-pvc
+        persistentVolumeClaim:
+          claimName: web-tier-pvc
+        accessModes:
+        - ReadWriteOnce
+        storageClass: standard
+        size: 5Gi
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-tier-service
+spec:
+  selector:
+    app: web-tier
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80

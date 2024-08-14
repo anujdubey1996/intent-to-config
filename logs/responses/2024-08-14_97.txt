@@ -1,0 +1,54 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration for deploying a podinfo application, with specific settings for readiness, scaling, and resource management.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podinfo
+  labels:
+    app: podinfo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: podinfo
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: podinfo
+    spec:
+      containers:
+      - name: podinfo
+        image: gcr.io/google-samples/node-hello:1.0
+        ports:
+        - containerPort: 8080
+      readinessProbe:
+        httpGet:
+          path: /healthz
+          port: 8080
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 8080
+      resources:
+        requests:
+          cpu: 0.1
+          memory: 50Mi
+        limits:
+          cpu: 0.2
+          memory: 100Mi
+```
+
+This Kubernetes Deployment configuration creates a workload for the `podinfo` application, using the `gcr.io/google-samples/node-hello:1.0` image. The pod replicas are set to `3`, and it will follow a rolling update strategy, ensuring zero downtime during deployments. The rolling update configures the `maxUnavailable` to `0`, which means that all replicas should be available before starting updates, and `maxSurge` to `1`, allowing the deployment to scale up to `4` replicas during an update.
+
+It includes a readiness probe and a liveness probe, both checking the application's health at path `/healthz` on port `8080`. The probes will help Kubernetes to determine when a pod is ready to receive traffic and when it needs to restart.
+
+The container requests and limits are also defined, with a request of `0.1` CPU and `50Mi` of memory, and a limit of `0.2` CPU and `100Mi` of memory, respectively. The specified values can vary depending upon the system's requirements.

@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-deployment
+  labels:
+    app: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-app-container
+        image: my-docker-repo/my-app:latest
+        env:
+        - name: MY_ENV_VAR1
+          value: "value1"
+        - name: MY_ENV_VAR2
+          value: "value2"
+        - name: MY_ENV_VAR3
+          valueFrom:
+            secretKeyRef:
+              name: my-secret
+              key: my-secret-key
+      imagePullSecrets:
+      - name: my-docker-hub-secret

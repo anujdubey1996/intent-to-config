@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment for a Redis instance with a single replica. The deployment configures resource requests and limits for the Redis container and exposes the default Redis port

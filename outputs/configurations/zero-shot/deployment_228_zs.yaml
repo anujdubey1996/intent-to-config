@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secondary-container-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secondary-container
+  template:
+    metadata:
+      labels:
+        app: secondary-container
+    spec:
+      containers:
+      - name: secondary-container
+        image: <acr>.azurecr.io/<acr_repo_name>:<tag>
+        imagePullPolicy: Always
+        readinessProbe:
+          tcpSocket:
+            port: 80
+        ports:
+        - containerPort: 80
+      revisionHistoryLimit: 3

@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consul
+  annotations:
+    istio.io/rev: 2
+    service.istio.io/canonical-name: consul
+    service.istio.io/canonical-namespace: istio-system
+  labels:
+    app: consul
+    app.kubernetes.io/name: consul
+    app.kubernetes.io/part-of: consul
+    istio-injection: enabled
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consul
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/istio-injection: enabled
+    spec:
+      containers:
+      - name: consul
+        image: consul/consul:latest
+        ports:
+        - name: http
+          containerPort: 8500
+        - name: dns
+          containerPort: 8600
+        - name: raft
+          containerPort: 8300
+        - name: serf
+          containerPort: 8301
+        - name: ui
+          containerPort: 8501
+        env:
+        - name: CONSUL_BIND_ADDR
+          value: 0.0.0.0
+        - name: CONSUL_DATACENTER
+          value: datacenter1
+        - name: CONSUL_LAN
+          value: "true"
+        - name: CONSUL_RESOURCES_NETWORKS
+          value: "databases"
+        - name: CONSUL_RESOURCES_tags
+          value: "k8s"
+        readinessProbe:
+          httpGet:
+            path: /v1/health/ready
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      imagePullSecrets:
+      - name: regcred
+  service:
+    type: ClusterIP
+    externalTrafficPolicy: Local
+    annotations:
+      service.beta.kubernetes.io/istio-inject: "true"
+    selector:
+      app: consul
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: consul-headless
+  annotations:
+    istio.io/canonical-name: consul
+    istio.io/canonical-namespace: istio-system
+spec:
+  type: Headless
+  selector:
+    app: consul

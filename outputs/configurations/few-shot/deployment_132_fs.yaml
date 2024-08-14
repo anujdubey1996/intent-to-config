@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harvester-app
+  labels:
+    app: harvester
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: harvester
+  template:
+    metadata:
+      labels:
+        app: harvester
+    spec:
+      containers:
+      - name: harvester-container
+        image: "<IMAGE_NAME>:<TAG>"
+        ports:
+        - containerPort: 8080
+        env:
+        - name: API_KEY
+          value: "<API_KEY>"
+        - name: ADMIN_PASSWORD
+          value: "<ADMIN_PASSWORD>"
+        - name: RABBITMQ_USER
+          value: "<RABBITMQ_USER>"
+        - name: RABBITMQ_PASS
+          value: "<RABBITMQ_PASS>"
+        - name: DB_USER
+          value: "<DB_USER>"
+        - name: DB_PASS
+          value: "<DB_PASS>"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harvester-webhook
+  labels:
+    app: harvester-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: harvester-webhook
+  template:
+    metadata:
+      labels:
+        app: harvester-webhook
+    spec:
+      containers:
+      - name: harvester-webhook-container
+        image: "<IMAGE_NAME_WEBHOOK>:<TAG>"
+        ports:
+        - containerPort: 9000
+        env:
+        - name: API_KEY
+          value: "<API_KEY>"
+        - name: HARVESTER_URL
+          value: "http://<HARVESTER_APP_SERVICE_NAME>.<namespace>.svc.cluster.local:8080"
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 9000

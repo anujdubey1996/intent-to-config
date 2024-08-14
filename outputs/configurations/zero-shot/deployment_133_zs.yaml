@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flagger
+  labels:
+    app: flagger
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: flagger
+  template:
+    metadata:
+      labels:
+        app: flagger
+    spec:
+      containers:
+      - name: flagger
+        image: flagger/flagger:v1.7.0
+        env:
+        - name: FLAGGER_API_METRICS_EXPORTER_URL
+          value: "http://metrics-server:8080/api/v1/namespaces/$/prometheus"
+        - name: FLAGGER_API_LOGGING_STORAGE_URI
+          value: "s3://my-bucket/flagger-logs-<namespace>-<pod>.log"
+        - name: FLAGGER_API_MESH_PROVIDER
+          value: "istio"
+        ports:
+        - containerPort: 8080
+          name: http
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      imagePullSecrets:
+      - name: registry-creds

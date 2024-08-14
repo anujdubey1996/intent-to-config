@@ -1,0 +1,113 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment for a server application. This deployment manages three replicas of the server container, sets environment variables for connecting to Redis and PostgreSQL databases, and exposes port 5000.
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-deployment
+  labels:
+    app: server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+    spec:
+      containers:
+      - name: server
+        image: myregistry/server:latest
+        envFrom:
+        - secretRef:
+            name: db-secrets
+        ports:
+        - containerPort: 5000
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 5000
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 5000
+```
+
+In this YAML manifest, we deploy a Kubernetes Deployment, with the name `server-deployment` and a label `app: server`. The Deployment manages three replicas of the server container with image `myregistry/server:latest`.
+
+```
+replicas: 3
+```
+
+The Deployment selects replicas with the label `app: server` and, within the template, it labels each container with the same label:
+
+```
+selector:
+  matchLabels:
+    app: server
+template:
+  metadata:
+    labels:
+      app: server
+```
+
+The container has the name `server`, and it pulls the image from the specified registry:
+
+```
+containers:
+- name: server
+  image: myregistry/server:latest
+```
+
+To connect to Redis and PostgreSQL databases, the container receives environment variables from a secret called `db-secrets`. The secret should contain the connection configuration and credentials:
+
+```
+envFrom:
+- secretRef:
+    name: db-secrets
+```
+
+The Deployment exposes the server container's port 5000:
+
+```
+ports:
+- containerPort: 5000
+```
+
+Checks for a healthy server status and readiness are set up using HTTP GET requests to `/healthz` on port 5000:
+
+```
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 5000
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 5000
+```
+
+Make sure you have appropriate permissions to create secrets and deployments in your Kubernetes cluster, and store your database credentials securely in Kubernetes secrets.
+
+Here's a sample secret to store the database credentials:
+
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-secrets
+type: Opaque
+data:
+  REDIS_HOST: eW91cl9pbnNfY3J5cHQ=
+  REDIS_PASSWORD: SSdlIGxvY2FsIE5vcmcvTGF5c3VjIiwidXNlcmNvbm5zaA==
+  POSTGRES_HOST: eW91c2VfcGxheXM=
+  POSTGRES_USER: dGVzdHVzZXJfdG9rZW4=
+  POSTGRES_PASSWORD: bGFzc3dvcmQ=
+  POSTGRES_DATABASE: bGlicmFyeXNfZGV2LmNvbS50YWJjZA==
+```

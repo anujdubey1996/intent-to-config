@@ -1,0 +1,55 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy an FTP server using the fauria/vsftpd Docker image.
+
+Resource: Deployment
+
+Name: ftp-server
+
+Namespace: default
+
+PodTemplate:
+  Labels:
+    app: ftp-server
+  Containers:
+    - Name: vsftpd
+      Image: fauria/vsftpd
+      Ports:
+        - ContainerPort: 21
+          Protocol: TCP
+      VolumeMounts:
+        - Name: ftp-data
+          MountPath: /var/ftp
+  Volumes:
+    - Name: ftp-data
+      EmptyDir: {}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ftp-server
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: ftp-server
+  template:
+    metadata:
+      labels:
+        app: ftp-server
+    spec:
+      containers:
+      - name: vsftpd
+        image: fauria/vsftpd
+        ports:
+        - containerPort: 21
+          protocol: TCP
+        volumeMounts:
+        - name: ftp-data
+          mountPath: /var/ftp
+      volumes:
+      - name: ftp-data
+        emptyDir: {}

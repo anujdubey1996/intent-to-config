@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment using Helm templates with configurable values for autoscaling, labels, annotations, security contexts, and resource management. The deployment includes settings for image, ports, volumes, and other configurations as specified in the Helm chart values.

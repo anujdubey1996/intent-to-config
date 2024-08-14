@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+      - name: wordpress
+        image: <your-docker-repository>/wordpress:<tag>
+        envFrom:
+        - configMapRef:
+            name: wordpress-config
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          tcpSocket:
+            port: 80
+        livenessProbe:
+          tcpSocket:
+            port: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+spec:
+  selector:
+    app: wordpress
+  type: ClusterIP
+  ports:
+  - port: 80

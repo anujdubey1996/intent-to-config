@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: details-v1
+  labels:
+    app: details-v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: details-v1
+  template:
+    metadata:
+      labels:
+        app: details-v1
+    spec:
+      containers:
+      - name: details
+        image: details:v1
+        ports:
+        - containerPort: 8080
+      nodeSelector:
+        app-tier: web
+      scale:
+        minReplicas: 3
+        maxReplicas: 5
+      readinessProbe:
+        tcpSocket:
+          port: 8080
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      terminationGracePeriodSeconds: 30
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+      rollbackTo: ""
+      containers:
+        - name: details
+          containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+          image: details:v1
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+        scale:
+          scaling:
+            minReplicas: 3
+            maxReplicas: 5
+          cpu:
+            utilizationThreshold: 0.5
+            targetCPUUtilizationPercentage: 50
+          resourcePolicy: "ConcurrencyPolicy=Allow"
+          type: Resource
+        type: RollingUpdate
+        minReadySeconds: 5
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+        strategy:
+          type: RollingUpdate
+          rollingUpdate:
+            maxSurge: 1
+            maxUnavailable: 0
+        resources:
+          limits:
+            cpu: "1"
+          requests:
+            cpu: "0.5"

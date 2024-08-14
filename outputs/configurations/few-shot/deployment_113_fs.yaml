@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: react-clock-basic
+  namespace: terraform-clock-app
+  labels:
+    app: react-clock-basic
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: react-clock-basic
+  template:
+    metadata:
+      labels:
+        app: react-clock-basic
+    spec:
+      containers:
+      - name: react-clock-basic
+        image: <your-dockerhub-username>/react-clock-basic:latest
+        ports:
+          - containerPort: 80
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20

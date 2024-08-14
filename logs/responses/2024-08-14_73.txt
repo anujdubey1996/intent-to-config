@@ -1,0 +1,73 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy Redis Session Store with Optional Persistent Storage
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-session-store
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-session-store
+  template:
+    metadata:
+      labels:
+        app: redis-session-store
+    spec:
+      containers:
+      - name: redis
+        image: redis:6.2.7
+        ports:
+        - containerPort: 6379
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-auth
+              key: password
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-data-pvclaim
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-session-store
+spec:
+  selector:
+    app: redis-session-store
+  ports:
+  - port: 6379
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data-pvclaim
+  storageClassName: standard
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+```
+
+This configuration deploys a single replica of a `Redis` container that serves as the session store. The Redis container is secured with an optional password from a secret `redis-auth`. It also includes persistence of data using a `PersistentVolumeClaim` named `redis-data-pvclaim` and a storage request of 20GB.
+
+To customize this configuration for your own use, you may modify the Redis container image, password secret name, volume claim name, storage class, and storage size as needed. Deploy this configuration using `kubectl apply -f redis-session-store.yaml` and then scale the deployment as desired using `kubectl scale deployment redis-session-store --replicas=3`.

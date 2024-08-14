@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-center1-kube-system-pod-collector
+  labels:
+    app: data-center1-kube-system-pod-collector
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: data-center1-kube-system-pod-collector
+  template:
+    metadata:
+      labels:
+        app: data-center1-kube-system-pod-collector
+    spec:
+      containers:
+        - name: data-center1-kube-system-pod-collector
+          image: my-custom-image:latest
+          ports:
+            - containerPort: 8080
+              name: http-server
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 8080
+          resources:
+            limits:
+              cpu: 1
+              memory: 256Mi
+            requests:
+              cpu: 500m
+              memory: 128Mi
+      serviceAccountName: data-center1-kube-system-pod-collector-sa

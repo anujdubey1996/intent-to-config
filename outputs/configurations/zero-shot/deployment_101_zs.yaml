@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flixpredix-admin
+  labels:
+    app: flixpredix
+    tier: admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flixpredix
+      tier: admin
+  template:
+    metadata:
+      labels:
+        app: flixpredix
+        tier: admin
+    spec:
+      containers:
+      - name: flixpredix-admin
+        image: <your-docker-registry-region>/flixpredix-admin:latest
+        ports:
+        - containerPort: 8080
+          name: http
+      imagePullSecrets:
+      - name: <your-docker-registry-secret>

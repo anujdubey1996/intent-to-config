@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a frontend service with a single replica using the hjacobs/{{ .Release.Name }}:23.5.0 image

@@ -1,0 +1,74 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a microservice using Helm templating to customize the deployment name, labels, replicas, container image, environment variables, and image pull secrets.
+
+Solution:
+
+First, install Helm v3 if not already installed on your Kubernetes cluster. You can install it using the official Helm installation script with Tiller enabled for local deployment:
+
+```bash
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sh
+```
+
+Next, create a Helm chart for your microservice and customize the values.yaml file to match your requirements. The following example is a simple Helm chart that deploys a Node.js microservice and sets deployment configuration, containers, environment variables, and image pull secret:
+
+1. Create a base Helm chart folder named `microservice-chart`:
+
+```bash
+mkdir microservice-chart
+cd microservice-chart
+```
+
+2. Create the Helm chart structure with `chart.yaml`, `templates`, and `values.yaml` files:
+
+```bash
+helm create microservice
+cd microservice
+```
+
+3. Modify the `values.yaml` file to customize your deployment:
+
+```yaml
+replicaCount: 3
+
+app:
+  name: my-microservice # Change this to your service's name
+
+container:
+  image: my-registry/my-microservice:latest
+
+  env:
+      variable1: value1
+      variable2: value2
+
+  imagePullSecrets:
+    - name: my-registry-secret
+```
+
+Replace the values with your service's name, container image, environment variables, and image pull secret name.
+
+4. Modify `templates/deployment.yaml` to set labels:
+
+```yaml
+...
+metadata:
+  name: {{ .Values.app.name }}
+  labels:
+    app: {{ .Values.app.name }}
+...
+```
+
+5. Install the Helm chart by running:
+
+```bash
+helm install my-microservice .
+```
+
+Replace `my-microservice` with the name you set for the deployment in the values.yaml file.
+
+Now Kubernetes will create the deployment, service, and other needed resources based on the Helm chart template files. You should be able to see the deployment created via `kubectl`.
+
+```bash
+kubectl get deployments
+```

@@ -1,0 +1,82 @@
+Deploy the kuard application with 10 replicas to ensure high availability, utilizing a rolling update strategy for seamless updates. The deployment includes readiness probes to confirm that the application is ready to handle traffic, ensuring smooth operation during rollouts. We will use a Service object for load balancing the deployed kuard pods, and expose the service externally via a type ClusterIP or LoadBalancer, depending on the cloud provider.
+
+Here is a sample `kuard-deployment.yaml`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kuard
+  labels:
+    app: kuard
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: kuard
+  template:
+    metadata:
+      labels:
+        app: kuard
+    spec:
+      containers:
+      - name: kuard
+        image: gcr.io/kuar-demo/kuard:blue
+        ports:
+        - containerPort: 8080
+          name: web
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kuard-service
+  labels:
+    app: kuard
+spec:
+  type: LoadBalancer
+  selector:
+    app: kuard
+  ports:
+  - name: kuard-port
+    port: 80
+    targetPort: 8080
+```
+
+This yaml file defines a Deployment named `kuard` with 10 replicas. It makes use of a readiness probe to check if the application is ready, ensuring smooth operation when rolling out updates. The Service object named `kuard-service` is responsible for load balancing the pods, as indicated by the `type: LoadBalancer` field.
+
+You can replace `gcr.io/kuar-demo/kuard:blue` with another image you want to deploy or the image where your application resides. The `terminationGracePeriodSeconds` in the container spec determines the amount of time the kubernetes will wait for your application to gracefully shutdown before forcibly terminating it during a rollout.
+
+To apply the yaml file, use this command:
+
+```
+kubectl apply -f kuard-deployment.yaml
+```
+
+Once the deployment is created, you can check the status using:
+
+```
+kubectl get deployments
+kubectl get pods
+```
+
+For service information:
+
+```
+kubectl get services
+```
+
+You can access the kuard application using the service's public IP or DNS, if you have a type LoadBalancer service. When using a type ClusterIP service, access the application using its cluster IP and port:
+
+```
+kubectl get services kuard-service -o jsonpath='{.spec.clusterIP}'
+```
+
+Now you have a resilient and high-available `kuard` application deployed, utilizing readiness probes, rolling updates, and Service load balancing.

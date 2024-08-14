@@ -1,0 +1,44 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy 2 replicas of the `wildwest` application in the `wildwest` namespace.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wildwest-deployment
+  namespace: wildwest
+  labels:
+    app: wildwest
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wildwest
+  template:
+    metadata:
+      labels:
+        app: wildwest
+    spec:
+      containers:
+      - name: wildwest
+        image: wildwest:latest
+        ports:
+        - containerPort: 8080
+```
+
+Save the above configuration in a `wildwest-deployment.yaml` file.
+
+To apply the deployment on a Kubernetes cluster using kubectl:
+
+```
+kubectl apply -f wildwest-deployment.yaml
+```
+
+You can inspect or monitor the deployment with:
+
+```
+kubectl get deployments -n wildwest
+kubectl logs -f wildwest-deployment -n wildwest pod/[POD_NAME]   # replace [POD_NAME] with pod name from output of the previous command
+```

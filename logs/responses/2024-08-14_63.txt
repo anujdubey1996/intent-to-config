@@ -1,0 +1,41 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Define a Deployment for a helloworld application
+
+Here's the Kubernetes Deployment configuration YAML file for a `helloworld` application:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-deployment
+  labels:
+    app: hello-world
+spec:
+  selector:
+    matchLabels:
+      app: hello-world
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: hello-world
+    spec:
+      containers:
+      - name: hello-world
+        image: busybox:1.28
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        command: ["sh", "-c", "tail -f /dev/null"]
+```
+
+This YAML file creates a Kubernetes Deployment workload for a container running the `busybox:1.28` container image named `hello-world`. It setups `3` replicas of the container, defines a rolling update strategy, and mounts port `8080` TCP. By running the `tail -f /dev/null`, the container sits idle and does not perform any action, making it ready to receive requests.
+
+To apply this Deployment, save the above YAML configuration in a file, such as `helloworld-deployment.yaml`, and execute `kubectl apply -f helloworld-deployment.yaml` on your command-line.

@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment for a Consul service, deploying a single replica with specific annotations, port configurations, and resource limits.

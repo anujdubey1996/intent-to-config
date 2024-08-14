@@ -1,0 +1,115 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Configure a Kubernetes Deployment for a publisher service.
+
+1. Define the API version, kind, and metadata for the Deployment.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: publisher-deployment
+  labels:
+    app: publisher
+```
+
+2. Specify the publisher service container image including its tag.
+
+```yaml
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: publisher
+  template:
+    metadata:
+      labels:
+        app: publisher
+    spec:
+      containers:
+      - name: publisher
+        image: publisher:latest
+```
+
+3. Define the container port where the service is exposed.
+
+```yaml
+      ports:
+      - containerPort: 8080
+```
+
+4. Define any necessary environment variables or command arguments required by the container.
+
+```yaml
+      env:
+      - name: APP_ENV
+        value: production
+      command: ["sh", "-c", "while true; do npm start; done"]
+```
+
+5. If scalability is desired, set a strategy for scaling based on CPU usage or other metrics.
+
+```yaml
+  strategy:
+    type: HorizontalPodAutoscaler
+    metrics:
+      type: Resource
+      targetCPUUtilizationPercentage: 50
+    minReplicas: 3
+    maxReplicas: 10
+```
+
+6. Save the configuration file as `publisher-deployment.yaml`.
+
+```bash
+touch publisher-deployment.yaml
+```
+
+7. Replace the content of `publisher-deployment.yaml` file with the combined YAML configuration.
+
+```bash
+echo "apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: publisher-deployment
+  labels:
+    app: publisher
+
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: publisher
+  template:
+    metadata:
+      labels:
+        app: publisher
+    spec:
+      containers:
+      - name: publisher
+        image: publisher:latest
+      ports:
+      - containerPort: 8080
+      env:
+      - name: APP_ENV
+        value: production
+      command: ["sh", "-c", "while true; do npm start; done"]
+  strategy:
+    type: HorizontalPodAutoscaler
+    metrics:
+      type: Resource
+      targetCPUUtilizationPercentage: 50
+    minReplicas: 3
+    maxReplicas: 10" > publisher-deployment.yaml
+```
+
+8. Apply the Kubernetes Deployment configuration to create the service.
+
+```bash
+kubectl apply -f publisher-deployment.yaml
+```
+
+Assuming the Kubernetes cluster has the necessary context and credentials configured, this command will create the publishe-deployment in the default namespace.
+
+Once the deployment is created successfully, the publisher service will be running with three replicas and it will auto-scale based on the set CPU target (CPU Utilization Percentage).

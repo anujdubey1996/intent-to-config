@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Define a test setup for evaluating deployment performance and pod startup latency. This includes phases for creating deployments, measuring pod startup latency, and managing pod lifecycle.

@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment to manage the deployment of a PM2-based application with specific configurations for replicas, image details, environment variables, resource requests, and node affinity. This deployment uses Helm templating to dynamically set values based on the Helm chart configuration.

@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a worker application, specifying the Docker image and environment variables for Redis connectivity.

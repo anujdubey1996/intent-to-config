@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: demo-voting-app
+    tier: redis
+specificator: demo-voting-app/redis
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-voting-app
+      tier: redis
+
+  template:
+    metadata:
+      labels:
+        app: demo-voting-app
+        tier: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:latest
+        ports:
+        - name: redis
+          containerPort: 6379
+        env:
+        - name: ALLOW_EMPTY_PASSWORD
+          value: "yes"
+      restartPolicy: Always

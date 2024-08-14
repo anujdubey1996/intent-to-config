@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $name
+  namespace: $namespace
+  labels:
+    app: $name
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: $name
+  template:
+    metadata:
+      labels:
+        app: $name
+      annotations:
+        eks.amazonaws.com/alb-ingress-controller: 'true'
+    spec:
+      serviceAccountName: my-operator-sa
+      containers:
+      - name: $name
+        image: $image_name
+        env:
+        - name: ENVIRONMENT
+          value: production
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        resources:
+          limits:
+            cpu: 10m
+            memory: 50Mi
+          requests:
+            cpu: 5m
+            memory: 30Mi

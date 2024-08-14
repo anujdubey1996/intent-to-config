@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server
+  labels:
+    app: auth-server
+    chart: auth-chart
+    release: my-release
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: auth-server
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: auth-server
+        tier: backend
+        release: my-release
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9000"
+    spec:
+      securityContext:
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: auth-server
+        image: '{{ .Release.Name }}:{{ .Chart.Version }}'
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9000
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: auth-config
+        volumeMounts:
+        - name: auth-volume
+          mountPath: /etc/auth-config
+          subPath: auth.properties
+        - name: auth-secrets
+          mountPath: /secrets
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ALL
+            add:
+            - TTY
+          readOnlyRootFilesystem: true
+        resources:
+          limits:
+            cpu: '1'
+            memory: '512Mi'
+          requests:
+            cpu: '500m'
+            memory: '256Mi'
+        volumeClaimTemplate:
+          metadata:
+            name: auth-volume
+          spec:
+            accessModes: [ReadWriteOnce]
+            storageClassName: mystorageclass
+            resources:
+              requests:
+                storage: 1Gi
+        env:
+        - name: SERVICE_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              name: auth-config
+              key: service-address
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: username
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: password
+      volumes:
+      - name: auth-config
+        configMap:
+          name: auth-config
+      - name: auth-secrets
+        secret:
+          secretName: db-secrets

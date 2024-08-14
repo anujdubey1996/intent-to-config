@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plato-backend-deployment
+  namespace: project-plato
+  labels:
+    app: plato-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: plato-backend
+  template:
+    metadata:
+      labels:
+        app: plato-backend
+    spec:
+      containers:
+      - name: plato-backend
+        image: my-backend:1.0.0
+        ports:
+        - containerPort: 8081
+        volumeMounts:
+        - name: plato-backend-data
+          mountPath: /app/data
+      volumes:
+      - name: plato-backend-data
+        configMap:
+          name: plato-backend-configs
+          items:
+          - key: config.properties
+            path: config.properties
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plato-backend-configs
+  namespace: project-plato
+data:
+  config.properties: |
+    database.url=jdbc:mysql://my-database-service.default.svc.cluster.local:3306/mydb
+    database.user=myUsername
+    database.password=myPassword

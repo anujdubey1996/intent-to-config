@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the instascan-vault application with optional PostgreSQL integration, initializing the database if necessary, and configure the Vault service with specific settings and security contexts.

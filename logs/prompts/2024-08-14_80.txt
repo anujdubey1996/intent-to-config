@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Prometheus Operator with Helm Chart and various options for image configuration, resource management, network settings, security features.

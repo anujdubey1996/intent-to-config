@@ -1,0 +1,101 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy an instance of the OpenTelemetry Collector in a Kubernetes cluster using a Helm-managed setup. The deployment should handle various telemetry data protocols and be configured via a ConfigMap.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  labels:
+    app: otel-collector
+    tier: collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+      tier: collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+        tier: collector
+    spec:
+      containers:
+      - name: otel-collector
+        image: otel/opentelemetry-collector:latest
+        ports:
+        - containerPort: 4318
+          name: grpc-otlp
+        - containerPort: 9411
+          name: jaeger
+        - containerPort: 4317
+          name: zipkin
+        - containerPort: 55680
+          name:Prometheus
+        env:
+        - name: COLLECTOR_OTLP_GRPC_ENDPOINTS
+          value: collector-0.collector-otel-collector:4317,collector-1.collector-otel-collector:4317,collector-2.collector-otel-collector:4317
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/otel/collector
+      volumes:
+      - name: config-volume
+        configMap:
+          name: otel-collector-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  labels:
+    app: otel-collector
+    tier: collector
+data:
+  receiver:
+    otlp: |
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+            http:
+    jaeger: |
+      receivers:
+        jaeger:
+          logspout:
+            batch-interval: 2s
+    zipkin: |
+      receivers:
+        zipkin:
+          interval: 5s
+    prometheus: |
+      receivers:
+        prometheus:
+          job_name: otel-collector
+      exporters:
+        logging:
+          loglevel: debug
+        jaeger:
+        zipkin:
+        telemetry:
+          pipeline:
+            processors:
+              batch:
+                max-batch-size: 1mb
+                timeout-seconds: 1m
+    exporters:
+      logging:
+        loglevel: debug
+      jaeger:
+        endpoint: http://jaeger-query.<REPLACE_WITH_JAEGER_SERVICE_DOMAIN>:14268/query
+      zipkin:
+        endpoint: http://zipkin-web.<REPLACE_WITH_ZIPKIN_SERVICE_DOMAIN>:9411/api/v2/spans
+      telemetry:
+        endpoint: http://prometheus-metrics-receiver.<REPLACE_WITH_PROMETHEUS_SERVICE_DOMAIN>:55680
+```
+
+This YAML code defines a Kubernetes deployment for the OpenTelemetry Collector, which collects and processes telemetry data from various different protocols such as OpenTelemetry Protocol (OTLP), Jaeger Trace, Zipkin Trace, and Prometheus. The Deployment configuration also uses a ConfigMap to allow configuration of the Collector at runtime. You'll need to replace the `<REPLACE_WITH_JAEGER_SERVICE_DOMAIN>`, `<REPLACE_WITH_ZIPKIN_SERVICE_DOMAIN>` and `<REPLACE_WITH_PROMETHEUS_SERVICE_DOMAIN>` with the appropriate service names or IP addresses in your own Kubernetes cluster.
+
+This configuration setup is managed by Helm, making it easier to install and upgrade the OpenTelemetry Collector in your K8s cluster.

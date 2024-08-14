@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Update the hw-deployment manifest to ensure pods are launched under the monitoring service account. Include necessary volume mounts, lifecycle hooks, and probes for the deployment.

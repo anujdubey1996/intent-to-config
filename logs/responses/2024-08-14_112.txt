@@ -1,0 +1,57 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a simple application in the lab-app namespace, with configuration settings sourced from a ConfigMap.
+
+Example ConfigMap (configmap.yaml):
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: lab-app
+data:
+  appConf: |
+    key1=value1
+    key2=value2
+    key3=value3
+```
+
+Example Deployment (deployment.yaml):
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: lab-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: app
+  template:
+    metadata:
+      labels:
+        app: app
+    spec:
+      containers:
+      - name: app
+        image: my-app-image:latest
+        envFrom:
+          - configMapRef:
+              name: app-config
+        ports:
+        - containerPort: 80
+```
+
+Explanation:
+
+1. The ConfigMap is created with the `apiVersion`, `kind`, `metadata`, and `data` fields as usual. In the `data` field, the configuration settings are provided as key-value pairs with an indented format (YAML's block style).
+
+2. The Deployment is created with the `apiVersion`, `kind`, `metadata`, `spec`, and `template` fields.
+
+3. Under the `spec` section, we set the number of replicas (`replicas`), define the selector to match pods based on a label (`selector`), and specify the template for creating the pod (`template`).
+
+4. Inside the `template` section, we provide metadata, such as labels, and specify the container for our application which should reference the ConfigMap (`envFrom.configMapRef.name`).
+
+5. In the container specification, we set its name, image, environment variables (`envFrom`), and port (`ports`). The port is the application's listening port, exposing it for external traffic.

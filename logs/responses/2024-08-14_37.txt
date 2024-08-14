@@ -1,0 +1,62 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the geolocationdb application with specific configurations for volume mounts, environment variables, and node selection. This deployment uses an existing AWS EBS volume for persistent storage.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geolocationdb
+  labels:
+    app: geolocationdb
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: geolocationdb
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: geolocationdb
+    spec:
+      containers:
+      - name: geolocationdb
+        image: geolocationdb:latest
+        envFrom:
+        - configMapRef:
+            name: geolocationdb-config
+        volumeMounts:
+        - name: geolocationdb-data
+          mountPath: /data
+        ports:
+        - containerPort: 5432
+        readinessProbe:
+          tcpSocket:
+            port: 5432
+        livenessProbe:
+          tcpSocket:
+            port: 5432
+      volumes:
+      - name: geolocationdb-data
+        persistentVolumeClaim:
+          claimName: geolocationdb-pvclaim
+  nodeSelector:
+    kubernetes.io/role: db
+```
+
+In this YAML configuration file, a Kubernetes deployment is created for the "geolocationdb" application. The deployment is configured with the following specifics:
+
+- Number of replicas: 3
+- Container name: geolocationdb, using the geolocationdb:latest image
+- Environment variables are set using a ConfigMap named "geolocationdb-config"
+- Volume mount for persistent storage named "geolocationdb-data" is mounted at /data
+- The container listens on port 5432
+- Readiness and liveness probes are set to check the TCP port 5432 for the application's readiness and liveness
+- NodeSelector is set to run the deployment on nodes with the role label "db"
+- A PersistentVolumeClaim named "geolocationdb-pvclaim" is referenced for storing the persistent data. It must already exist and be bound to an appropriate PersistentVolume in the cluster.

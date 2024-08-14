@@ -1,0 +1,65 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration for deploying a front-end application with dynamic image tags based on Git branch and commit, and with readiness, liveness, and startup probes configured.
+
+Deployment name: myapp-deployment
+
+Container image: my-frontend:latest, using GitHub actions to automatically build and tag Docker images based on the current branch and commit.
+
+Container port: 8080
+
+Number of replicas: 3
+
+Label selector: app=myapp
+
+Readiness probe: HTTP GET /healthz (path: /healthz) with initial delay of 15 seconds, timeout of 5 seconds, and failure threshold of 3.
+
+Liveness probe: HTTP GET /live (path: /live) with initial delay of 15 seconds, timeout of 5 seconds, and failure threshold of 3.
+
+Startup probe: HTTP GET /ready (path: /ready) with initial delay of 10 seconds, timeout of 5 seconds, and failure threshold of 5.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-deployment
+  labels:
+    app: myapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: my-frontend
+        image: my-frontend:$(GIT_COMMIT)
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 5
+```

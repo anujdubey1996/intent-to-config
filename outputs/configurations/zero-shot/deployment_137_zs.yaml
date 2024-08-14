@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-cli-js
+  labels:
+    app: airbyte-cli-js
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airbyte-cli-js
+  template:
+    metadata:
+      labels:
+        app: airbyte-cli-js
+    spec:
+      containers:
+      - name: airbyte-cli-js
+        image: airbyte/airbyte-cli:v0.90.0 # Assuming the Airbyte CLI version 0.90.0 used
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "1"
+            memory: "4Gi"
+        env:
+        - name: NODE_ENV # (optional) - set to 'production' or 'development'
+          value: "production" # (optional) - Set NODE_ENV to Production, development if you want to set it to Development

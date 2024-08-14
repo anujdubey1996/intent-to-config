@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+  labels:
+    app: test-app
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: test-app
+  template:
+    metadata:
+      annotations:
+        kubernetes.io/pod-launch-failure-reason: StartupLatency
+    spec:
+      containers:
+      - name: test-container
+        image: busybox:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          limits:
+            cpu: "0.1"
+            memory: "64Mi"
+          requests:
+            cpu: "0.1"
+            memory: "64Mi"

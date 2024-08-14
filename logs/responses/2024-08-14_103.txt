@@ -1,0 +1,31 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration for a Redis service with a single replica.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-deployment
+  labels:
+    app: redis
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:6.2.5
+        ports:
+        - containerPort: 6379
+```
+
+Description:
+The provided YAML code defines a Kubernetes Deployment object named `redis-deployment`. The deployment is tasked to manage a single replica of a Redis service. The Redis container uses the Redis version `6.2.5` image and exposes the Redis server running on port `6379`. Both the deployment and the container label the pods with the key-value pair `app:redis`.

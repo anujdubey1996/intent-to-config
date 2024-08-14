@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a frontend application on Kubernetes with multiple replicas to ensure high availability.

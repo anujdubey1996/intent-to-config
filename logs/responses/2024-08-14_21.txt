@@ -1,0 +1,89 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a scalable k8sdemo application with configurable replicas, image details, and resource requirements. The deployment uses a specified service account, implements security contexts, and configures liveness and readiness probes for health checks. It also supports advanced scheduling and resource management with optional node selectors, affinity, and tolerations. The deployment ensures controlled image pulling and maintains the specified container and pod settings for robust operation.
+
+Example configuration file:
+
+```YAML
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8sdemo
+  namespace: default
+  labels:
+    app: k8sdemo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: k8sdemo
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: k8sdemo
+    spec:
+      serviceAccountName: k8sdemo-sa
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 3001
+      containers:
+      - name: k8sdemo
+        image: registry.example.com/k8sdemo:v1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      schedulerName: my-scheduler-name
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - k8sdemo
+            topologyKey: kubernetes.io/hostname
+      nodeSelector:
+        zone: us-west-1c
+      tolerations:
+      - operator: Existence
+        effect: NoSchedule
+        tolerationSeconds: 300
+```
+Replace the following placeholders in the example configuration file with your desired values:
+
+- `registry.example.com/k8sdemo:v1`: The Docker image and its tag or repository URL where the application is stored in the container registry.
+- `k8sdemo-sa`: The service account that the deployment should run under.
+- `1001`: The user ID to run the container process as.
+- `3001`: The group ID to run the container process as.
+- `my-scheduler-name`: The name of the custom Kubernetes scheduler you want to use for this deployment, if applicable.
+- `us-west-1c`: The desired zone or label for the nodes where the pods will be scheduled.
+- `app`: The label key used to select and manage pods of the k8sdemo application.
+
+Also, update the `livenessProbe` and `readinessProbe` paths if the k8sdemo app exposes any different endpoints for health checks. Additionally, adjust the `replicas` field to define the number of replicas that should be running at any given time.
+
+After updating the placeholders, save the configuration file as `k8sdemo-deployment.yaml`. Apply this configuration with the command:
+
+```sh
+kubectl apply -f k8sdemo-deployment.yaml
+```
+
+This command creates a Kubernetes deployment named `k8sdemo` that follows your specified configuration.

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kuard
+  labels:
+    app: kuard
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: kuard
+  template:
+    metadata:
+      labels:
+        app: kuard
+    spec:
+      containers:
+      - name: kuard
+        image: kutana/kuard:blue
+        ports:
+        - name: http
+          containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      strategypic: Apps/V1StrategicRollingUpdate
+      rollingUpdate:
+        maxUnavailable: 2
+        maxSurge: 2

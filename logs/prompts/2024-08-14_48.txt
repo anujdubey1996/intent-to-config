@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create Kubernetes Deployments for the harvester application and the harvester-webhook service. These deployments configure the harvester application with various environment variables, container settings, and health probes, and set up the harvester-webhook with its own configurations.

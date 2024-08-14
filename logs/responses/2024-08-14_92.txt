@@ -1,0 +1,74 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration for a microservice. The deployment should be parameterized to accommodate various deployment scenarios and should use Helm templating to fill in dynamic values.
+
+Solution: Here's a Kubernetes Deployment configuration with parameters and Helm templating for a microservice deployment. This example uses the Nginx web server as a hypothetical microservice.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{include "my-service-fullname" .}}
+  labels:
+    app: {{include "my-service-name" .}}
+    helm: chart-name
+spec:
+  replicas: {{.Values.replicaCount}}
+  selector:
+    matchLabels:
+      app: {{include "my-service-name" .}}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{.Values.maxUnavailable}}
+      maxSurge: {{.Values.maxSurge}}
+
+  template:
+    metadata:
+      labels:
+        app: {{include "my-service-name" .}}
+
+    spec:
+      containers:
+      - name: {{include "my-service-name" .}}
+        image: {{.Values.container.image}}
+        imagePullPolicy: {{.Values.container.imagePullPolicy}}
+        ports:
+          - name: http
+            containerPort: {{.Values.container.httpPort}}
+            protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{.Values.container.httpPort}}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{.Values.container.httpPort}}
+        resources:
+          limits:
+            cpu: {{.Values.container.cpu}}
+            memory: "{{.Values.container.memory}}"
+          requests:
+            cpu: {{.Values.container.cpu}}
+            memory: "{{.Values.container.memory}}"
+```
+
+This YAML configuration file can be used as a base and extended with other options like volumes, env variables, annotations, etc. It uses Helm templating functions (`include`, `.Values`) to parameterize the deployment configuration for different deployment scenarios.
+
+You should create the `.Values.yaml` file in the same directory as above YAML configuration file and define your parameters there. For example:
+
+```yaml
+replicaCount: 3
+maxUnavailable: 1
+maxSurge: 2
+container:
+  image: nginx:1.19.0
+  httpPort: 80
+  imagePullPolicy: IfNotPresent
+  cpu: 100m
+  memory: 128Mi
+```
+
+This way, you can easily change the number of replicas, configuration parameters, or swap the image used by editing the `.Values.yaml` file. Additionally, you can extend this configuration with more services, services, ingress, and so on, depending on your desired architecture.

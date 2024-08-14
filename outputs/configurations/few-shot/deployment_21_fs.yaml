@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zookeeper-operator
+  labels:
+    app: zookeeper-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper-operator
+  template:
+    metadata:
+      labels:
+        app: zookeeper-operator
+    spec:
+      containers:
+      - name: zookeeper-operator
+        image: zookeeper-operator:latest
+        ports:
+        - containerPort: 2181
+        - containerPort: 2888
+        - containerPort: 3888

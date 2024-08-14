@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  labels:
+    app: web-app
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      containers:
+      - name: web-app
+        image: my-web-app:v1
+        env:
+        - name: DB_HOST
+          value: database
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: password
+        volumeMounts:
+        - mountPath: /var/app/app-data
+          name: web-app-data
+        - name: app-secrets
+          secretName: app-secrets
+          items:
+          - key: api-key
+            path: api-key
+        resources:
+          requests:
+            cpu: 500m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+      volumes:
+      - name: web-app-data
+        emptyDir: {}
+      - name: app-secrets
+        secret:
+          secretName: app-secrets
+      readinessProbe:
+        httpGet:
+          path: /readiness
+          port: 80
+        initialDelaySeconds: 5
+        periodSeconds: 10
+      livenessProbe:
+        httpGet:
+          path: /liveness
+          port: 80
+        initialDelaySeconds: 15
+        periodSeconds: 20

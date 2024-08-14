@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a simple web application named "YouthConn Demo" on Kubernetes, exposing it on port 8080.

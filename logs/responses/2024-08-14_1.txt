@@ -1,0 +1,49 @@
+
+Deploy an Nginx web server with high availability and basic health checks
+========================================================================
+
+In this project, an Nginx web server is deployed with high availability and basic health checks using Kubernetes.
+
+### Architecture
+
+<img src="/images/project-architecture.png" alt="Project architecture" height="400"/>
+
+The deployment includes three Nginx pods in a replica set, a LoadBalancer service for handling external traffic, and a cluster IP service for internal traffic. The health checking is done by an external service (kubectl's `kubectl` command, but it could be something more customized in a real-world scenario), which periodically probes the status of the Nginx services, and kills any unhealthy pods and recreates them in case of failures.
+
+### Requirements
+
+- Kubernetes cluster (minikube is used for this project, but any other k8s cluster can be used)
+
+### Cloning and building
+
+- `git clone git@github.com:carlos-garcia-ruiz/highavail-nginx.git`
+- `cd highavail-nginx`
+- `make build` or `make up` for building Docker image and deploying to the cluster, respectively.
+
+### Accessing
+
+The Nginx web server can be accessed by using the LoadBalancer service IP address. In case you are using minikube, follow these instructions:
+
+- Run `minikube service nginx`
+- The output will give you a URL in the following format:
+    ```
+    Name:             nginx
+    Namespace:        default
+    Status:           Loading...
+    IP:               192.168.49.3
+    URL:             http://192.168.49.3:31851/
+    ```
+    Open your browser and copy the IP address.
+
+You should see a basic test page with a message saying `Welcome to your deployed Nginx!`
+
+### Clean up
+
+Run `make clean` to stop the deployment and remove all its resources.
+
+### Tips and considerations
+
+- You can tune the load balancer service by increasing/decreasing its traffic and testing how it reacts.
+- You can increase the deployment replicas by increasing the value of `replicas` parameter in the `nginx-deployment.yaml` file.
+- You can also add custom health checking rules using a more complex health probe and liveness probe in the pod definitions.
+- You can run the project in a different cluster without problems by simply changing `minikube` by `<your-cluster-ip>` inside the service creation commands in `deploy/manifests/nginx.yaml`. You can usually find this one inside the web console of the cluster you are using.

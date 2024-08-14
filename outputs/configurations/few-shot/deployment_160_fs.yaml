@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+  labels:
+    app: prometheus-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-operator
+  template:
+    metadata:
+      labels:
+        app: prometheus-operator
+    spec:
+      containers:
+      - name: prometheus-operator
+        image: quay.io/prometheus/prometheus-operator:v2.32.0
+        ports:
+        - containerPort: 9090
+          name: prometheus-web
+        - containerPort: 9093
+          name: prometheus-push
+        command:
+        - /bin/prometheus-operator
+        args:
+        - --web.listen-address=0.0.0.0:9090
+        - --storage=tsdb
+        - --tsdb.path=/data/prometheus
+        - --rules-path=/rules
+        - --rule-paths=rule-files
+        - --web.enable-admin-api
+        - --tsdb.enable-client-auth
+        - --tsdb.ca-file=/etc/tls/ca.crt
+        - --tsdb.cert-file=/etc/tls/server.crt
+        - --tsdb.key-file=/etc/tls/server.key
+        resources:
+          requests:
+            cpu: 250m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      - operator: Exists
+        effect: PreferNoSchedule
+      - operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 300
+      imagePullSecrets:
+      - name: prometheusci-imagepullsecret
+      serviceAccountName: prometheus-operator
+      volumeMounts:
+      - name: prometheus-operator-data
+        mountPath: /data/prometheus
+        subPath: prometheus
+      - name: prometheus-rules
+        mountPath: /rules
+        subPath: rule-files
+      - name: tls-secret
+        mountPath: /etc/tls
+      restartPolicy: Always
+      volumes:
+      - name: prometheus-operator-data
+        persistentVolumeClaim:
+          claimName: prometheus-operator-pvc
+      - name: prometheus-rules
+        configMap:
+          name: prometheus-rule-files
+      - name: tls-secret
+        secret:
+          secretName: tls-secret

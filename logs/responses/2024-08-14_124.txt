@@ -1,0 +1,169 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the mxnet-operator with a single replica
+
+In this tutorial, we are going to create and deploy a Kubernetes deployment manifest for the `mxnet-operator`. The operator we are going to deploy is the `mxnet-operator` from the Kubeflow official GitHub repository which is a Kubernetes Operator to install, configure, and manage MXNet and other deep learning frameworks for machine learning tasks.
+
+Here are the steps to deploy the `mxnet-operator` with a single replica:
+
+1. Install kubectl. Kubectl (Kubernetes command-line tool) is required to deploy Kubernetes workloads such as Deployments, Services, etc.
+
+To install kubectl follow the given link: https://kubernetes.io/docs/tasks/tools/Install-kubectl/
+
+2. Create a namespace for the MXNet Operator. We will call it `mxnet-system`:
+
+```yaml
+kubectl create namespace mxnet-system
+```
+
+3. Download the MXNet Operator Helm chart:
+
+```sh
+wget https://raw.githubusercontent.com/kubeflow/mxnet-operator/master/deploy/charts/mxnet-operator/templates/mxnetoperatordeployment.yaml
+```
+
+4. Modify the downloaded `mxnetoperatordeployment.yaml` to specify a Deployment with a single replica. To do this, add the following annotation and change the `replicas` field accordingly.
+
+```yaml
+annotations:
+  kubeflow.org/helm-release: mxnet-operator
+kind: Deployment
+metadata:
+...
+spec:
+ ...
+ replicas: 1
+```
+
+Now your `mxnetoperatordeployment.yaml` should look like this:
+
+```yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mxnet-operator
+  namespace: mxnet-system
+  annotations:
+    kubeflow.org/helm-release: mxnet-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mxnet-operator
+  template:
+    metadata:
+      labels:
+        app: mxnet-operator
+    spec:
+      containers:
+      - name: mxnet-operator
+        image: kubeflow/mxnet-operator:v0.34.0
+        ports:
+        - name: http
+          containerPort: 8080
+        command: ["sh"]
+        args: ["-c"]
+        args: ["/app/start.sh"]
+        volumeMounts:
+        - name: config
+          mountPath: /etc/kubeflow/mxnet-operator
+      volumes:
+      - name: config
+        configMap:
+          name: mxnet-operator-config
+```
+
+5. Create a ConfigMap called `mxnet-operator-config` with MXNet default configurations such as a JupyterHub, HDFS, Spark, etc.
+
+```sh
+kubectl create configmap mxnet-operator-config --from-file=templates/configmap.yaml
+```
+
+Here is an example of a `configmap.yaml` file to create with commonly used deep learning framework configurations:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mxnet-operator-config
+data:
+  jupyterhub.yml: |-
+    kubeflowReplicaCount: 1
+    master:
+      replicas: 1
+    worker:
+      replicas: 1
+  hdfs-site.xml: |-
+    <configuration>
+      <property>
+        <name>dfs.client.block.size</name>
+        <value>134217728</value>
+      </property>
+      <property>
+        <name>dfs.namenode.extra-namenodes</name>
+        <value>
+        ${KUBE_NAMESPACE}-hdfs-secondary-nn
+        </value>
+      </property>
+      <property>
+        <name>dfs.replication</name>
+        <value>3</value>
+      </property>
+    </configuration>
+  spark-defaults.conf: |-
+    spark.driverAllocation.executor.instances   1
+    spark.driverAllocation.webUI.port           8082
+    spark.executor.instances                    3
+    spark.kubernetes.driver.pod.name             mxnet-operator
+    spark.kubernetes.driver.serviceAccountName  mxnet-operator
+    spark.kubernetes.executor.pod.name           mxnet-operator
+    spark.kubernetes.executor.serviceAccountName mxnet-operator
+    spark.kubernetes.executor.limit.memory       "30g"
+    spark.kubernetes.executor.cores              "4"
+```
+
+You can install and customize more deep learning framework configurations based on your requirements. The above example contains some commonly used configurations for JupyterHub, HDFS, and Spark.
+
+6. Create the `mxnetoperatordeployment.yaml` in a directory called `mxnet-operator` in your home folder:
+
+```sh
+mkdir ~/mxnet-operator
+mv mxnetoperatordeployment.yaml ~/mxnet-operator/
+```
+
+7. Deploy the `mxnet-operator` with the created `mxnetoperatordeployment.yaml`:
+
+```sh
+kubectl apply -f ~/mxnet-operator/mxnetoperatordeployment.yaml
+```
+
+After deployment completes, you can check the status of the Deployment:
+
+```sh
+kubectl get deployments mxnet-operator
+```
+
+The output will be similar to the following:
+
+```bash
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE
+mxnet-operator   1/1     1            1          4s
+```
+
+Wait for the `mxnet-operator` pod to be in a `Running` state:
+
+```sh
+kubectl get pods -n mxnet-system | grep mxnet-operator
+```
+
+After the pod is in a `Running` state, you can access the MXNet dashboard by running the following command:
+
+```sh
+kubectl port-forward mxnet-operator-7c8696c777-v8s67 8080:8080
+```
+
+Then open your web browser and navigate to <http://localhost:8080> to access the MXNet Operator dashboard and manage your deep learning workflows.
+
+In this tutorial, we learned how to create and deploy a Kubernetes Deployment for the `mxnet-operator` with a single replica along with HDFS, JupyterHub, and Spark configurations. This setup enables you to create, manage, and scale your deep learning workflows using the MXNet Operator on your Kubernetes cluster. You can now modify the `mxnetoperatordeployment.yaml` and customize even more by adding or removing configurations according to your unique needs in your machine learning projects.

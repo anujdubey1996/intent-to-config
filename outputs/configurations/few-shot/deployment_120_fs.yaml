@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: ecs-system
+  name: my-operator
+  labels:
+    app: my-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-operator
+  template:
+    metadata:
+      labels:
+        app: my-operator
+    spec:
+      serviceAccountName: my-operator-sa
+      containers:
+      - name: my-operator
+        image: <REPLACEMENT_NAME>
+        env:
+        - name: env-var-1
+          value: "value-1"
+        - name: env-var-2
+          value: "value-2"
+        ports:
+        - containerPort: 80
+          name: http

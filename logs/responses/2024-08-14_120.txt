@@ -1,0 +1,37 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a simple web application named "YouthConn Demo" on Kubernetes, exposing it on port 8080.
+
+Given that the application Docker image is "youthconn/demo:latest", named "webapp". The application's expected start command is "npm start".
+
+Assuming the replicas count is 3.
+
+Deployment configuration file:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: youthconn-demo
+  labels:
+    app: youthconn-demo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: youthconn-demo
+  template:
+    metadata:
+      labels:
+        app: youthconn-demo
+    spec:
+      containers:
+      - image: youthconn/demo:latest
+        name: webapp
+        ports:
+        - containerPort: 8080
+        command: ["npm", "start"]
+```
+
+To deploy the application, save the content above to a file, for example, `youthconn-deployment.yaml`, and then apply it using `kubectl apply -f youthconn-deployment.yaml`. This will create the required deployment object in your Kubernetes cluster.

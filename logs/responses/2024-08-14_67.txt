@@ -1,0 +1,68 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create backend Deployment in project-plato Namespace
+Service: Backend service
+Replica count: 3
+Container image: my-backend:1.0.0
+Container port: 8081
+Volume mount
+1. Mount directory as `/app/data` with host path `/data/plato-backend`
+2. create a `config.properties` file at `/app/data/config.properties` with the following data
+```
+database.url=jdbc:mysql://my-database-service.default.svc.cluster.local:3306/mydb
+database.user=myUsername
+database.password=myPassword
+```
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plato-backend-deployment
+  namespace: project-plato
+  labels:
+    app: plato-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: plato-backend
+  template:
+    metadata:
+      labels:
+        app: plato-backend
+    spec:
+      containers:
+      - name: plato-backend
+        image: my-backend:1.0.0
+        ports:
+        - containerPort: 8081
+        volumeMounts:
+        - name: plato-backend-data
+          mountPath: /app/data
+      volumes:
+      - name: plato-backend-data
+        configMap:
+          name: plato-backend-configs
+          items:
+          - key: config.properties
+            path: config.properties
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plato-backend-configs
+  namespace: project-plato
+data:
+  config.properties: |
+    database.url=jdbc:mysql://my-database-service.default.svc.cluster.local:3306/mydb
+    database.user=myUsername
+    database.password=myPassword
+```
+
+This Kubernetes YAML file will create a Deployment named `plato-backend-deployment` with 3 replicas in the `project-plato` namespace, using the `my-backend:1.0.0` image, and exposing port `8081`.
+
+It also creates a ConfigMap named `plato-backend-configs` to store the necessary configuration data and mounts the `config.properties` file to be available at `/app/data/config.properties` inside each container.
+
+Finally, it mounts a volume named `plato-backend-data` on `/app/data` inside each container.

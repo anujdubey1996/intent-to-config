@@ -1,0 +1,50 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Set up a single replica of a MySQL instance using the `mysql:latest` image. Retrieve database configuration details such as root password, user password, database name, and user credentials from a ConfigMap named `app-config`
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-db
+  labels:
+    app: my-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-db
+  template:
+    metadata:
+      labels:
+        app: my-db
+    spec:
+      containers:
+        - name: my-db
+          image: mysql:latest
+          ports:
+            - containerPort: 3306
+          envFrom:
+            - configMapRef:
+                name: app-config
+          volumeMounts:
+            - name: config-volume
+              mountPath: /var/lib/mysql
+              subPath: config.cnf
+          readinessProbe:
+            tcpSocket:
+              port: 3306
+          livenessProbe:
+            tcpSocket:
+              port: 3306
+      volumes:
+        - name: config-volume
+          configMap:
+            name: app-config
+            items:
+              - key: database
+                path: config.cnf
+```
+
+The above YAML file will create a deployment that manages a single replica of a MySQL instance using the `mysql:latest` image. The configuration details for the database, user credentials, etc., are retrieved from a ConfigMap named `app-config`. Specifically, the configuration file (`config.cnf`) is mounted at `/var/lib/mysql` within the container, allowing the MySQL server to be configured based on the details in the ConfigMap. The `readinessProbe` and `livenessProbe` ensure that the MySQL container is ready and running, respectively, by checking the connection to the MySQL instance on port 3306.

@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azure-keyvault-secret-operator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: azure-keyvault-secret-operator
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: azure-keyvault-secret-operator
+    spec:
+      containers:
+      - name: azure-keyvault-secret-operator
+        image: docker.io/microsoft/azure-vault-key-secrets-controller:latest
+        env:
+        - name: ARM_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: azure-keyvault-client-id
+              key: client-id
+        - name: ARM_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: azure-keyvault-client-secret
+              key: client-secret
+        - name: ARM_SUBSCRIPTION_ID
+          valueFrom:
+            secretKeyRef:
+              name: azure-keyvault-subscription-id
+              key: subscription-id
+        - name: ARM_RESOURCE_GROUP_NAME
+          valueFrom:
+            secretKeyRef:
+              name: azure-keyvault-resource-group-name
+              key: resource-group-name
+        - name: ARM_KEY_VAULT_NAME
+          valueFrom:
+            secretKeyRef:
+              name: azure-keyvault-name
+              key: key-vault-name
+        - name: ARM_AAD_APP_ID
+          valueFrom:
+            secretKeyRef:
+              name: azure-keyvault-app-id
+              key: app-id
+        - name: ARM_TENANT_ID
+          valueFrom:
+            secretKeyRef:
+              name: azure-keyvault-tenant-id
+              key: tenant-id
+      ports:
+      - name: http
+        containerPort: 8080
+      - name: https
+        containerPort: 8443
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+        requests:
+          memory: "64Mi"
+          cpu: "250m"

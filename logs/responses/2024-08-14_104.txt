@@ -1,0 +1,47 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration for a Redis service in the demo-voting-app with a single replica.
+
+Name: `redis-deployment.yaml`
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: demo-voting-app
+    tier: redis
+specificator: demo-voting-app/redis
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-voting-app
+      tier: redis
+
+  template:
+    metadata:
+      labels:
+        app: demo-voting-app
+        tier: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:latest
+        ports:
+        - name: redis
+          containerPort: 6379
+        env:
+        - name: ALLOW_EMPTY_PASSWORD
+          value: "yes"
+      restartPolicy: Always
+```
+
+To create the Kubernetes Deployment using the provided intent, save the content to a file named `redis-deployment.yaml` and apply the configuration by running:
+
+```sh
+kubectl apply -f redis-deployment.yaml
+```

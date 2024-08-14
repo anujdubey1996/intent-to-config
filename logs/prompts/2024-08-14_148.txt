@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Seldon Controller Manager with a single replica, using custom labels and annotations for identification and monitoring.

@@ -1,0 +1,65 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration with dynamic service names, rolling update strategy, health probes, and resource management.
+
+Deployment Configuration:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-deployment
+  labels:
+    app: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-app-container
+        image: my-app-image:v1
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: "2"
+            memory: "512Mi"
+          requests:
+            cpu: "1"
+            memory: "256Mi"
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 1
+        type: RollingUpdate
+      terminationGracePeriodSeconds: 30
+```
+
+This configuration creates a Kubernetes deployment named `my-app-deployment` for a three-replica pod set, each pod running the `my-app-image:v1` container on port 8080. The deployment has dynamic service names by not specifying any service selectors.
+
+The deployment includes rolling update strategy for the deployment and rolling update for each individual pod update, with a max surge of 1 allowing up to one new pod to be created before any existing pods are deleted or terminated, and a max unavailable of 1 allowing one existing pod to be terminated before any new pod is created for rolling-updates.
+
+It also includes readiness and liveness probes to check the status of the container, with a liveness probe initial delay of 10 seconds before checking the status.
+
+Lastly, it includes resource management for the container, with limit and request configurations for CPU and Memory.

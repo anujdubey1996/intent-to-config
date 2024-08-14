@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared-tunnel
+  labels:
+    app: cloudflared-tunnel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudflared-tunnel
+  template:
+    metadata:
+      labels:
+        app: cloudflared-tunnel
+    spec:
+      containers:
+      - name: cloudflared
+        image: cloudflare/cloudflared:latest
+        ports:
+        - containerPort: 443
+          name: tunnel
+        volumeMounts:
+        - name: cloudflared-conf
+          mountPath: /etc/cloudflared
+        - name: cloudflared-creds
+          mountPath: /etc/cloudflared/credentials.json
+      volumes:
+      - name: cloudflared-conf
+        configMap:
+          name: cloudflared-config
+      - name: cloudflared-creds
+        secret:
+          secretName: cloudflared-credentials
+      readinessProbe:
+        tcpSocket:
+          port: 443
+      livenessProbe:
+        tcpSocket:
+          port: 443

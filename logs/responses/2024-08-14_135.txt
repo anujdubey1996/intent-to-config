@@ -1,0 +1,27 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single replica of the `order-service` application within the `default` namespace
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: order-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+      - name: order-service
+        image: registry.example.com/order-service:v1
+        ports:
+        - containerPort: 8080
+```

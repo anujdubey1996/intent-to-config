@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Kubernetes configuration for an auth-server application. It includes metadata, specifications, and container configurations with placeholders for dynamic values.

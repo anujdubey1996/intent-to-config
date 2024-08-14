@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the auth-deploy service with two replicas, configured to use the shafaqzehra/backend:latest image. Ensure the deployment is set up with the necessary environment variables and is running the yarn start command.

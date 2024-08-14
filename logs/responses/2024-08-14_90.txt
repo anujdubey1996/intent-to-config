@@ -1,0 +1,87 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy and manage the auth-server application using Kubernetes in a customizable and scalable manner.
+
+Files to create:
+1. Deployment.yaml (or pods.yaml for an alternative approach without a replicaset)
+2. Service.yaml
+
+Assumptions:
+- The source code of the auth-server resides in the `auth-server` directory within the `src` folder.
+- The `auth-server` is a containerized application with a valid Dockerfile and a build script (e.g., `Makefile`).
+- The `auth-server` exposes an HTTP API on port 3000.
+- The `auth-server` supports environment variables to define the number of replicas, the service port, and the service type as ClusterIP, LoadBalancer or NodePort.
+
+Deployment.yaml file:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server-deployment
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: auth-server
+  template:
+    metadata:
+      labels:
+        app: auth-server
+    spec:
+      containers:
+        - name: auth-server
+          image: "{{ .Values.imageName }}:{{ .Values.imageVersion }}"
+          ports:
+            - name: http
+              containerPort: {{ .Values.servicePort }}
+          env:
+            - name: SERVICE_TYPE
+              value: {{ .Values.serviceType }}
+            - name: NUM_REPLICAS
+              value: {{ .Values.replicas }}
+            - name: SERVICE_PORT
+              value: {{ .Values.servicePort }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-server-service
+spec:
+  selector:
+    app: auth-server
+  type: {{ .Values.serviceType }}
+  ports:
+    - name: http
+      port: 3000
+      targetPort: {{ .Values.servicePort }}"
+
+```
+
+For the `.Values` object, you have to create a separate configuration file called `values.yaml` with customization settings:
+
+```yaml
+replicas: 3
+imageName: auth-server-container
+imageVersion: latest
+servicePort: 80
+serviceType: ClusterIP
+```
+
+This setup will deploy the `auth-server` application as a Kubernetes deployment and create a service for it using the specified configuration values.
+
+**Alternative approach:** If you'd rather use Kubernetes pods instead of deployments, you can modify the `Deployment.yaml` file to `Pods.yaml` by changing the `kind` from `Deployment` to `Pods`. Just be aware that pods lack self-healing characteristics like replica scaling and rolling updates.
+
+```yaml
+apiVersion: v1
+kind: Pods
+...
+```
+
+In both cases, deploy and manage your `auth-server` application using the following command:
+
+```sh
+kubectl apply -f path/to/your/manifest.yaml
+```

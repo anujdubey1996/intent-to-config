@@ -1,0 +1,9 @@
+auth-server:
+  replicas: 3
+  image: quay.io/poc-io/auth-server:latest
+  port: 8080
+  hostPort: 30008
+  env:
+    SEPARATOR: |
+      ,
+      :=

@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment for a Fullstack API application using Helm templates. This configuration sets up the deployment with dynamic values for metadata, replicas, container details, environment variables, and more.

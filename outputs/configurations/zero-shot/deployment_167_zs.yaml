@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consul
+  labels:
+    app: consul
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consul
+  template:
+    metadata:
+      labels:
+        app: consul
+    spec:
+      containers:
+      - name: consul
+        image: hashicorp/consul
+        ports:
+        - name: http
+          containerPort: 8500
+          protocol: TCP
+        - name: serf-lan
+          containerPort: 8301
+          protocol: TCP
+        - name: lan-ssls
+          containerPort: 8346
+          protocol: TCP
+      resources:
+        requests:
+          cpu: 250m
+          memory: 512Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
+      imagePullSecrets:
+      - name: registry-secret
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+        name: node-selector-istio-injection
+      readinessProbe:
+        tcpSocket:
+          port: http
+      livenessProbe:
+        tcpSocket:
+          port: http
+      containers:
+      - name: prometheus
+        image: prom/node-exporter
+        command: ["--collector=all", "--path=/metrics", "--stash.file=/tmp/consul-exporter"]
+        securityContext:
+          privileged: true
+        env:
+        - name: NODE_EXPORTER_UPGRADE
+          value: "1.2.1"
+        ports:
+        - containerPort: 9100
+          name: prom-http
+        volumeMounts:
+        - name: consul-exporter-config
+          mountPath: /tmp/consul-exporter
+      volumes:
+      - name: consul-exporter-config
+        configMap:
+          name: exporter-config

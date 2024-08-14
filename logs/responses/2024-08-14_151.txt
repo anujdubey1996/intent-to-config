@@ -1,0 +1,28 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single replica of the "demoapp-puma" application using the container image. 
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demoapp-puma-deployment
+  labels:
+    app: demoapp-puma
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demoapp-puma
+  template:
+    metadata:
+      labels:
+        app: demoapp-puma
+    spec:
+      containers:
+        - name: demoapp-puma
+          image: your_container_registry_url/demoapp-puma:latest
+          ports:
+            - containerPort: 3000
+```

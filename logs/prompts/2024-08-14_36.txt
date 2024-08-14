@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the azure-keyvault-secret-operator in the default namespace with a single replica, using the Recreate strategy. The deployment includes environment variables for logging and reconciliation settings, and specifies resource limits for memory and CPU.

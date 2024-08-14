@@ -1,0 +1,123 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy multiple Kubernetes applications for Airbyte components, specifying resource limits and configurations for each deployment.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-deployment
+  labels:
+    app: airbyte
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: airbyte
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: airbyte
+        tier: backend
+    spec:
+      containers:
+      - name: airbyte-backend
+        image: airbyte/airbyte:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-api-deployment
+  labels:
+    app: airbyte
+    tier: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: airbyte
+      tier: api
+  template:
+    metadata:
+      labels:
+        app: airbyte
+        tier: api
+    spec:
+      containers:
+      - name: airbyte-api
+        image: airbyte/airbyte-api:latest
+        ports:
+        - containerPort: 3000
+        resources:
+          limits:
+            memory: "64Mi"
+            cpu: "200m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-web-deployment
+  labels:
+    app: airbyte
+    tier: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: airbyte
+      tier: web
+  template:
+    metadata:
+      labels:
+        app: airbyte
+        tier: web
+    spec:
+      containers:
+      - name: airbyte-web
+        image: airbyte/airbyte-web:latest
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+```
+
+This configuration file creates three Kubernetes deployments for the Airbyte components:
+
+1. `airbyte-deployment`: a deployment for the Airbyte backend services.
+2. `airbyte-api-deployment`: a deployment for the Airbyte API services.
+3. `airbyte-web-deployment`: a deployment for the Airbyte web interface services.
+
+Each deployment has a specified number of replicas, resource limits for memory and CPU, readiness probes, and liveness probes to ensure the health and availability of the applications.

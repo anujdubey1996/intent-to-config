@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-operator
+  template:
+    metadata:
+      labels:
+        app: prometheus-operator
+    spec:
+      containers:
+      - name: prom-operator
+        image: prom/prometheus-operator
+        env:
+        - name: PROMETHEUS_OPERATOR_STORAGE_CLASS
+          value: my-storage-class
+      volumeClaimTemplates:
+      - metadata:
+          name: prometheus-pvc
+          labels:
+            app: prometheus
+          annotations:
+            volume.beta.kubernetes.io/storage-class: my-storage-class
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 10Gi
+      - metadata:
+          name: alertmanager-pvc
+          labels:
+            app: alertmanager
+          annotations:
+            volume.beta.kubernetes.io/storage-class: my-storage-class
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 5Gi
+      serviceAccountName: prometheus-operator
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      service:
+        clusterIP: None

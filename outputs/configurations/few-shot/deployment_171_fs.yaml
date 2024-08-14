@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server
+  labels:
+    app: auth-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-server
+  template:
+    metadata:
+      labels:
+        app: auth-server
+    spec:
+      containers:
+      - name: auth-server
+        image: "your_auth_server_image"
+        ports:
+        - containerPort: 8080
+          name: auth-server
+        env:
+        - name: DATABASE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: auth-secret
+              key: username
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: auth-secret
+              key: password

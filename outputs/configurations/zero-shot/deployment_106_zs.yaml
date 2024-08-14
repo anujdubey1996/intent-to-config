@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sinks
+  labels:
+    app: sinks
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sinks
+  template:
+    metadata:
+      labels:
+        app: sinks
+    spec:
+      containers:
+        - name: sinks
+          image: myregistry.com/sinks:v1.0.1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 9090
+              name: logging
+          envFrom:
+            - secretRef:
+                name: sinks-config
+          env:
+            - name: DB_USERNAME
+              value: ${DB_USERNAME_ENV_VAR}
+            - name: DB_PASSWORD
+              value: ${DB_PASSWORD_ENV_VAR}
+            - name: LOG_LEVEL
+              value: ${LOG_LEVEL_ENV_VAR}
+      restartPolicy: Always
+      serviceAccountName: sinks-deployment
+      tolerations:
+        - operator: Exists
+          effects:
+            - NoSchedule
+            - PreferNoExecute
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sinks
+  labels:
+    app: sinks
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+    - name: logging
+      port: 91
+      targetPort: 9090
+  selector:
+    app: sinks

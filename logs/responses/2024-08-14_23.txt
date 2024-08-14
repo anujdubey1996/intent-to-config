@@ -1,0 +1,50 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy an Nginx container with a continuous health check loop using the following Kubernetes Deployment configuration. Ensure that the deployment is properly labeled and configured.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-nginx-deployment
+  labels:
+    app: nginx
+    tier: frontend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: nginx
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: nginx
+        tier: frontend
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.14.2
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+          terminationGracePeriodSeconds: 10
+```
+
+This Deployment configuration deploys an Nginx application with 3 replicas, utilizing the RollingUpdate strategy for updates. It ensures the health of the pods by setting up a continuous liveness and readiness probe to check that the application is responding. The labels are properly applied to the Deployment, Selector, and Pod templates to ensure proper selectors match correctly.
+
+The Deployment is named `my-nginx-deployment`, and it's labeled with "app=nginx" and "tier=frontend". The liveness probe checks the application's health by sending an HTTP request to `/` on port 80, just like the readiness probe. The configuration also includes settings for the initial delay before readiness checks start after a pod is instantiated and the grace period to allow containers to shut down before they are forcibly terminated.

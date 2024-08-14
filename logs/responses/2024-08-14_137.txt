@@ -1,0 +1,35 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Configure a single replica of the `customer` application using the Docker image `chmatvey/customer:latest` and set an environment variable `SPRING_PROFILES_ACTIVE` with the value `kube`
+
+Here's the `customer-deployment.yaml` file:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer
+  template:
+    metadata:
+      labels:
+        app: customer
+    spec:
+      containers:
+      - name: customer
+        image: chmatvey/customer:latest
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: kube
+```
+
+You can apply the configuration using the following `kubectl` command:
+
+```bash
+kubectl apply -f customer-deployment.yaml
+```

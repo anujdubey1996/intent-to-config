@@ -1,0 +1,2 @@
+
+Create a Kubernetes deployment workload configuration file for a Java microservice running on port 8080.

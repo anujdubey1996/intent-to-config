@@ -1,0 +1,35 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the cert-controller in a Kubernetes cluster when the certController is to be created and the certManager is not enabled for the webhook
+
+Name: cert-controller-deployment.yaml
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-controller
+  labels:
+    app: cert-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cert-controller
+  template:
+    metadata:
+      labels:
+        app: cert-controller
+    spec:
+      containers:
+      - name: cert-controller
+        image: <cert-controller-image>
+        ports:
+        - containerPort: 443
+          name: https
+          protocol: TCP
+        env:
+        - name: WEBHOOK_SKIPPERS
+          value: "certmanagers.k8s.io"
+```

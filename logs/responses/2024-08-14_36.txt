@@ -1,0 +1,47 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the azure-keyvault-secret-operator in the default namespace with a single replica, using the Recreate strategy. The deployment includes environment variables for logging and reconciliation settings, and specifies resource limits for memory and CPU.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azure-keyvault-secret-operator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: azure-keyvault-secret-operator
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: azure-keyvault-secret-operator
+    spec:
+      serviceAccountName: azure-keyvault-secret-operator-service-account
+      containers:
+      - name: azure-keyvault-secret-operator
+        image: docker.io/redhat-openshift-azure/azure-keyvault-secret-operator:v0.8.0
+        envFrom:
+        - configMapRef:
+            name: azure-keyvault-secret-operator-config
+        env:
+        - name: KV_RECONCILIATION_MODE
+          value: "once"
+        - name: KV_OPERATOR_LOG_LEVEL
+          value: "info"
+        - name: KV_LOG_DRIVER
+          value: "stderr"
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+          requests:
+            memory: "128Mi"
+            cpu: "500m"
+```
+
+This deployment configuration file creates a new Kubernetes deployment called `azure-keyvault-secret-operator` in the `default` namespace. It has a single replica and uses the Recreate strategy to manage updates. The deployment includes environment variables for logging and reconciliation settings, as specified in the intent. It also sets resource limits for memory and CPU to help manage the resource usage of the operator.

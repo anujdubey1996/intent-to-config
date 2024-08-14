@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single instance of the Telegraf monitoring agent in a Kubernetes environment using specific configuration settings, environment variables, and resource constraints.

@@ -1,0 +1,40 @@
+appName: MyApp
+container:
+  image: pm2/pm2:latest
+  env:
+    NODE_ENV: production
+    PORT: "3000"
+    PM2_APP_NAME: "{{ .Values.appName }}"
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+nodeSelector:
+  key: "workload"
+  value: "app"
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+    - labelSelector:
+        matchExpressions:
+        - key: "app"
+          operator: In
+          values:
+          - "MyApp"
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preferenceNonScheduling:
+          matchExpressions:
+          - key: "kubernetes.io/hostname"
+            operator: In
+            values:
+            - example-worker01
+            - example-worker02
+---
+podAnnotations:
+  # Example: Set custom annotations to the pod such as owner name, service or project
+  # This should be dynamically generated using the Helm installation `--set` parameters or CI/CD pipeline variables.
+  # For brevity, this example does not include template-based annotations.

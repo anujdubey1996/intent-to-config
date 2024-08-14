@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration for the bibbi-backend-api with specified settings for replicas, container image, environment variables, resource requests and limits, and health checks.

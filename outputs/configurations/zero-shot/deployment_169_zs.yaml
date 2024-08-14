@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server
+  labels:
+    app: auth-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: auth-server
+  template:
+    metadata:
+      labels:
+        app: auth-server
+    spec:
+      containers:
+      - name: auth-server
+        image: your-auth-server-image:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: APP_ENV
+          value: production
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "500m"
+            memory: "256Mi"
+      imagePullSecrets:
+      - name: your-registry-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-server
+  labels:
+    app: auth-server
+spec:
+  selector:
+    app: auth-server
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer

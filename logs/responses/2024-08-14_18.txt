@@ -1,0 +1,93 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a configurable application with multiple replicas and optional update strategies. The deployment includes settings for security, image management, environment configuration through secrets, and health checks. It also supports resource allocation, volume mounting, node selection, affinity, and tolerations based on provided values, ensuring the application is properly managed and scaled according to the deployment's requirements
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-app
+  labels:
+    app: example
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: example
+    spec:
+      containers:
+      - name: example-app
+        image: <IMAGE_REPO>:<TAG>
+        ports:
+        - containerPort: 80
+        envFrom:
+        - secretRef:
+            name: example-app-config
+        volumeMounts:
+        - name: example-app-volume
+          mountPath: /var/example-app/config
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 1000
+        resources:
+          requests:
+            cpu: 500m
+            memory: "128Mi"
+          limits:
+            cpu: 1
+            memory: "256Mi"
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20
+      volumes:
+      - name: example-app-volume
+        configMap:
+          name: example-app-config
+      nodeSelector:
+        app: example-node
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - example-node
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - example-node
+              topologyKey: kubernetes.io/hostname
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+        key: node-role.kubernetes.io/master
+```
+
+For easier usage, you can replace the `<IMAGE_REPO>:<TAG>` with your desired container image repository and tag. Update the `replicas` value to specify the desired number of replicas. Set the `nodeSelector` to match your required nodes. Configure the required pod affinity and tolerations according to your needs. Provide necessary environment configuration through the `example-app-config` ConfigMap or create a new one. Ensure you have defined appropriate resources, such as CPU and memory limits, based on your application requirements. Update the readinessProbe and livenessProbe as per your application's health check requirements.

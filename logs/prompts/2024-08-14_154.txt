@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single replica of the "secondary-container" application using container image from Azure Container Registry with a revision history limit of 3 to retain a history of up to three previous versions.

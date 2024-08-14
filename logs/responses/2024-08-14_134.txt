@@ -1,0 +1,34 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Configure a Kubernetes Deployment for a Zookeeper Operator. The deployment runs a single replica of the zookeeper-operator container, which is used to manage Zookeeper clusters.
+
+Here is a simplified example of a YAML file that can be used as a starting point:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zookeeper-operator
+  labels:
+    app: zookeeper-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper-operator
+  template:
+    metadata:
+      labels:
+        app: zookeeper-operator
+    spec:
+      containers:
+      - name: zookeeper-operator
+        image: zookeeper-operator:latest
+        ports:
+        - containerPort: 2181
+        - containerPort: 2888
+        - containerPort: 3888
+```
+
+Replace the image name with the actual image you are using for your zookeeper operator. Make sure you have created a corresponding `Service` or `Ingress` to access the exposed ports.

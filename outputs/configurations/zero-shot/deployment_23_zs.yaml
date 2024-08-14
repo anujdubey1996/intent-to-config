@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k6-deployment
+  labels:
+    app: k6
+    environment: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k6
+  template:
+    metadata:
+      labels:
+        app: k6
+    spec:
+      containers:
+      - name: k6
+        image: github.com/k6/k6:latest
+        ports:
+        - containerPort: 3003
+        command: ["k6", "run", "--vuv", "50", "--duration", "30s", "./k6-test.js"]
+        env:
+        - name: K6_NET_HOST_PORT
+          value: "0"
+        - name: K6_GRPC_HOST_PORT
+          value: "0"

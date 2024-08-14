@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: graphql-example
+  name: graphql-server-v1
+  labels:
+    app: graphql-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: graphql-server
+  template:
+    metadata:
+      labels:
+        app: graphql-server
+    spec:
+      containers:
+      - name: graphql-server
+        image: graphql:v1
+        ports:
+        - containerPort: 4000
+        env:
+        - name: GRAPHQL_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: graphql-api-keys
+              key: v1
+        readinessProbe:
+          httpGet:
+            path: /healthStatus
+            port: 4000
+        livenessProbe:
+          httpGet:
+            path: /healthStatus
+            port: 4000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: graphql-example
+  name: graphql-server-v2
+  labels:
+    app: graphql-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: graphql-server
+  template:
+    metadata:
+      labels:
+        app: graphql-server
+    spec:
+      containers:
+      - name: graphql-server
+        image: graphql:v2
+        ports:
+        - containerPort: 4001
+        env:
+        - name: GRAPHQL_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: graphql-api-keys
+              key: v2
+        readinessProbe:
+          httpGet:
+            path: /healthStatus
+            port: 4001
+        livenessProbe:
+          httpGet:
+            path: /healthStatus
+            port: 4001

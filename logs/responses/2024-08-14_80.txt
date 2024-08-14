@@ -1,0 +1,135 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Prometheus Operator with Helm Chart and various options for image configuration, resource management, network settings, security features.
+
+File: `prometheus-operator-deployment.yaml`
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+  namespace: monitoring
+  labels:
+    app: prometheus-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-operator
+  template:
+    metadata:
+      labels:
+        app: prometheus-operator
+    spec:
+      containers:
+      - name: prometheus-operator
+        image: quay.io/prometheus/kubernetes-operators:v2.24.0
+        ports:
+        - containerPort: 9090
+          name: web
+          protocol: TCP
+        - containerPort: 9093
+          name: tls-web
+          protocol: TCP
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            allowedCapabilities:
+              - NET_BIND_SERVICE
+              - NET_BIND_SERVICE_PORT_DISCOVERY
+        env:
+        - name: RBAC_CREATED_CLUSTER_ROLE_NAME
+          value: prometheus-operated-ClusterRole
+        volumeMounts:
+        - name: prometheus-prometheus-rules
+          mountPath: /prometheus/prometheus/remote_write/0.0.0.0/rules
+          readOnly: true
+        - name: prometheus-service-account-token
+          secretName: kube-api-access-${KUBERNETES_NAMESPACE}
+          readOnly: true
+        - name: prometheus-operated-prometheus-service
+          configMapName: prometheus-operated-prometheus-config
+        - name: prometheus-operated-alertsmanager-service
+          configMapName: prometheus-operated-alertsmanager-config
+      volumes:
+      - name: prometheus-prometheus-rules
+        configMap:
+          name: prometheus-prometheus-rules-v2.24.0
+      - name: prometheus-service-account-token
+        secret:
+          secretName: kube-api-access-${KUBERNETES_NAMESPACE}
+      - name: prometheus-operated-prometheus-config
+        configMap:
+          name: prometheus-operated-prometheus-config
+      - name: prometheus-operated-alertsmanager-config
+        configMap:
+          name: prometheus-operated-alertsmanager-config
+      serviceAccountName: prometheus-operated
+      serviceAccount: prometheus
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+        tolerationSeconds: 300
+      - operator: Exists
+        effect: PreferNoSchedule
+        tolerationSeconds: 300
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: PreferNoSchedule
+      securityContext:
+       fsGroup: 1000
+        runAsUser: 1000
+        supplementalGroups:
+        - 1000
+      resources:
+        limits:
+          cpu: 2
+          memory: "512Mi"
+        requests:
+          cpu: 1
+          memory: "256Mi"
+  strategy:
+    type: Recreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-operator
+  namespace: monitoring
+spec:
+  clusterIP: None
+  type: ExternalName
+  externalName: prometheus-operator.${KUBERNETES_NAMESPACE}.svc.cluster.local
+
+---
+apiVersion: kubernetes.io/v1
+kind: ConfigMap
+metadata:
+  name: prometheus-prometheus-config
+  namespace: monitoring
+data:
+  ruleFiles: |-
+    rules.yml
+    notifications.yml
+    alerts.yml
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kube-api-access-${KUBERNETES_NAMESPACE}
+  namespace: monitoring
+data:
+  kubeapiaccess: |
+    {"auth" : {
+      "kubernetes" : {
+        "clientCertificateData" : ${SECRET_K8S_CERT},
+        "clientKeyData" : ${SECRET_K8S_KEY},
+        "serviceAccountName" : "prometheus"
+      }
+    }}
+```

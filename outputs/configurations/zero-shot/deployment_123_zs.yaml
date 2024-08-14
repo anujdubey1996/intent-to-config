@@ -1,0 +1,6 @@
+replicaCount: 3
+deployment:
+  name: my-microservice-deployment
+  labels:
+    app: my-microservice
+    release: my-microservice

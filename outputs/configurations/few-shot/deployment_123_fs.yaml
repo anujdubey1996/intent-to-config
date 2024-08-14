@@ -1,0 +1,14 @@
+replicaCount: 3
+
+app:
+  name: my-microservice # Change this to your service's name
+
+container:
+  image: my-registry/my-microservice:latest
+
+  env:
+      variable1: value1
+      variable2: value2
+
+  imagePullSecrets:
+    - name: my-registry-secret

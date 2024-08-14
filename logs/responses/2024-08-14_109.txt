@@ -1,0 +1,66 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Define a Kubernetes deployment for Cloudflare's cloudflared tunnel, configured with liveness probes and volume mounts for configuration and credentials.
+
+Name: cloudflared-tunnel
+
+Description: Kubernetes deployment for Cloudflare's cloudflared tunnel.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared-tunnel
+  labels:
+    app: cloudflared-tunnel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudflared-tunnel
+  template:
+    metadata:
+      labels:
+        app: cloudflared-tunnel
+    spec:
+      containers:
+      - name: cloudflared-tunnel
+        image: cloudflare/cloudflared:latest
+        ports:
+        - name: cloudflare
+          containerPort: 80 # For your custom service definition, change this to the port you want to use
+        env:
+        - name: TUNNEL_ID
+          valueFrom:
+            secretKeyRef:
+              name: cloudflared-tunnel-credentials
+              key: tunnel-id
+        - name: TUNNEL_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: cloudflared-tunnel-credentials
+              key: tunnel-api-key
+        livenessProbe:
+          httpGet:
+            path: /probe
+            port: 8080
+            scheme: HTTP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+            scheme: HTTP
+        volumeMounts:
+        - name: cloudflared-config
+          mountPath: /etc/cloudflared
+        - name: cloudflared-credentials
+          mountPath: /etc/cloudflared/ credentials
+      volumes:
+        - name: cloudflared-config
+          configMap:
+            name: cloudflared-config
+        - name: cloudflared-credentials
+          secret:
+            secretName: cloudflared-tunnel-credentials
+```

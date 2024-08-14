@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apim
+  namespace: wso2
+  labels:
+    app: apim
+    tier: backend
+    owner: platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: apim
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: apim
+        tier: backend
+    spec:
+      containers:
+      - name: apim
+        image: wso2/product-apim:4.2.2
+        ports:
+        - containerPort: 8243
+        env:
+        - name: WSO2_APIM_MASTER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: apim-master-key
+              key: master-key
+        - name: WSO2_STRUTS_PROPERTIES_JARS
+          value: /wso2/apim-4.2.2/wso2-struts2-plugin-jar-cache/
+        - name: WSO2_APIM_REGISTRY_HOST
+          value: registry.example.com
+        - name: WSO2_APIM_REGISTRY_PORT
+          value: "5000"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8243
+          initialDelaySeconds: 60
+          periodSeconds: 15
+      imagePullSecrets:
+      - name: registry-secret

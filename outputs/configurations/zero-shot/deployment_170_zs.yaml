@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server
+  labels:
+    app: auth-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: auth-server
+  template:
+    metadata:
+      labels:
+        app: auth-server
+    spec:
+      containers:
+      - name: auth-server
+        image: node:14-alpine
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: auth-server-config
+        volumeMounts:
+        - name: db-volume
+          mountPath: /app/data
+      volumes:
+      - name: db-volume
+        nfs:
+          path: $(PWD)/data
+          server: $(NFS_SERVER)
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  scaleTargetRef:
+    kind: Deployment
+    name: auth-server
+    APIVersion: apps/v1
+    metadata:
+      annotations:
+        autoscaling.kubernetes.io/hpa-type: "GitOps"
+        autoscaling.kubernetes.io/external-trigger: "http://autoscaler-webhook.example.com"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-server-config
+data:
+  MONGO_URI: "mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}/${DB_NAME}"

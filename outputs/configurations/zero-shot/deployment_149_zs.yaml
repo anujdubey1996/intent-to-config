@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-controller
+  labels:
+    app: cert-controller
+spec:
+  selector:
+    matchLabels:
+      app: cert-controller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cert-controller
+    spec:
+      containers:
+      - name: cert-controller
+        image: <container-image>
+      # Add the following condition if use-cert-controller is set to true in values.yaml
+      containers:
+      - name: cert-controller
+        image: <container-image>
+        env:
+        - name: USE_CERT_CONTROLLER
+          valueFrom:
+            configMapKeyRef:
+              name: values
+              key: use-cert-controller
+        # Add your volume mount for the values.yaml
+        volumeMounts:
+        - name: values-volume
+          mountPath: /etc/values.yaml
+        # Add your configmap for values.yaml
+      volumes:
+      - name: values-volume
+        configMap:
+          name: values

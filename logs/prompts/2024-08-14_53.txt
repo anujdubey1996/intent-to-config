@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy multiple Kubernetes applications for Airbyte components, specifying resource limits and configurations for each deployment.

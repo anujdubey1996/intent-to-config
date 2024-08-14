@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy and manage the auth-server application using Kubernetes in a customizable and scalable manner.

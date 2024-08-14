@@ -1,0 +1,38 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Kubernetes operator in the ecs-system namespace with a specific service account and environment variables. The deployment configuration uses a placeholder for the image name, which should be replaced with the actual image name when deploying.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: ecs-system
+  name: my-operator
+  labels:
+    app: my-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-operator
+  template:
+    metadata:
+      labels:
+        app: my-operator
+    spec:
+      serviceAccountName: my-operator-sa
+      containers:
+      - name: my-operator
+        image: <REPLACEMENT_NAME>
+        env:
+        - name: env-var-1
+          value: "value-1"
+        - name: env-var-2
+          value: "value-2"
+        ports:
+        - containerPort: 80
+          name: http
+```
+
+Replace the `<REPLACEMENT_NAME>` placeholder with the actual image name before deploying this configuration.

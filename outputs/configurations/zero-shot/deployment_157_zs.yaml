@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-session-store
+  labels:
+    app: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+      tier: redis
+  template:
+    metadata:
+      labels:
+        app: my-app
+        tier: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:latest
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - name: persistent-volum
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-password
+              key: password
+        - name: REDIS_SENTINEL_MASTER_NAME
+          value: sentinel-master
+      volumes:
+      - name: persistent-volume
+        persistentVolumeClaim:
+          claimName: redis-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  labels:
+    app: my-app
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 40Gi

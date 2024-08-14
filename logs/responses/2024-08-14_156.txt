@@ -1,0 +1,54 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the "k6loadgenerator" application to run performance tests using a single replica
+Pod with 1 CPU, 1Gi Memory, and an environment variable for the number of tests to run.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k6loadgenerator
+  labels:
+    app: k6loadgenerator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k6loadgenerator
+      environment: staging
+  template:
+    metadata:
+      labels:
+        app: k6loadgenerator
+        environment: staging
+    spec:
+      containers:
+      - name: k6loadgenerator
+        image: loadimpact/k6:latest
+        env:
+        - name: VU
+          value: "200" # The number of virtual users for the performance test
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+        ports:
+        - containerPort: 8001 # k6 server port
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: k6loadgenerator-service
+spec:
+  selector:
+    app: k6loadgenerator
+  type: ClusterIP
+  ports:
+    - port: 8001
+      targetPort: 8001
+```
+
+This YAML configuration deploys a Kubernetes Deployment named "k6loadgenerator" running a single replica with 1 CPU and 1Gi of memory. The Deployment mounts an environment variable "VU" with a default value of "200" for the number of virtual users in the performance test.
+
+A ClusterIP Service is also created to expose the deployed Deployment. The service port is shared with the container port (8001) specified in the Deployment container.

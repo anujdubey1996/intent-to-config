@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Configure and deploy site-deployment with zero replicas, specifying container details and exposing a port.

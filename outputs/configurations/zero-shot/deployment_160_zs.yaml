@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+  labels:
+    app: prometheus-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-operator
+  template:
+    metadata:
+      labels:
+        app: prometheus-operator
+    spec:
+      containers:
+      - name: prometheus-operator
+        image: quay.io/prometheus-operator-19/prometheus-kube-scheduler-config:v6.2.0
+        command: ["/bin/prometheus-operator", "--config", "--storageClass", "prom-storage"]
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+          requests:
+            cpu: "500m"
+            memory: "256Mi"
+      imagePullSecrets:
+        - name: regcred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-operator
+spec:
+  selector:
+    app: prometheus-operator
+  port:
+    name: https
+    targetPort: 9090
+    protocol: TCP
+    nodePort: 31000
+  type: ClusterIP
+  clusterIP: None
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: quay.io/prometheus/prometheus:v2.31.3
+        command: ["/prometheus", "--config", "./secrets/prometheus.yaml", "--storageClass", "prom-storage"]
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+      imagePullSecrets:
+        - name: regcred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+spec:
+  selector:
+    app: prometheus
+  port:
+    name: http
+    targetPort: 9090
+    protocol: TCP
+    nodePort: 30000
+  type: ClusterIP
+  clusterIP: None
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+      - name: alertmanager
+        image: quay.io/prometheus/alertmanager:v0.21.0
+        command: ["/alertmanager", "--config", "./secrets/alertmanager.yaml"]
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+      imagePullSecrets:
+        - name: regcred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+spec:
+  selector:
+    app: alertmanager
+  port:
+    name: alertmanager
+    targetPort: 9093
+    protocol: TCP
+    nodePort: 32000
+  type: ClusterIP
+  clusterIP: None

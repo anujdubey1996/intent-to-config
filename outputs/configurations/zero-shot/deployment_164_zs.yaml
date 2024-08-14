@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consul-server
+  labels:
+    app: consul
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consul
+      tier: server
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: consul
+        tier: server
+    spec:
+      containers:
+      - name: consul
+        image: consul
+        ports:
+        - containerPort: 8500
+          name: consul-internal
+        - containerPort: 8600
+          name: consul-http
+          nodePort: 30250
+        readinessProbe:
+          tcpSocket:
+            port: 8500
+        resources:
+          requests:
+            cpu: 250m
+            memory: 128Mi
+          limits:
+            cpu: 1
+            memory: 256Mi
+        annotations:
+          sidecar.istio.io/canary: "true"
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "8600"
+          prometheus.io/path: "/metrics"

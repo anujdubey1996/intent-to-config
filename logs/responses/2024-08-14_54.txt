@@ -1,0 +1,51 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Kubernetes application named data-center1-kube-system-pod-collector with specific configurations for collecting pod data.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-center1-kube-system-pod-collector
+  labels:
+    app: data-center1-kube-system-pod-collector
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: data-center1-kube-system-pod-collector
+  template:
+    metadata:
+      labels:
+        app: data-center1-kube-system-pod-collector
+    spec:
+      containers:
+        - name: data-center1-kube-system-pod-collector
+          image: my-custom-image:latest
+          ports:
+            - containerPort: 8080
+              name: http-server
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 8080
+          resources:
+            limits:
+              cpu: 1
+              memory: 256Mi
+            requests:
+              cpu: 500m
+              memory: 128Mi
+      serviceAccountName: data-center1-kube-system-pod-collector-sa
+```
+
+This YAML file defines a Kubernetes Deployment with the name `data-center1-kube-system-pod-collector`. The Deployment has three replicas and labels for identifying the application.
+
+The container running inside the pod uses the image `my-custom-image:latest` and exposes a port 8080 with the name `http-server`. It also includes readiness and liveness probes that periodically check the application's health, and defines CPU and memory resource limits and requests.
+
+The pod will be assigned a service account named `data-center1-kube-system-pod-collector-sa`.

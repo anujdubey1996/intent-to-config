@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single instance of the Delegate-service with rolling update strategy, allowing for controlled updates and rollbacks. The deployment includes a specified image version with always pulling the latest image, sets environment variables, exposes HTTP on port 8080, and defines resource requests to ensure appropriate CPU and memory allocation. The deployment maintains a history of previous revisions for rollback purposes

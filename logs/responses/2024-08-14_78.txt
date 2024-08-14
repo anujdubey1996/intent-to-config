@@ -1,0 +1,49 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a pedido-ms service with specified resource requests and limits, and set up liveness and readiness probes to ensure the application's health and availability
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pedido-ms
+  labels:
+    app: pedido-ms
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pedido-ms
+  template:
+    metadata:
+      labels:
+        app: pedido-ms
+    spec:
+      containers:
+      - name: pedido-ms
+        image: pedido-ms:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 250m
+            memory: 50Mi
+          limits:
+            cpu: 500m
+            memory: 100Mi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+```
+
+This Kubernetes Deployment configuration aims to create a service named `pedido-ms` with 3 replicas. It pulls the image `pedido-ms:latest`, exposes the container port `8080`, and sets the specified CPU and memory requests and limits. The liveness probe checks the health of the application periodically at the `/healthz` path while readiness probes ensure the application is able to handle traffic at the same path. The initial delay seconds are set to 15 seconds for both probes.

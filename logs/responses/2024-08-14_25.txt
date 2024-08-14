@@ -1,0 +1,49 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the auth-deploy service with two replicas, configured to use the shafaqzehra/backend:latest image. Ensure the deployment is set up with the necessary environment variables and is running the yarn start command.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-deploy
+  labels:
+    app: auth
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+      - name: auth
+        image: shafaqzehra/backend:latest
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: PORT
+          value: "3000"
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-credentials
+              key: uri
+        command: ["yarn", "start"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-deploy
+spec:
+  selector:
+    app: auth
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+```

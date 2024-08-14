@@ -1,0 +1,111 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy 6 replicas of the `myweb` application using the Docker image `kammana/myweb`.
+
+Additionally, the deployment should be exposed using an ingress controller that routes traffic to the `myweb` service on port 80 and 443 (HTTP and HTTPS).
+
+1. Create a Kubernetes deployment YAML file named `myweb-deployment.yaml`:
+
+```yaml
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: myweb-hpa
+spec:
+  maxReplicas: 6
+  minReplicas: 3
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: myweb
+  targetCPUUtilizationPercentage: 50
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myweb
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myweb
+  template:
+    metadata:
+      labels:
+        app: myweb
+    spec:
+      containers:
+        - name: myweb
+          image: kammana/myweb
+          ports:
+            - containerPort: 5000
+      service:
+        clusterIP: None
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: myweb-ingress
+spec:
+  rules:
+    - host: myweb.example.com
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: myweb
+                port:
+                  number: 80
+      tls:
+        - hosts:
+          - myweb.example.com
+          secretName: myweb-tls
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/secure-backends: "true"
+```
+
+2. Create a Kubernetes service YAML file named `myweb-service.yaml`:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myweb
+spec:
+  selector:
+    app: myweb
+  type: ClusterIP
+  ports:
+    - port: 80
+    targetPort: 5000
+```
+
+3. Create a Kubernetes TLS secret YAML file named `myweb-tls.yaml`:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: myweb-tls
+type: kubernetes.io/tls
+data:
+  tls.crt: [base64-encoded-certificate]
+  tls.key: [base64-encoded-private-key]
+```
+
+Replace the `[base64-encoded-certificate]` and `[base64-encoded-private-key]` placeholders with the actual Base64-encoded contents of your SSL certificate and private key files, respectively.
+
+4. Apply the Kubernetes configuration using `kubectl`:
+
+```sh
+kubectl apply -f myweb-deployment.yaml
+kubectl apply -f myweb-service.yaml
+kubectl apply -f myweb-tls.yaml
+```
+
+That's it! You've created a Kubernetes deployment, service, and TLS secret for the `myweb` application with a configured horizontal pod autoscaler. You should now have 3 initial replicas of the application running. The ingress controller will route traffic to the `myweb` service on ports 80 and 443 when you access `myweb.example.com`. Don't forget to update `myweb.example.com` with the domain name where you want to reach the application.

@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy Kubernetes application named myapp02-deployment with 2 replicas, using a RollingUpdate strategy

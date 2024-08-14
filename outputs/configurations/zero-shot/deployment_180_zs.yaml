@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bibbi-backend-api
+  namespace: bibbi-namespace
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bibbi-backend-api
+  template:
+    metadata:
+      labels:
+        app: bibbi-backend-api
+    spec:
+      containers:
+      - name: bibbi-backend-api
+        image: bibbi/backend-api:1.0.0
+        env:
+        - name: DB_PORT
+          value: "5000"
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: udp
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "256Mi"
+          limits:
+            cpu: "1000m"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10

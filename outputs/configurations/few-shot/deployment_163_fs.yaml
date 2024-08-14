@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-web-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-web-app
+  template:
+    metadata:
+      labels:
+        app: my-web-app
+    spec:
+      containers:
+      - name: my-web-app
+        image: my-web-app:v1
+        env:
+        - name: MY_ENV_VAR_1
+          value: "some-value-1"
+        - name: MY_ENV_VAR_2
+          value: "some-value-2"
+        volumeMounts:
+        - name: my-config-volume
+          mountPath: /etc/config
+        resources:
+          limits:
+            cpu: 1
+            memory: 128Mi
+          requests:
+            cpu: 500m
+            memory: 64Mi
+      volumes:
+      - name: my-config-volume
+        configMap:
+          name: my-web-app-config

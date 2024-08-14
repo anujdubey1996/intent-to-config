@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kao-deployment
+  labels:
+    app: kao-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kao-service
+  template:
+    metadata:
+      labels:
+        app: kao-service
+    spec:
+      containers:
+      - name: kao-container
+        image: localhost:5000/kao-service:latest
+        ports:
+        - containerPort: 8777
+        env:
+        - name: DAPR_HTTP_PORT
+          value: "0"
+        - name: DAPR_GRPC_PORT
+          value: "0"
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8777
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8777
+        volumeMounts:
+        - name: dapr- secrets
+          mountPath: "/app/dapr"
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8777
+        imagePullPolicy: Always
+      volumes:
+      - name: dapr-secrets
+        secret:
+          secretName: dapr-config
+          items:
+          - key: dapr.io/app/dotnet-new-app/app-id
+            path: app-id
+          - key: tracing
+            path: tracing-config.json
+          - key: logging
+            path: logging-config.json

@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a container running amazon/aws-cli with a service account that has read-only access to S3. The container will execute a sleep command to keep it running.

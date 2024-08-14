@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  labels:
+    app: web-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      containers:
+      - name: web-container
+        image: username/web-app:latest
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+        rollingUpdate:
+          maxUnavailable: 1
+        strategy:
+          type: RollingUpdate
+          rollingUpdate:
+            maxSurge: 1
+            maxUnavailable: 1

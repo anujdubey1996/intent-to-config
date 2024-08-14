@@ -1,0 +1,55 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration for a web sample application with rolling update strategy and health checks.
+
+Solution: Below is a YAML configuration file for a simple web application deployment on Kubernetes using the rolling update strategy and health checks. You can use this as a starting point and modify it according to your needs.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  labels:
+    app: web-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+    scale:
+      minReplicas: 1
+      maxReplicas: 10
+  template:
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      containers:
+      - name: web-app
+        image: your-web-app-image:latest
+        ports:
+        - containerPort: 80
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 10
+```
+
+Replace `your-web-app-image:latest` with the Docker image of your web application.
+
+This deployment will scale from 1 to 10 replicas and perform a rolling update with a maxSurge of 2 and maxUnavailable of 1. The health check probes are set up for readiness and liveness of the pods, ensuring that only healthy pods are serving requests and that unhealthy pods are properly recreated if needed.

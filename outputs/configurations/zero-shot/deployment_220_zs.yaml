@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-custom-server
+  labels:
+    app: custom-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: custom-server
+  template:
+    metadata:
+      labels:
+        app: custom-server
+    spec:
+      containers:
+      - name: custom-server
+        image: mycustomserverimage:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        volumeMounts:
+        - name: debug-scripts
+          mountPath: /var/debug
+        - name: secret-volume
+          mountPath: /etc/secrets
+        env:
+        - name: DEBUG_MODE
+          value: "true"
+      volumes:
+      - name: debug-scripts
+        configMap:
+          name: custom-server-debug-scripts
+      - name: secret-volume
+        secret:
+          secretName: custom-server-secrets
+  strategy:
+    type: Recreate

@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kao-service
+  namespace: production
+  labels:
+    app: kao-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kao-service
+  template:
+    metadata:
+      labels:
+        app: kao-service
+    spec:
+      containers:
+      - name: kao-service
+        image: local-registry.example.com/kao-service:latest
+        ports:
+        - containerPort: 8777
+          name: http
+        env:
+        - name: DAPR_HTTP_PORT
+          value: "8778"
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: 8777
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8777
+        volumeMounts:
+        - name: dapr-data
+          mountPath: /var/run/dapr
+        - name: dapr-secrets
+          mountPath: /secrets
+      volumes:
+      - name: dapr-data
+        emptyDir: {}
+      - name: dapr-secrets
+        secret:
+          secretName: dapr-secret
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+        requests:
+          memory: "64Mi"
+          cpu: "250m"
+      dapr:
+        appID: kao-service
+        appVersion: v1
+        port: 8777
+        bindings:
+        - name: logging
+          type: logger
+          data: |
+            {
+              "logs": [
+                {
+                  "level": "debug",
+                  "appID": "kao-service",
+                  "name": "kao-service"
+                }
+              ]
+            }
+        - name: tracing
+          type: zipkin
+          data: |
+            {
+              "zipkin": {
+                "collector": "http://zipkin-collector.kafka-svc.cluster.local:9411/api/v2/spans",
+                "jaeger": {
+                  "collector": "http://jaeger-collector.kafka-svc.cluster.local:14268"
+                }
+              }
+            }

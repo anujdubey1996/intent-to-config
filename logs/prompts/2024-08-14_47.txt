@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment for a server application. This deployment manages three replicas of the server container, sets environment variables for connecting to Redis and PostgreSQL databases, and exposes port 5000.

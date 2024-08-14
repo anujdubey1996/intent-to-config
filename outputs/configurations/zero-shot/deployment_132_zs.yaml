@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harvester-app
+  labels:
+    app: harvester-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: harvester-app
+  template:
+    metadata:
+      labels:
+        app: harvester-app
+    spec:
+      containers:
+      - name: harvester-app-container
+        image: harvester-app:v1
+        env:
+        - name: APP_ENV
+          value: production
+        - name: APP_SECRET
+          value: secret_value_1234
+        ports:
+        - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harvester-webhook
+  labels:
+    app: harvester-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: harvester-webhook
+  template:
+    metadata:
+      labels:
+        app: harvester-webhook
+    spec:
+      containers:
+      - name: harvester-webhook-container
+        image: harvester-webhook:v1
+        env:
+        - name: WEBHOOK_SECRET
+          value: secret_value_1234
+        ports:
+        - containerPort: 8443
+      imagePullPolicy: Always
+      serviceAccountName: harvester-webhook-sa

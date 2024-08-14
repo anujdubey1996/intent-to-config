@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: publisher-deployment
+  labels:
+    app: publisher
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: publisher
+  template:
+    metadata:
+      labels:
+        app: publisher
+    spec:
+      containers:
+      - name: publisher
+        image: your-publisher-image
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PUBLISHER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: publisher-api-key-secret
+              key: apikey
+      imagePullSecrets:
+      - name: registry-credentials

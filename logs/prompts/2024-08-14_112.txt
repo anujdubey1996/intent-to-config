@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a simple application in the lab-app namespace, with configuration settings sourced from a ConfigMap.

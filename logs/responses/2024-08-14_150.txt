@@ -1,0 +1,54 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single replica of a "test-deployment" application, include an initialization container that checks for the availability of a MySQL server before the main application starts. 
+
+Here's a sample Kubernetes deployment manifest file that satisfies the provided intent:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+  labels:
+    app: test-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-app
+  template:
+    metadata:
+      labels:
+        app: test-app
+    spec:
+      containers:
+      - name: test-container
+        image: my-test-image:latest
+        ports:
+        - name: http
+          containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: http
+      initContainers:
+      - name: check-mysql
+        image: busybox:latest
+        command: ["sh", "-c", "until mysqladmin ping -h my-mysql-server -uroot -ppassword; do sleep 5; done"]
+        env:
+        - name: MYSQL_HOST
+          value: "my-mysql-server"
+        - name: MYSQL_USER
+          value: "root"
+        - name: MYSQL_PASSWORD
+          value: "password"
+```
+
+This deployment will create a "test-deployment" with a single replica, use the specified image for the main container ("my-test-image:latest"), and check for application readiness and liveness using an HTTP GET request as described in the intent. Importantly, an initContainer is added to check the availability of a MySQL server before the main application starts. The initContainer uses the busybox image to run a shell script that repeatedly tries to connect to the MySQL server with the specified host, username, and password until it is successful (assuming that there is an active MySQL server named "my-mysql-server" with the correct properties in the same Kubernetes namespace).

@@ -1,0 +1,67 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single replica of the kao-service application in a production environment. The deployment integrates with Dapr for enhanced observability and service communication, specifying configurations for tracing and logging in JSON format. The service is exposed on port 8777, with the image pulled from a local registry to ensure the latest version is always used.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kao-deployment
+  labels:
+    app: kao-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kao-service
+  template:
+    metadata:
+      labels:
+        app: kao-service
+    spec:
+      containers:
+      - name: kao-container
+        image: localhost:5000/kao-service:latest
+        ports:
+        - containerPort: 8777
+        env:
+        - name: DAPR_HTTP_PORT
+          value: "0"
+        - name: DAPR_GRPC_PORT
+          value: "0"
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8777
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8777
+        volumeMounts:
+        - name: dapr- secrets
+          mountPath: "/app/dapr"
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8777
+        imagePullPolicy: Always
+      volumes:
+      - name: dapr-secrets
+        secret:
+          secretName: dapr-config
+          items:
+          - key: dapr.io/app/dotnet-new-app/app-id
+            path: app-id
+          - key: tracing
+            path: tracing-config.json
+          - key: logging
+            path: logging-config.json
+
+```
+
+This YAML file defines a Kubernetes deployment for the kao-service application, which integrates with Dapr for enhanced observability and service communication. The deployment is configured to have a single replica, and the kao-service container is specified to be pulled from a local registry using the image `localhost:5000/kao-service:latest`.
+
+The application exposes the service on port 8777, and both readiness and liveness probes are defined to check the status of the service. The configs for Dapr's tracing and logging are mounted as volumes and specified by the `tracing-config.json` and `logging-config.json` keys from the `dapr-config` secret, respectively.
+
+The deployment also includes volumeMounts to specify the mount path for the Dapr configuration files, which are necessary for Dapr's component to properly function when the container is started.

@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-controller
+  labels:
+    app: cert-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cert-controller
+  template:
+    metadata:
+      labels:
+        app: cert-controller
+    spec:
+      containers:
+      - name: cert-controller
+        image: <cert-controller-image>
+        ports:
+        - containerPort: 443
+          name: https
+          protocol: TCP
+        env:
+        - name: WEBHOOK_SKIPPERS
+          value: "certmanagers.k8s.io"

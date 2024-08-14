@@ -1,0 +1,77 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment with a sidecar container for the controller manager. The sidecar container acts as an HTTP proxy that performs RBAC authorization using SubjectAccessReviews. The deployment includes a primary container for the manager and a sidecar container for the proxy.
+
+You will be provided a YAML file that includes the `spec.template.spec.containers` section for the primary container and the sidecar container for the HTTP proxy. The YAML file is named `deployment.yaml` and present in your current working directory.
+
+To create this Kubernetes deployment, run the following command:
+
+```
+kubectl apply -f deployment.yaml
+```
+
+Here is the YAML file for the deployment:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  labels:
+    app: controller-manager
+spec:
+  selector:
+    matchLabels:
+      app: controller-manager
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: controller-manager
+    spec:
+      containers:
+      - name: controller-manager
+        image: controller-manager:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+      - name: sidecar-proxy
+        image: sidecar-proxy:latest
+        imagePullPolicy: Always
+        env:
+        - name: CONTROLLER_MANAGER_HOST
+          value: controller-manager
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+```
+
+This YAML file creates a Kubernetes Deployment with two containers:
+1. `controller-manager` - the primary container running the controller manager.
+2. `sidecar-proxy` - the sidecar container that acts as an HTTP proxy for the primary container, performing RBAC authorization using SubjectAccessReviews.
+
+The deployment selector labels `app: controller-manager` are used to select Pods created by this deployment.
+
+The `strategy` section defines how updates to the Deployment should be performed. For this example, we use a `RollingUpdate` strategy, which performs an update by incrementally updating the desired number of replicas while ensuring that a specified number of replicas are always available. In this case, we allow one additional replica to be used during the update process (`maxSurge: 1`) and no replicas to become unavailable (`maxUnavailable: 0`).
+
+Both containers are configured with their respective HTTP proxies and liveness/readiness probes to check their health and status. The `sidecar-proxy` container is also configured with an environment variable `CONTROLLER_MANAGER_HOST` to indicate the hostname of the primary container `controller-manager`.

@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: my-microservice
+   spec:
+     replicas: {{ .Values.replicas }}
+     selector:
+       matchLabels:
+         app: my-microservice
+     template:
+       metadata:
+         labels:
+           app: my-microservice
+       spec:
+         containers:
+         - name: {{ .Chart.Name }}
+           image: {{ .Values.image }}
+           ports:
+           - containerPort: {{ .Values.service.port }}

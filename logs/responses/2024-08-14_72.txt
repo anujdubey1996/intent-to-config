@@ -1,0 +1,173 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy Redis Session Store with Persistent Storage Option
+
+Goal: Deploy a Redis Server with persistent storage (using `redis-persistent` and `redis-cluster`), expose it as a Kubernetes service, and authenticate against the `auth-config.json` located in a Secrets volume.
+
+Assumptions:
+
+- Using the `redis` Docker image `redis:6-alpine-redis-cluster`
+  - This image includes Redis Server version 6.2-rc5, Alpine Linux, clustering support, and various other tools
+- Using a Kubernetes Persistent Volume (PV) and Persistent Volume Claim (PVC) to create a storage location for persistent Redis data.
+- The secrets (`auth-config.json`) is already encoded as a Kubernetes secret.
+
+Steps:
+- Create Namespaces:
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: redis-session-store
+```
+
+- Persistent Volume Claim (PVC):
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pv-claim
+  namespace: redis-session-store
+spec:
+  accessModes:
+    - ReadWriteOnce # only one pod will access the volume from this cluster
+  resources:
+    requests:
+      storage: 1Gi # 1Gi is a shorthand for requesting 1 gigabyte
+```
+
+- Persistent Volume (PV):
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis-pv
+spec:
+  accessModes:
+    - ReadWriteOnce # only one pod will access the volume from this cluster
+  capacity:
+    storage: 1Gi # 1Gi is a shorthand for 1 gigabyte
+  storageClassName: manual # this is the name of the persistent volume class, set below
+  persistentVolumeReclaimPolicy: Retain
+  volumeMode: Filesystem # this is the type of volume
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /mnt/data/redis-session-store
+```
+
+- Create the Persistent Volume Class manifest:
+
+```yaml
+apiVersion: storage.k8s.io/v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pv-class
+  labels:
+    type: redis # sets the storage profile for the class
+spec:
+  storageClassName: manual # the name of the storage class
+  accessModes:
+    - ReadWriteOnce # set the access mode for the class
+  resources:
+    requests:
+      storage: 1Gi # sets the minimum storage requested by the class for the volumes it creates
+```
+
+- Configuration file for Redis Session Store Deployment:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-session-store
+  namespace: redis-session-store
+spec:
+  replicas: 1 # Set the number of desired replicas
+  selector:
+    matchLabels:
+      app: redis-session-store # label selector for the created pods
+  template:
+    metadata:
+      labels:
+        app: redis-session-store          # matches the label in the selector, to properly label the created pod(s)
+        tier: database
+    spec:
+      volumes:
+        - name: redis-data-volume
+          persistentVolumeClaim:
+            claimName: redis-pv-claim
+        - name: auth-config
+          secret:
+            secretName: auth-config
+
+      containers:
+        - name: redis-session-store-container
+          image: redis:6-alpine-redis-cluster
+          volumeMounts:
+            - name: redis-data-volume
+              mountPath: /data
+            - name: auth-config
+              mountPath: /auth-config.json
+              subPath: auth-config.json
+          ports:
+            - containerPort: 6379          # Redis Listener Port
+          command: ["redis-server", "-c", "/usr/local/redis/redis.conf", "--daemonize"]
+          env:
+            - name: REDIS_MASTER_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-config
+                  key: REDIS_MASTER_AUTH_PASSWORD
+            - name: REDIS_CLUSTER_ENABLED
+              value: "yes"
+
+      initContainers:
+      - name: create-redis-session-store-cluster
+        image: alpine:3.12
+        command: ["sh", "-c"]
+        args:
+          - |-
+            apk add --no-cache awk
+            export REDIS_CLUSTER_NODES=(`kubectl get pods --namespace redis-session-store -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[0].env[?(@.name=="REDIS_CLUSTER_PORT")].value}{"\n"}:`)
+            echo "cluster-nodes: $REDIS_CLUSTER_NODES" >> /usr/local/redis/redis.conf
+            echo "cluster-config slot-count 16384" >> /usr/local/redis/redis.conf
+            echo "cluster-node-timeout 5000" >> /usr/local/redis/redis.conf
+            apk del --no-cacheawk
+        volumeMounts:
+          - name: redis-data-volume
+            mountPath: /usr/local/redis
+            subPath: redis.conf
+```
+
+- Expose Redis Session Store as Service:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-session-store
+  namespace: redis-session-store
+spec:
+  selector:
+    app: redis-session-store
+  type: ClusterIP
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+```
+
+After creating the above files, apply them using the kubectl apply -f [manifest-file-name.yaml] command.
+
+```
+$ kubectl apply -f <namespace.yaml>
+$ kubectl apply -f <pv-class.yaml>
+$ kubectl apply -f <pv-claim.yaml>
+$ kubectl apply -f <deployment.yaml>
+$ kubectl apply -f <service.yaml>
+```
+
+Now, you have deployed the Redis Session Store Deployment with persistent storage and created a cluster. The service automatically exposes it, allowing you to connect from your applications.

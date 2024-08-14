@@ -1,0 +1,73 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a sinks component of an application with configurable environment variables, database settings, and logging levels. The deployment includes a single replica, manages secrets and configuration through environment variables, and ensures the use of appropriate image tags and pull policies. It also specifies ports for HTTP and additional services, along with a restart policy to maintain service availability.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sinks
+  labels:
+    app: my-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+      component: sinks
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: my-app
+        component: sinks
+    spec:
+      containers:
+      - name: sinks
+        image: my-registry/app:latest
+        envFrom:
+        - secretRef:
+            name: sinks-config
+            optional: true
+        ports:
+        - containerPort: 8080
+        - containerPort: 8081
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        imagePullPolicy: IfNotPresent
+      imagePullSecrets:
+      - name: registry-secret
+      serviceAccountName: my-sa
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: config-volume
+        configMap:
+          name: sinks-config
+```
+
+In the provided configuration:
+
+1. The deployment name is `sinks`.
+2. The application name and component are set as meta labels.
+3. The deployment strategy uses a RollingUpdate to update the deployment with minimal impact.
+4. The template includes a single container called `sinks`.
+5. The container uses the latest image from the provided registry.
+6. The environment variables are configured using a reference to the `sinks-config` secret, which is optional in case the deployment does not require configuration.
+7. The application listens on two ports: `8080` and `8081`.
+8. Readiness and liveness probes are set up for a health check at the `/healthz` endpoint of the container on port `8080`.
+9. The image pull policy is set to `IfNotPresent` to pull the image if it does not already exist locally.
+10. The container uses the `my-sa` service account and has a restart policy set to `Always`.
+11. A termination grace period of 30 seconds is given to the container before it is terminated.
+12. A volume is mounted using the `sinks-config` ConfigMap.

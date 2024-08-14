@@ -1,0 +1,35 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a PostgreSQL container with specific environment variables for database configuration.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deckard
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchingLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres-deckard
+        image: postgres:14
+        env:
+        - name: POSTGRES_USER
+          value: deckard
+        - name: POSTGRES_PASSWORD
+          value: deckard123
+        - name: POSTGRES_DB
+          value: deckard_db
+        ports:
+        - containerPort: 5432
+```

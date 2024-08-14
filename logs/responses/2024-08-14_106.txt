@@ -1,0 +1,57 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration for a WordPress application with a Recreate strategy and environmental variables.
+
+The WordPress application consists of the following components:
+- Dockerfile to build the application image
+- wp-config.php file to store the database settings
+- index.php file for the frontend web application
+
+The WordPress application must be exposed as a Kubernetes Service, and it should use a Recreate strategy, which means that if the pod restarts, the old instance will be killed and a new instance of the application will be created. The application should also have access to two environmental variables: `DB_NAME` and `DB_USER`.
+
+Below is a YAML file that describes the requirements for this Kubernetes Deployment. Save this file as `wordpress-deployment.yaml` and apply it using `kubectl apply`.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+      - name: wordpress
+        image: <your-docker-repository>/wordpress:<tag>
+        envFrom:
+        - configMapRef:
+            name: wordpress-config
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          tcpSocket:
+            port: 80
+        livenessProbe:
+          tcpSocket:
+            port: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+spec:
+  selector:
+    app: wordpress
+  type: ClusterIP
+  ports:
+  - port: 80
+```

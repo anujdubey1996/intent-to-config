@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single replica of the `my-stats-script` application, which runs a Python script (`stats-app.py`) within a container

@@ -1,0 +1,12 @@
+# roach-ui deployment values
+   roachUI:
+     replicaCount: 1
+     image:
+       repository: cockroachdb/roach-ui
+       tag: v2.2.3
+     service:
+       type: ClusterIP
+       port: 9091
+       targetPort: 9091
+     ingress:
+       enabled: false

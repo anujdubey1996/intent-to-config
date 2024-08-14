@@ -1,0 +1,26 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a "pause" container named "inflate" with zero replicas. 
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inflate
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: inflate
+  template:
+    metadata:
+      labels:
+        app: inflate
+    spec:
+      containers:
+      - name: inflate
+        image: k8s.gcr.io/pause:3.1
+```
+
+This YAML file defines a Kubernetes Deployment named `inflate` with zero replicas. The deployment uses the `pause` container image `k8s.gcr.io/pause:3.1`, and both the deployment and container are labeled with the key-value pair `app: inflate`. This labeling allows for simpler management, filtering, and selection of the deployment and its pods based on the app name.

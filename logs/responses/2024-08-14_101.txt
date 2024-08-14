@@ -1,0 +1,76 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment configuration for the bibbi-backend-api with specified settings for replicas, container image, environment variables, resource requests and limits, and health checks.
+
+Name: bibbi-backend-api-deployment.yaml
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bibbi-backend-api
+  labels:
+    app: bibbi-backend-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bibbi-backend-api
+  template:
+    metadata:
+      labels:
+        app: bibbi-backend-api
+    spec:
+      containers:
+      - name: bibbi-backend-api
+        image: bibbi/bibbi-backend-api:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DATABASE_URL
+          value: "mongodb+srv://username:password@cluster.amazonaws.com/db?retryWrites=true&w=majority"
+        - name: ACCESS_TOKEN_SECRET
+          value: "mysecret"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
+```
+
+Explanation:
+
+* `apiVersion` specifies the version of the Kubernetes API that this configuration was created with. In this case, it's the latest version `apps/v1`.
+* `kind` defines the workload type being created, in this case, a Deployment.
+* `metadata` includes the name of the deployment and labels for managing and grouping resources.
+* `spec` contains the configuration for the Deployment, such as the number of replicas, selector for label matching, and the Pod template that defines the container and its settings.
+* `replicas` sets the number of replica Pods of this Deployment that should be running, in this case, 3.
+* `selector` defines a label selector for selecting which existing Pods belong to this deployment. In this case, it's the `app: bibbi-backend-api` label.
+* `template` specifies the Pod template that should be used to create new Pods in this Deployment.
+* `containers` specifies the containers to be included in the Pod, in this case, the `bibbi-backend-api` container.
+* `image` specifies the Docker image to use for the container, in this case, `bibbi/bibbi-backend-api:latest`.
+* `ports` defines the container ports to be exposed. In this case, it's port 8080.
+* `env` specifies environment variables for the container, in this case, `DATABASE_URL` and `ACCESS_TOKEN_SECRET`.
+* `resources` sets the requested and maximum CPU and memory resources for the container.
+* `readinessProbe` defines a readiness probe to verify that the container is ready to start accepting traffic.
+* `livenessProbe` defines a liveness probe to verify that the container is still alive and functional.
+* The `httpGet` probe type makes an HTTP GET request to the specified `path` and `port` for verification.
+* `initialDelaySeconds` sets the initial delay before starting probes, to allow the container time to start up.
+* `periodSeconds` sets the time between successive probes.
+
+You can create the deployment using the `kubectl apply -f bibbi-backend-api-deployment.yaml` command. Make sure you have a `Service` defined for the deployment, or update the container port accordingly.

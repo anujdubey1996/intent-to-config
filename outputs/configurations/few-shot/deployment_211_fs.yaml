@@ -1,0 +1,97 @@
+# helm/my-app/values.yaml
+#
+# Values for my app Helm chart.
+
+# The global FQDN (with optional subdomain) for the application.
+# This value should match the Hostname and Ingress annotations for the services.
+# Default to my-app.example.com if not specified.
+appFqdn: my-app.example.com
+
+# The deployment configuration for the my-app service.
+# See: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+deployment:
+  # The number of replicas to run for the deployment. Default is 1.
+  replicas: 3
+
+  # The container definition for the application pods.
+  container:
+    # The image name for the container. The image tag is inferred from the chart's `version` value.
+    image: my-app:{{ .Values.chart.version }}
+
+    # The command to run in the container. Defaults to `{{ .Values.container.command }}`.
+    command: []
+
+    # The environment variables to set in the container.
+    env:
+    - name: APP_PORT
+      value: "8080"
+
+    # The port bindings for the container. Defaults to the standard port for the image.
+    ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+
+    # The startup probes to run on the container to check its health.
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: http
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: http
+
+    # The security context for the container.
+    securityContext:
+      allowPrivilegeEscalation: false
+      runAsUser: 1000
+
+  # Optionally configure rolling updates settings for the deployment.
+  rollingUpdate:
+    maxUnavailable: 25%
+    maxSurge: 50%
+
+  # Optionally configure the deployment strategy for new replicas.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 50%
+
+  # Optionally configure the annotations for the deployment.
+  annotations: {}
+
+# Optionally configure the ingress settings for the service
+ingress:
+  # Annotate the deployment with the Ingress annotation to expose the service.
+  enabled: true
+
+  # The ingress class to use for the service. Defaults to the built-in nginx ingress controller.
+  class: "nginx"
+
+  # The hostname mappings for the Ingress resource. If empty, the appFqdn value will be used.
+  hosts:
+  - host: my-app.example.com
+
+  # Optionally configure the path rule mappings for the service.
+  paths:
+  - path: /*
+    backend:
+      service:
+        name: my-app
+        port: http
+
+# Optionally configure the service settings for the service
+service:
+  enabled: true
+
+  # The type of service to create. Defaults to ClusterIP.
+  type: LoadBalancer
+
+  # The port to expose the service on. Default is the port specified in the container ports, or the container's standard port (80).
+  port: http
+
+  # Optionally configure the selectors for the service.
+  selector:
+    app: my-app

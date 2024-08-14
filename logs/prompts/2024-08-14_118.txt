@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy an instance of the OpenTelemetry Collector in a Kubernetes cluster using a Helm-managed setup. The deployment should handle various telemetry data protocols and be configured via a ConfigMap.

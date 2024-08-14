@@ -1,0 +1,6 @@
+replicas: 3
+image: my-microservice:latest
+
+env:
+  APP_NAME: my-app
+  APP_VERSION: v1

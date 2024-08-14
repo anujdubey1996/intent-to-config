@@ -1,0 +1,70 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a Grafana instance
+
+Here is a Kubernetes deployment workload configuration file for deploying Grafana instance:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: <your-admin-password>
+        volumeMounts:
+        - name: grafana-persistent-volume
+          mountPath: /var/lib/grafana
+      volumes:
+      - name: grafana-persistent-volume
+        persistentVolumeClaim:
+          claimName: grafana-pvclaim
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvclaim
+  storageClass: standard
+  labels:
+    app: grafana
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+```
+
+To deploy the Grafana instance, save the above code in a file called `grafana-deployment.yaml` and use the following command to apply the deployment:
+
+```bash
+kubectl apply -f grafana-deployment.yaml
+```
+
+Replace the `<your-admin-password>` value with your desired admin password for Grafana. Note that this example stores the configuration in a `PersistentVolumeClaim` to persist data across pod runs. You must have a PersistentVolume or a StorageClass set up on your cluster first to create this PersistentVolumeClaim.
+
+After deploying, you can access the Grafana dashboard using the following command (replace `<Your-Cluster-Name>` with the name of your Kubernetes cluster):
+
+```bash
+kubectl port-forward service/grafana 3000:3000
+```
+
+Then visit `http://localhost:3000` in your web browser to access the Grafana interface.

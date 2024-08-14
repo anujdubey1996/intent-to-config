@@ -1,0 +1,157 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-cli-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aws-cli
+  template:
+    metadata:
+      labels:
+        app: aws-cli
+    spec:
+      containers:
+      - name: aws-cli
+        image: amazon/aws-cli:latest
+        command:["sleep", "3600"]
+       volumeMounts:
+        - name: s3-config-volume
+          mountPath: /root/.aws
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aws-cli-secret
+              key: accessKey
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-cli-secret
+              key: secretKey
+      volumes:
+      - name: s3-config-volume
+        secret:
+          secretName: aws-cli-config
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-cli-secret
+type: Opaque
+data:
+  accessKey: <BASE64_ENCODED_ACCESS_KEY>
+  secretKey: <BASE64_ENCODED_SECRET_KEY>
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aws-cli-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: aws-cli-role
+  namespace: default
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["persistentvolumes"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["create", "get", "list"]
+- apiGroups: ["apps"]
+  resources: ["statefulsets", "deployments", "daemonsets", "replicasets", "jobs"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions"]
+  resources: ["deployments", "daemonsets", "replicasets", "jobs", "ingresses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["networkpolicies"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["batch"]
+  resources: ["cronjobs"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["autoscaling"]
+  resources: ["customautoscalers", "horizontalpodautoscalers", "replicasetautoscalers"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps/v1beta2"]
+  resources: ["statefulsets", "deployments", "daemonsets", "replicasets", "jobs"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions/v1beta1"]
+  resources: ["deployments", "daemonsets", "replicasets", "jobs", "ingresses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.k8s.io/v1"]
+  resources: ["networkpolicies"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["batch"]
+  resources: ["cronjobs"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["autoscaling"]
+  resources: ["customautoscalers", "horizontalpodautoscalers", "replicasetautoscalers"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps/v1beta2"]
+  resources: ["statefulsets", "deployments", "daemonsets", "replicasets", "jobs"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions/v1beta1"]
+  resources: ["deployments", "daemonsets", "replicasets", "jobs", "ingresses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["networkpolicies", "ingresses"]
+  verbs: ["create"]
+- apiGroups: ["autoscaling"]
+  resources: ["customautoscalers", "horizontalpodautoscalers", "replicasetautoscalers"]
+  verbs: ["create", "update", "patch"]
+- apiGroups: ["events.k8s.io"]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+- apiGroups: ["policy"]
+  resources: ["poddisruptionbudgets"]
+  verbs: ["create", "update", "patch"]
+- apiGroups: ["policy"]
+  resources: ["rolebindings", "clusterrolebindings"]
+  verbs: ["create", "update", "patch"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["role", "clusterrole", "rolebinding", "clusterrolebinding"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions", "crdshims"]
+  verbs: ["get", "list", "watch"]
+resources: ["secrets", "configmaps"]
+verbs: ["create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: aws-cli-role-binding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: aws-cli-sa
+  namespace: default
+roleRef:
+  kind: Role
+  name: aws-cli-role
+  apiGroup: rbac.authorization.k8s.io

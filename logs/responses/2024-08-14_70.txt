@@ -1,0 +1,47 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy Grafana 8.5.5 in the monitoring namespace with a single replica
+
+Create a `grafana-deployment.yaml` configuration file as follows:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:v8.5.5
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: GF_SECURITY_ADMIN_USER
+          value: admin
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: password
+        - name: GF_SERVER_ROOT_URL
+          value: "/"
+        readinessProbe:
+          httpGet:
+            path: /login
+            port: 3000
+        livenessProbe:
+          httpGet:
+            path: /login
+            port: 3000
+```
+
+The provided configuration will create a Deployment for Grafana 8.5.5, in the `monitoring` namespace with a single replica and the required environment variables for authentication. Additionally, it includes a readiness and liveness probes to ensure that the Grafana pod is ready to accept traffic and is running healthy, respectively.

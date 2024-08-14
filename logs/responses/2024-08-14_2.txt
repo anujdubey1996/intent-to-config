@@ -1,0 +1,61 @@
+
+Create a Kubernetes deployment workload configuration file for a Java microservice running on port 8080.
+
+Here is a basic example of a Kubernetes deployment configuration file for a Java microservice running on port 8080. This example assumes that the container has a Docker image available in a container registry, in this case, Docker Hub.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-java-microservice
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-java-microservice
+  template:
+    metadata:
+      labels:
+        app: my-java-microservice
+    spec:
+      containers:
+      - name: my-java-microservice
+        image: username/my-java-microservice:tag
+        ports:
+        - containerPort: 8080
+          name: http
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      imagePullSecrets:
+      - name: docker-registry-secret
+```
+
+Here's a breakdown of the configuration:
+
+1. The `apiVersion` specifies the version of the API you want to use for this Kubernetes deployment. In this case, we're using the v1 API for the Apps resource.
+
+2. The `kind` specifies the type of resource you're defining in Kubernetes. In this case, it's a Deployment.
+
+3. The `metadata` section contains information about this particular deployment, such as its name and labels.
+
+4. The `spec` section contains details about how the deployment should be run, including the number of replicas, the label selector, and the container template.
+
+5. The `template` section defines the container's configuration. Here, we specify the container's Docker image, ports, readiness and liveness probes, and image pull secrets if needed.
+
+6. The `readinessProbe` and `livenessProbe` tell Kubernetes how to check the health of the container. If the health check fails, Kubernetes may kill the container or stop sending traffic to it.
+
+7. The `imagePullSecrets` section is used in case you're pulling the Docker image from a private registry that requires authentication. In this example, we reference a secret named `docker-registry-secret`. You'll need to create this secret separately if it doesn't already exist.

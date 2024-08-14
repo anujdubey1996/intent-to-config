@@ -1,0 +1,65 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the auth-server with dynamic values from Helm charts, including image configurations, environment settings, resource requests, volume mounts, and annotations. Ensure the deployment has the required security contexts and configurations based on Helm values
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server
+  labels:
+    app: auth-server
+    chart: auth-server-1.0.0
+    release: my-auth-server
+  annotations:
+    # Add any custom annotations here based on Helm values
+
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: auth-server
+      release: my-auth-server
+
+  template:
+    metadata:
+      labels:
+        app: auth-server
+        release: my-auth-server
+      annotations:
+        # Add any custom annotations here based on Helm values
+
+    spec:
+      serviceAccountName: auth-server-sa
+      containers:
+        - name: auth-server
+          image: "{{ .Values.image.repo }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          envFrom:
+            - configMapRef:
+                name: auth-server-config
+          volumeMounts:
+            - name: auth-server-storage
+              mountPath: /opt/app/storage
+              subPath: (sub-path from Helm values)
+          securityContext:
+            runAsUser: {{ .Values.securityContext.runAsUser }}
+            fsGroup: {{ .Values.securityContext.fsGroup }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.service.port }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.service.port }}
+      volumes:
+        - name: auth-server-storage
+          persistentVolumeClaim:
+            claimName: auth-server-pvc
+      nodeSelector:
+        # Add any custom node selectors here based on Helm values
+```

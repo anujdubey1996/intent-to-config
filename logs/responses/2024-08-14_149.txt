@@ -1,0 +1,28 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a simple "helloworld" application with two replicas.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helloworld-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: helloworld
+  template:
+    metadata:
+      labels:
+        app: helloworld
+    spec:
+      containers:
+        - name: helloworld
+          image: "gcr.io/gocrunchio/hello:latest"
+          ports:
+          - containerPort: 8080
+```
+
+This Deployment configuration sets up a Kubernetes workload named helloworld-deployment with two replicas. It consists of a container running the image `gcr.io/gocrunchio/hello:latest` that listens on port 8080 inside the container. The containers and entire Pods created from this Deployment are labeled with `app: helloworld` for easy selection and management.

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: delegate-service
+  labels:
+    app: delegate-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: delegate-service
+  template:
+    metadata:
+      labels:
+        app: delegate-service
+    spec:
+      containers:
+      - name: delegate-service
+        image: registry/path/delegate-service:latest
+        env:
+        - name: APP_NAME
+          value: "my-app"
+        - name: APP_VERSION
+          value: "1.0.0"
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "128Mi"
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        rollsUpdates:
+          maxSurge: 1
+          maxUnavailable: 0
+        revisionHistoryLimit: 5

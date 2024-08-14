@@ -1,0 +1,36 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a simple echo server application named "meow" on Kubernetes with multiple replicas to handle HTTP traffic.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meow
+  labels:
+    app: meow
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: meow
+  template:
+    metadata:
+      labels:
+        app: meow
+    spec:
+      containers:
+      - name: my-meow
+        image: ghcr.io/your-username/your-repo:your-tag
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+```

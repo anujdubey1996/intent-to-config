@@ -1,0 +1,82 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single instance of the selenoid-chrome-vnc service to enable remote access to a Chrome browser via VNC. The deployment connects to a specified Selenium hub and is configured with resource limits for efficient operation. The service is exposed on port 5900 for VNC connections
+
+For this task, we will need a few things prepared:
+
+1. Dockerfile (if you are using a custom base image you can build yourself) or the built image available in a container registry (Docker Hub, Google Container Registry, etc.)
+2. Helm chart for the Selenoid service, if one doesn't already exist
+
+Assuming we have a Dockerfile and a Helm chart for the Selenoid service, here's an example of a Kubernetes deployment configuration file `selenoid-chrome-vnc.yaml`.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenoid-chrome-vnc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: selenoid-chrome-vnc
+  template:
+    metadata:
+      labels:
+        app: selenoid-chrome-vnc
+    spec:
+      containers:
+        - name: selenoid-chrome-vnc
+          image: <your-container-registry>/selenoid-chrome-vnc:<tag>
+          env:
+          - name: SELENIUM_HUB_URL
+            value: <selenium-hub-url>
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "2"
+            requests:
+              memory: "256Mi"
+              cpu: "1"
+          ports:
+          - containerPort: 4444 # Remote WebDriver port
+            name: rwd
+          - containerPort: 5900
+            name: vnc
+          readinessProbe:
+            tcpSocket:
+              port: 4444
+          livenessProbe:
+            httpGet:
+              path: "/"
+              port: 4444
+```
+
+Customize `<your-container-registry>/selenoid-chrome-vnc:<tag>` with the appropriate container registry and tag for your built or prebuilt Docker image. Also, replace `<selenium-hub-url>` with the URL of your Selenium hub.
+
+Save the configuration file as `selenoid-chrome-vnc.yaml` and deploy it to your Kubernetes cluster using kubectl.
+
+```sh
+kubectl apply -f selenoid-chrome-vnc.yaml
+```
+
+When the deployment is successful, you should see output similar to the following:
+
+```sh
+deployment.apps/selenoid-chrome-vnc created
+```
+
+Then use the following command to check the status of your deployment:
+
+```sh
+kubectl get deployments selenoid-chrome-vnc
+```
+
+You should see the `Ready` status increasing as each container in the replica set successfully loads and starts running your Selenoid Chrome VNC application.
+
+```sh
+NAME                   READY   UP-TO-DATE   AVAILABLE   AGE
+selenoid-chrome-vnc    1/1     1            1           3m11s
+```
+
+This demonstrates how to create a Kubernetes Deployment to manage and deploy a single instance of the Selenoid Chrome VNC service on a cluster. Proper configuration, connection to the Selenium hub, resource limits, and health checks have been implemented.

@@ -1,0 +1,35 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create a Kubernetes Deployment for a Redis instance with a single replica. The deployment configures resource requests and limits for the Redis container and exposes the default Redis port
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-deployment
+  labels:
+    app: redis
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:latest
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "64Mi"
+          limits:
+            cpu: "500m"
+            memory: "128Mi"
+```

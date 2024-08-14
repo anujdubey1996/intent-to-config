@@ -1,0 +1,78 @@
+Deploy a single replica of the kao-service application in a production environment. The deployment integrates with Dapr for enhanced observability and service communication, specifying configurations for tracing and logging in JSON format. The service is exposed on port 8777, with the image pulled from a local registry to ensure the latest version is always used.
+
+To achieve this, create a `Docker` file, a `docker-compose.yml` file, and a `DaprHelperApp.yaml` file, then run the provided scripts to build the container image and deploy the service.
+
+1. Create the `Dockerfile`:
+
+```Dockerfile
+FROM public.ecr.aws/cao-developers/kao-service:latest
+WORKDIR /app
+EXPOSE 8777
+COPY DaprHelperApp.yaml /app/DaprHelperApp.yaml
+```
+
+2. Create the `docker-compose.yml` file:
+
+```yaml
+version: '3'
+services:
+  kao-service:
+    build: .
+    ports:
+      - "8777:8777"
+    environment:
+      - DAPR_HTTP_PORT=5000
+      - DAPR_APP_ID=demo
+      - DAPR_APP_PORT_PUBLISH=false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      com.docker.compose.service: kao-service
+      com.docker.compose.oneoff: "false"
+```
+
+3. Create the `DaprHelperApp.yaml` file:
+
+```yaml
+versions: "dotnet-runtime-7.0"
+appID: "demo"
+appName: "kao-service"
+
+logging:
+  loglevel: "Information"
+  file: "stdout"
+
+tracing:
+  sampling:
+    parent: "1"
+    local: "1"
+
+dependencies:
+  bindings:
+    - dotnet
+
+hosts:
+  - type: "grpc"
+    port: "5000"
+    grpc: {}
+    http: {}
+```
+
+4. Build the container image:
+
+Run the following command in your project directory:
+
+```bash
+docker-compose build
+```
+
+5. Run the deployed kao-service application:
+
+```bash
+docker-compose up
+```
+
+The service will now be running on port 8777. You can now access it using a tool like [Postman](https://www.postman.com/downloads/) or [curl](https://curl.se/), or by using your preferred web client.

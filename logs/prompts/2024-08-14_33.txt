@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy an Nginx application with a Kubernetes Deployment. The deployment specifies a single replica, includes health checks for both liveness and readiness, and exposes port 80.

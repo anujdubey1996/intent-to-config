@@ -1,0 +1,88 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create Kubernetes Deployments for Airbyte components with configurations for resource limits and environment variables.
+
+Example 
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-api
+  labels:
+    app: airbyte
+    component: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airbyte
+      component: api
+  template:
+    metadata:
+      labels:
+        app: airbyte
+        component: api
+    spec:
+      containers:
+      - name: airbyte-api
+        image: airbyte/airbyte-api:<version>
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 200m
+            memory: 64Mi
+        env:
+        - name: AMBASSADOR_HOST
+          value: airbyte-api.service.internal
+        - name: AMBASSADOR_PORT
+          value: 80
+      imagePullSecret: <image-pull-secret>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-dbt-core
+  labels:
+    app: airbyte
+    component: dbt-core
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airbyte
+      component: dbt-core
+  template:
+    metadata:
+      labels:
+        app: airbyte
+        component: dbt-core
+    spec:
+      containers:
+      - name: airbyte-dbt-core
+        image: airbyte/airbyte-dbt-core:<version>
+        resources:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 200m
+            memory: 64Mi
+        env:
+        - name: DB_URL
+          value: <database-url>
+        - name: DB_USER
+          value: <database-user>
+        - name: DB_PASSWORD
+          value: <database-password>
+        command: ["dbt", "run"]
+      imagePullSecret: <image-pull-secret>
+```
+
+Description: Thisyaml file creates two Kubernetes Deployments for Airbyte components: one for the API service and one for the dbt-core service. Each deployment has a specified number of replicas, a Selector for selecting pods, aTemplate with the Pod template, and a container with the container specifications, including image, ports, resource limits, and environment variables.
+
+The API service's image is airbyte/airbyte-api with a version specified, and it listens on port 80. It has a memory limit of 128 Mi and a CPU request of 200 m. The environment variables AMBASSADOR_HOST and AMBASSADOR_PORT are set to airbyte-api.service.internal and 80, respectively.
+
+The dbt-core service's image is airbyte/airbyte-dbt-core with a version specified, and it runs dbt with the command "dbt run". It has a memory limit of 128 Mi and a CPU request of 200 m. The environment variables DB_URL, DB_USER, and DB_PASSWORD are set for connecting to the database. Please replace `<version>`, `<image-pull-secret>`, `airbyte-api.service.internal`, `<database-url>`, `<database-user>`, and `<database-password>` with the actual values specific to your setup.

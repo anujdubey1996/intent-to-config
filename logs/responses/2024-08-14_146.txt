@@ -1,0 +1,52 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a custom server application with a single replica, including the Docker image, exposed port, volume mounts for scripts and secrets, environment variable configuration, and command to start the server in debug mode.
+
+Create a deployment configuration file named `my-app-deployment.yaml` with the following content:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-deployment
+  labels:
+    app: my-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-app-container
+        image: my-app-image:latest
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: my-app-scripts
+          mountPath: /scripts
+        - name: my-app-secrets
+          mountPath: /secrets
+        env:
+        - name: APP_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: my-app-secret
+              key: secret-key
+        env:
+        - name: DB_URI
+          value: "mongodb://user:password@mongo-service.default.svc.cluster.local/my-database"
+        command: ["node", "/scripts/my-app.js", "--debug"]
+      volumes:
+      - name: my-app-scripts
+        configMap:
+          name: my-app-scripts-configmap
+      - name: my-app-secrets
+        secret:
+          secretName: my-app-secret
+```

@@ -1,0 +1,36 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Configure and deploy site-deployment with zero replicas, specifying container details and exposing a port.
+
+Configuration:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: site-deployment
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: site
+  template:
+    metadata:
+      labels:
+        app: site
+    spec:
+      containers:
+      - name: site-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+```
+
+This YAML file provides a Kubernetes Deployment configuration for a workload called `site-deployment`. It is configured with zero replicas (`spec.replicas: 0`), meaning that no instances of this application will be running at the moment of deployment.
+
+The Deployment uses a Selector (`spec.selector`) to label these replicas, with the selector matching replicas based on the label `app: site` (`spec.selector.matchLabels: {app: site}`).
+
+The `template` field defines the settings for creating the replicas. The `template.metadata` field includes a label for the new replicas, also `app: site` (`template.metadata.labels: {app: site}`).
+
+The `template.spec` part holds the specifications for the container, including its name, image, and ports. The container is called `site-container` (`template.spec.containers[0].name`), uses the latest version of the Nginx image (`template.spec.containers[0].image: nginx:latest`), and exposes a port, specifically port 80 (`template.spec.containers[0].ports[0].containerPort: 80`).

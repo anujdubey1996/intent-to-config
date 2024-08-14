@@ -1,0 +1,134 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create Kubernetes Deployments for various Airbyte components with specific configurations for container resource limits and environment variables.
+
+Deployment configuration file for the following components would help build the Airbyte data pipeline:
+
+- airbyte-api-server
+- airbyte-cli
+- airbyte-controller-runner
+- airbyte-worker
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-api-server
+  labels:
+    app: airbyte-api-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: airbyte-api-server
+  template:
+    metadata:
+      labels:
+        app: airbyte-api-server
+    spec:
+      containers:
+      - name: airbyte-api-server
+        image: quay.io/airbytehq/airbyte-api-server:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "2"
+        env:
+        - name: AIRBYTE_API_SERVER_EXTRA_OIDC_CERTIFICATES
+          value: "path/to/airbyte_api_server_extra_oidc_certificates.json"
+        - name: AIRBYTE_API_SERVER_JWT_SECRET
+          value: "path/to/jwt_secret"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-cli
+  labels:
+    app: airbyte-cli
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airbyte-cli
+  template:
+    metadata:
+      labels:
+        app: airbyte-cli
+    spec:
+      containers:
+      - name: airbyte-cli
+        image: quay.io/airbytehq/airbyte-cli:latest
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "1"
+        env:
+        - name: AIRBYTE_CLI_EXTRA_OIDC_CERTIFICATES
+          value: "path/to/airbyte_cli_extra_oidc_certificates.json"
+        - name: AIRBYTE_CLI_JWT_SECRET
+          value: "path/to/jwt_secret"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-controller-runner
+  labels:
+    app: airbyte-controller-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airbyte-controller-runner
+  template:
+    metadata:
+      labels:
+        app: airbyte-controller-runner
+    spec:
+      containers:
+      - name: airbyte-controller-runner
+        image: quay.io/airbytehq/airbyte-controller-runner:latest
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "2"
+        env:
+        - name: AIRBYTE_CLI_EXTRA_OIDC_CERTIFICATES
+          value: "path/to/airbyte_cli_extra_oidc_certificates.json"
+        - name: AIRBYTE_CONTROLLER_RUNNER_JWT_SECRET
+          value: "path/to/jwt_secret"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-worker
+  labels:
+    app: airbyte-worker
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: airbyte-worker
+  template:
+    metadata:
+      labels:
+        app: airbyte-worker
+    spec:
+      containers:
+      - name: airbyte-worker
+        image: quay.io/airbytehq/airbyte-worker:latest
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "2"
+        env:
+        - name: AIRBYTE_CLI_EXTRA_OIDC_CERTIFICATES
+          value: "path/to/airbyte_cli_extra_oidc_certificates.json"
+        - name: AIRBYTE_WORKER_JWT_SECRET
+          value: "path/to/jwt_secret"
+```

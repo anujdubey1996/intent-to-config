@@ -1,0 +1,56 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Create and manage a deployment for the auth-server application
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server-deployment
+  labels:
+    app: auth-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: auth-server
+  template:
+    metadata:
+      labels:
+        app: auth-server
+    spec:
+      containers:
+      - name: auth-server
+        image: auth-server:v1
+        ports:
+        - containerPort: 8080
+        env:
+        - name: APP_PORT
+          value: "8080"
+        - name: APP_NAME
+          value: "auth-server"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 8080
+```
+
+Explanation:
+
+- `apiVersion` and `kind` define the Kubernetes API version and resource type for this file. In this case, we are using the apps/v1 API version and a Deployment.
+
+- `metadata` provides information about the object. Here, we have given the deployment a name and labels to help with identification and organization.
+
+- `spec` is where the deployment's details are defined:
+  - `replicas` indicates the number of pod replicas for this deployment to maintain.
+  - `selector` selects the pods that belong to this deployment based on the matching labels.
+  - `template` defines the spec for the pod templates that will be created by this deployment.
+    - `metadata` contains labels for the pods created by this deployment to help with identification and organization.
+    - `spec` defines the details of the container(s) that make up the pod templates, including container name, image, ports, environment variables, readiness and liveness probes.
+
+In this example, we create a deployment for the `auth-server` application with 3 replicas. The container inside the pods runs the `auth-server:v1` image, listening on port 8080. We have specified environment variables for the application port and name, and added readiness and liveness probes.

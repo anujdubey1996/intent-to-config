@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy the auth-server with dynamic values from Helm charts, including image configurations, environment settings, resource requests, volume mounts, and annotations. Ensure the deployment has the required security contexts and configurations based on Helm values

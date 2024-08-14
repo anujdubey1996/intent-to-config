@@ -1,0 +1,4 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Configure and execute a test scenario for Kubernetes deployment with performance measurements, including pod startup latency, deployment creation, and pod deletion.

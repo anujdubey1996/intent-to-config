@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zookeeper-operator-deployment
+  labels:
+    app: zookeeper-operator
+    version: 2.0.0
+spec:
+  serviceAccountName: zookeeper-operator-sa
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper-operator
+  template:
+    metadata:
+      labels:
+        app: zookeeper-operator
+    spec:
+      containers:
+      - name: zookeeper-operator
+        image: quay.io/kubecraft/zookeeper-operator:v2.0.0
+        envFrom:
+        - configMapRef:
+            name: zookeeper-operator-config
+        ports:
+        - containerPort: 18183
+          name: alpn-port
+          proto: TCP
+        - name: zookeeper-pod-namespace
+          valueFrom:
+            secretKeyRef:
+              name: zookeeper-operator-secret
+              key: my_zookeeper_namespace
+        - name: zookeeper-pod-release
+          valueFrom:
+            secretKeyRef:
+              name: zookeeper-operator-secret
+              key: my_zookeeper_release
+      imagePullSecrets:
+      - name: registry-secret

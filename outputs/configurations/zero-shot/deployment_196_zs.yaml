@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: otel-system
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: otel-system
+data:
+  receivers: |
+    otlp:
+      protocols:
+        grpc:
+
+  exporters: |
+    jaeger:
+      hostPort: 5778
+    logging:
+    traces:
+      logLevel: info
+    metrics:
+      logLevel: info
+
+---
+apiVersion: helm.helm.cattle.io/v1
+kind: HelmWorkload
+metadata:
+  name: otel-collector
+  namespace: otel-system
+spec:
+  chart: otel-collector
+  version: v0.28.0
+  setValues:
+    global:
+      serviceAccount: otel-collector
+      config: |
+        receivers:
+          otlp:
+            protocols:
+              grpc:
+        exporters:
+          jaeger:
+            hostPort: 5778
+          logging:
+            logLevel: info
+          traces:
+            logLevel: info
+          metrics:
+            logLevel: info
+  start: true

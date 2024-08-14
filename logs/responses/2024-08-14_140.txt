@@ -1,0 +1,51 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single replica of the `my-stats-script` application, which runs a Python script (`stats-app.py`) within a container
+using an Alpine Linux Docker Image (`alpine:3.15`), and expose it on port 8080. The container must also include a `stats-db.yaml` configuration file as a volume mount.
+
+Deployment Manifest:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-stats-app
+  labels:
+    app: my-stats-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-stats-app
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: my-stats-app
+        tier: backend
+    spec:
+      containers:
+      - name: my-stats-app
+        image: alpine:3.15
+        command: ["python", "stats-app.py"]
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: stats-db
+          mountPath: /app/config
+      volumes:
+      - name: stats-db
+        configMap:
+          name: stats-db-config
+```
+
+Explanation:
+
+- The `apiVersion` specifies the API version being used, in this case, the Kubernetes Apps/v1 API.
+- `kind` specifies the type of resource being created, which is a Deployment in this case.
+- `metadata` contains data that helps Kubernetes identify and categorize the deployment, such as a name and labels.
+- `spec` outlines the desired state for the deployment, including the number of replicas, the pod selector, and the container configuration.
+- To run the Python script `stats-app.py`, we need an Alpine Linux Docker Image and a command to execute it. The command is defined as an array with the image name and the script file to run. In this example, we're using `alpine:3.15` as the image and `["python", "stats-app.py"]` as the command.
+- To interact with Kubernetes services and expose the application on port 8080, we need to define a `containerPort` with the port number we want to bind to inside the container.
+- To mount the `stats-db.yaml` file as a volume inside the container, we need to define a `volumeMount` with the mount path and the name of the volume, and a corresponding `volume` with the name and the ConfigMap containing the file.

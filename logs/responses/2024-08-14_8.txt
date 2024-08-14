@@ -1,0 +1,60 @@
+Deploy a single instance of the demo-backend-svc backend service in the dev namespace, using the latest version of a specified container image. The service is exposed on port 8080 and utilizes the default service account. The backend service is responsible for processing requests sent to it and responding with the appropriate data.
+
+To deploy the demo-backend-svc backend service, follow these steps:
+
+1. Set the container image name and tag in the appropriate environment variables. Replace `<your-registry>`, `<container-image-name>`, and `<container-image-tag>` with your values:
+
+```bash
+export DEMO_BACKEND_SERVICE_REGISTRY='<your-registry>'
+export DEMO_BACKEND_SERVICE_IMAGE_NAME='<container-image-name>'
+export DEMO_BACKEND_SERVICE_IMAGE_TAG='<container-image-tag>'
+```
+
+2. Deploy the demo-backend-svc deployment using the `kubectl apply` command. This command creates the deployment, service, and associated resources (e.g., replica set) to manage the backend service:
+
+```bash
+kubectl apply -f demo-backend-svc-deployment.yaml --namespace=dev
+```
+
+3. Verify that the deployment was created successfully by listing the deployments in the `dev` namespace:
+
+```bash
+kubectl get deployments --namespace=dev
+```
+
+You should see output similar to the following:
+
+```
+NAME                                  READY   UP-TO-DATE   AVAILABLE   AGE
+demo-backend-svc                      1/1     1            1           23s
+```
+
+4. Verify that the service was created successfully by listing the services in the `dev` namespace and checking that the `demo-backend-svc` service is available:
+
+```bash
+kubectl get services --namespace=dev
+```
+
+You should see output similar to the following:
+
+```
+NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+demo-backend-svc     LoadBalancer  100.96.141.155   <pending>     8080:30506/TCP     2s
+```
+
+The external IP will not be available until you configure a load balancer or service in your cloud provider to route traffic to the Kubernetes Service. The `--port` flag in the `kubectl expose` command specifies the port on the Kubernetes service to use, which is then exposed by the load balancer (or service) provided by your cloud provider.
+
+5. Verify that the Pod(s) associated with the deployment are running and ready:
+
+```bash
+kubectl get pods --namespace=dev
+```
+
+You should see output similar to the following:
+
+```
+NAME                                    READY   STATUS    RESTARTS   AGE
+demo-backend-svc-5b6bc76c86-5j66t       1/1     Running   0          50s
+```
+
+Now the demo-backend-svc backend service is deployed and ready to process requests sent to it. The service is exposed on port 8080 and utilizes the default service account.

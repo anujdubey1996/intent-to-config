@@ -1,0 +1,2 @@
+
+Deploy an Nginx web server with high availability and basic health checks

@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-controller
+  namespace: external-secrets
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cert-controller
+      app.kubernetes.io/part-of: external-secrets
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cert-controller
+        app.kubernetes.io/part-of: external-secrets
+    spec:
+      containers:
+        - name: cert-controller
+          image: quay.io/external-secrets/cert-controller:v1.5.1
+          envFrom:
+            - configMapRef:
+                name: cert-controller-env
+              secretRef:
+                name: cert-controller-secrets
+          ports:
+          - name: telemetry
+            containerPort: 6009
+          volumeMounts:
+          - name: cert-controller-config
+            mountPath: /config
+          - name: cert-controller-secrets
+            mountPath: /secrets
+      volumes:
+      - name: cert-controller-config
+        configMap:
+          name: cert-controller-config
+      - name: cert-controller-secrets
+        secret:
+          secretName: cert-controller-secrets

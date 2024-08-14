@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <Your deployment name>
+spec:
+  replicas: <Number of replicas>
+  selector:
+    matchLabels:
+      app: <Your application name>
+  template:
+    metadata:
+      labels:
+        app: <Your application name>
+    spec:
+      containers:
+      - name: <Your container name>
+        image: <Container image>
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: <Healthz path port number>
+            scheme: HTTP
+          initialDelaySeconds: <Initial seconds delay>
+          periodSeconds: <Probe interval seconds>
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: <Healthz path port number>
+            scheme: HTTP
+          initialDelaySeconds: <Initial seconds delay>
+          periodSeconds: <Probe interval seconds>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: <Your service name>
+spec:
+  selector:
+    app: <Your application name>
+  ports:
+    - protocol: TCP
+      port: <Exposed port>
+      targetPort: <Container target port>
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Job
+metadata:
+  name: <Your job name>
+spec:
+  template:
+    metadata:
+      labels:
+        app: <Your application name>
+    spec:
+      containers:
+      - name: <Your container name>
+        image: <Container image>
+        command: <Command to exceute>
+      restartPolicy: OnFailure

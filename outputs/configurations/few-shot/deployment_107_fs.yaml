@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: delegate-service
+  namespace: default
+  labels:
+    app: delegate-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: delegate-service
+  template:
+    metadata:
+      labels:
+        app: delegate-service
+    spec:
+      containers:
+      - name: delegate-service
+        image: your.container.registry/delegate-service:latest
+        env:
+        - name: DELEGATE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: delegate-api-key
+              key: apiKey
+        - name: DELEGATE_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: delegate-api-secret
+              key: secret
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+      revisionHistoryLimit: 10

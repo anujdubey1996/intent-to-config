@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cicdpipelineapp-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cicdpipelineapp
+  template:
+    metadata:
+      labels:
+        app: cicdpipelineapp
+    spec:
+      containers:
+      - name: cicdpipelineapp
+        image: 390102656945.dkr.ecr.us-west-2.amazonaws.com/cicdpipelineapp:latest
+        ports:
+        - containerPort: 80

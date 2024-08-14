@@ -1,0 +1,56 @@
+
+Create a Kubernetes deployment workload configuration file based on the provided intent.
+
+Intent: Deploy a single replica of a MySQL database with the image `mysql:5.7`
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-mysql
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:5.7
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: super-secret-password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: my-mysql-pvclaim
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-mysql-pvclaim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+```
+
+This YAML file first defines a Deployment workload for a single replica of the MySQL database using the image `mysql:5.7`. The Deployment also includes environment variable for setting the root password to `super-secret-password`, a container port mapping to 3306, and a volume mount to store the data in the MySQL container.
+
+In the second resource, a PersistentVolumeClaim is defined with the name `my-mysql-pvclaim`, requesting 10 GiB of storage. The persistent volume claim guarantees that the database will have storage for its data, which is mounted to the MySQL container.
+
+You can apply these YAML files to your Kubernetes cluster to create and deploy the MySQL database. You may need to create a persistent volume to back the PersistentVolumeClaim before applying the files.
