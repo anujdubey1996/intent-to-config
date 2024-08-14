@@ -9,7 +9,7 @@ api_url = "http://localhost:8000/generate/"
 
 # Define the prompt with examples
 prompt = """
-Create a Kubernetes deployment workload for a Java microservice running on port 8080.
+Deploy an Nginx web server with high availability and basic health checks
 """
 start = time.time()
 

@@ -1,0 +1,130 @@
+
+Deploy an Nginx web server with high availability and basic health checks
+
+In this guide, I'll walk you through deploying a highly available Nginx web server with basic health checks. We'll use Kubernetes to manage our deployment, Helm as the package manager, and will set up basic autoscaling and Ingress load balancing.
+
+### 1. Prerequisites
+
+- Kubernetes cluster running on your local machine
+- Helm installed: https://helm.sh/docs/intro/install/
+- You can use a service like minikube for your Kubernetes cluster: https://minikube.sigs.k8s.io/docs/start/
+
+### 2. Deploy Nginx on Kubernetes with Helm
+
+First, let's install the nginx-ingress Helm chart, which will simplify the deployment and configuration of the Ingress controller and Nginx server.
+
+```
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+kubectl create namespace ingress-nginx
+helm install --namespace ingress-nginx ingress-nginx ingress-nginx/ingress-nginx
+```
+
+Now that the Ingress controller has been deployed, we can create a Helm chart for our basic Nginx web server.
+
+Create a `nginx-deployment.yaml` file with the following content:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.19.0
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  labels:
+    app: nginx
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+```
+
+Now deploy our Nginx web server:
+
+```
+helm create nginx
+cd nginx
+helm upgrade --install nginx-deployment ./
+```
+
+### 3. Deploy the Nginx Ingress Resource (Ingress)
+
+Create a `nginx-ingress.yaml` file with the following content:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: nginx-test.local
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 80
+```
+
+Deploy the Ingress resource:
+
+```
+kubectl apply -f nginx-ingress.yaml
+```
+
+### 4. Test the deployment
+
+You can now test the deployment by visiting the URL `nginx-test.local` (replace the domain with your own or use Minikube's tunnel) in your browser or by using curl:
+
+```
+curl nginx-test.local
+```
+
+Both the health checks and basic load balancing are now live, and you can further optimize the setup to better suit your needs, such as:
+
+- Integrating your custom health checks
+- Creating a custom Ingress resource with TLS termination
+- Configuring Ingress rules based on the path, host, and HTTP methods
+- Utilizing Annotations to configure Ingress controller specific features (e.g., enabling gzip compression)
+- Horizontal Pod Autoscaling - scaling the number of replicas depending on CPU usage, memory usage, or external traffic load.
+- Enable Ingress Controller's `ExternalTrafficPolicy` to `Local`/`ClusterIP` based on your use case.
+
+Keep on exploring Kubernetes ecosystems, and have fun with scalable, resilient, and containerized web applications! 🌟🌐💻

@@ -1,0 +1,48 @@
+
+Create a Kubernetes deployment workload configuration file for a Java microservice running on port 8080.
+
+To create a Kubernetes deployment for a Java microservice, you'll need to write a YAML file that defines the desired state of your deployment. Here's a basic example of how you might set up a deployment for a Java microservice that runs on port 8080:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-java-service
+  labels:
+    app: my-java-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-java-service
+  template:
+    metadata:
+      labels:
+        app: my-java-service
+    spec:
+      containers:
+      - name: my-java-container
+        image: my-java-image:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx128M -Xms64M"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "256Mi"
+          requests:
+            cpu: "500m"
+            memory: "128Mi"
+```
+
+This YAML file defines a Kubernetes Deployment for a Java microservice with the following features:
+
+1. The service is named `my-java-service`.
+2. It has labels for better identification and selection, with `app: my-java-service`.
+3. The deployment will create 3 replicas with the specified label selector.
+4. The deployment template creates a Pod with a container called `my-java-container` based on the Docker image `my-java-image:latest`.
+5. The container runs on port 8080.
+6. Environment variable `JAVA_OPTS` is set to `-Xmx128M -Xms64M` (a common JVM startup option).
+7. The container's resource limitations for CPU and memory, as well as the requested amounts for the Pod.

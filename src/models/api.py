@@ -13,7 +13,7 @@ api_token = os.getenv("HUGGINGFACE_HUB_TOKEN")
 # Load the Mistral model and tokenizer with a workaround for slow tokenization
 model_name = "mistralai/Mistral-7B-Instruct-v0.3"
 try:
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=api_token, use_fast=False)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=api_token, use_fast=True)
     model = AutoModelForCausalLM.from_pretrained(model_name, use_auth_token=api_token)
 except ImportError as e:
     raise RuntimeError(f"Error loading model/tokenizer: {e}")
