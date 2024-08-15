@@ -2,20 +2,40 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ml-pipeline-ui
-  labels:
-    app: ml-pipeline-ui
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: ml-pipeline-ui
+  replicas: 1
   template:
     metadata:
       labels:
         app: ml-pipeline-ui
     spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 5
       containers:
-      - name: ml-pipeline-ui
-        image: <ml-pipeline-ui-container-image>
-        ports:
-        - containerPort: 8080
+        - name: server
+          image: neptune/ml-pipeline-ui:v0.1
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: API_KEY
+              value: "abcdefg123456"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 256Mi
+            limits:
+              cpu: 1
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          imagePullPolicy: Always

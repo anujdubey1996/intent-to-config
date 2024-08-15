@@ -1,144 +1,88 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: prometheus-operator
+  name: prometheus
+  namespace: monitoring
   labels:
-    app: prometheus-operator
+    k8s-app: prometheus
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 0
   selector:
     matchLabels:
-      app: prometheus-operator
+      k8s-app: prometheus
   template:
     metadata:
       labels:
-        app: prometheus-operator
+        k8s-app: prometheus
     spec:
+      serviceAccountName: prometheus-sa
       containers:
-      - name: prometheus-operator
-        image: quay.io/prometheus/prometheus-operator:v2.43.0
-        ports:
-        - containerPort: 9090
-          name: prometheus-port
-        - containerPort: 9091
-          name: prometheus-operators-webconsole-port
-        command: ["--config", "/etc/prometheus/prometheus.yml"]
-        securityContext:
-          runAsUser: 1000
-          fsGroup: 3000
-        volumeMounts:
-        - name: prometheus-config
-          mountPath: /etc/prometheus
-        - name: prometheus-alertmanager-cert
-          mountPath: /etc/tls/local
-        - name: prometheus-prometheus-cert
-          mountPath: /etc/tls/local/prometheus
-        resources:
-          requests:
-            cpu: 250m
-            memory: 256Mi
-          limits:
-            cpu: 500m
-            memory: 512Mi
-        envFrom:
-        - secretRef:
-            name: prometheus-operator-secrets
-        volumes:
-        - name: prometheus-config
+        - name: prometheus
+          image: prom/prometheus:v2.25.0
+          ports:
+            - name: http
+              containerPort: 9090
+            - name: metrics
+              containerPort: 9091
+          env:
+            - name: RBAC_ENABLED
+              value: "true"
+            - name: ALERTMANAGER_URLS
+              value: "http://alertmanager:9093"
+            - name: SERVER_CONFIGS
+              value: |
+                --config.file=/etc/prometheus/prometheus.yml
+              subResource: config
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/prometheus/
+              subPath: prometheus.yml
+            - name: alertmanager-config-volume
+              mountPath: /etc/prometheus/alertmanager/
+              subPath: alertmanager.yml
+              readOnly: true
+          envFrom:
+            - secretRef:
+                name: prometheus-credentials
+                optional: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 50Mi
+            limits:
+              cpu: 200m
+              memory: 100Mi
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
+      volumes:
+        - name: config-volume
           configMap:
-            name: prometheus-config
-        - name: prometheus-alertmanager-cert
-          secret:
-            secretName: prometheus-alertmanager-tls
-        - name: prometheus-prometheus-cert
-          secret:
-            secretName: prometheus-prometheus-tls
-      terminationGracePeriodSeconds: 30
-      serviceAccountName: prometheus-operator-service-account
-
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: prometheus-operator-service-account
----
-
-# Service for Prometheus Operator's web console
-apiVersion: v1
-kind: Service
-metadata:
-  name: prometheus-operator-admin-service
-  labels:
-    app: prometheus-operator
-spec:
-  selector:
-    app: prometheus-operator
-  ports:
-    - port: 80
-      targetPort: 9091
-  type: ClusterIP
-
----
-
-# ClusterRole for Prometheus Operator
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: prometheus-operator-cluster-role
-rules:
-  - apiGroups: [""]
-    resources: ["configmaps"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: [""]
-    resources: ["services"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: [""]
-    resources: ["endpoints"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-
----
-# ClusterRoleBinding for Prometheus Operator
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: prometheus-operator-cluster-role-binding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: prometheus-operator-cluster-role
-subjects:
-- kind: ServiceAccount
-  name: prometheus-operator-service-account
-
----
-# Role for Alertmanager Webhook
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: alertmanager-webhook
-  labels:
-    app: alertmanager
-spec:
-  apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["get"]
----
-
-# RoleBinding for Alertmanager Webhook
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: alertmanager-webhook-role-binding
-subjects:
-- kind: ServiceAccount
-  name: webhook
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: alertmanager-webhook
+            name: prometheus-configuration
+            items:
+              - key: prometheus.yml
+                path: prometheus.yml
+        - name: alertmanager-config-volume
+          configMap:
+            name: alertmanager-configuration
+            items:
+              - key: alertmanager.yml
+                path: alertmanager.yml
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: http
+          host: prometheus
+      livenessProbe:
+        httpGet:
+          path: /ready
+          port: http
+          host: prometheus
+      nodeSelector:
+        k8s-node-pool: monitoring-pool

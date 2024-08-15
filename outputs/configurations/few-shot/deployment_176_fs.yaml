@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenium-grid-chrome
+  labels:
+    app: selenium-grid-chrome
+spec:
+  selector:
+    matchLabels:
+      app: selenium-grid-chrome
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  minReadySeconds: 30
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: selenium-grid-chrome
+    spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 5
+      containers:
+      - name: selenium-chrome
+        image: selenium/standalone-chrome:{{ .Values.seleniumVersion }}
+        envFrom:
+        - secretRef:
+            name: selenium-grid-secret
+        ports:
+        - name: selenium-port
+          containerPort: 4444
+        volumeMounts:
+        - name: selenium-data-volume
+          mountPath: /var/lib/selenium
+        readinessProbe:
+          httpGet:
+            path: /wd/hub/status
+            port: 4444
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /wd/hub/status
+            port: 4444
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      containers:
+      - name: selenium-chrome
+        if:
+          equals:
+            {{ .Values.chromeDriver }}
+            "true"
+        image: selenium/standalone-chrome:{{ .Values.chromeDriverVersion }}
+        envFrom:
+        - secretRef:
+            name: chrome-driver-secret
+        volumeMounts:
+        - name: chrome-driver-volume
+          mountPath: /usr/bin/chromedriver
+      volumes:
+      - name: selenium-data-volume
+        emptyDir: {}
+      - name: chrome-driver-volume
+        secret:
+          secretName: selenium-chrome-driver
+        optional: true
+      resources:
+        limits:
+          cpu: {{ .Values.seleniumCPULimit }}
+          memory: {{ .Values.seleniumMemoryLimit }}
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists

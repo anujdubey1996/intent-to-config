@@ -4,10 +4,10 @@ metadata:
   name: grafana
   namespace: monitoring
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: grafana
+  replicas: 1
   template:
     metadata:
       labels:
@@ -15,22 +15,17 @@ spec:
     spec:
       containers:
       - name: grafana
-        image: grafana/grafana:v8.5.5
+        image: grafana/grafana:8.5.5
+        env:
+        - name: DATA_SOURCE_NAME
+          value: "my-prometheus"
+        - name: PWD
+          value: "/var/lib/grafana"
+        - name: GF_SECURITY_ADMIN_USER
+          value: "admin"
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: "admin"
         ports:
         - containerPort: 3000
-          name: http
-        env:
-        - name: GF_SECURITY_ADMIN_USER
-          value: admin
-        - name: GF_SECURITY_ADMIN_PASSWORD
-          value: password
-        - name: GF_SERVER_ROOT_URL
-          value: "/"
-        readinessProbe:
-          httpGet:
-            path: /login
-            port: 3000
-        livenessProbe:
-          httpGet:
-            path: /login
-            port: 3000
+          name: grafana-ui
+      imagePullPolicy: IfNotPresent

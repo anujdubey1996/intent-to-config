@@ -1,81 +1,70 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-deployment
+  name: performance-test
+  labels:
+    app: performance-test
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
-      app: test-app
+      app: performance-test
   template:
     metadata:
       labels:
-        app: test-app
+        app: performance-test
     spec:
+      serviceAccountName: default
       containers:
-      - name: test-container
-        image: nginx:latest
-        ports:
-        - containerPort: 80
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 80
-        startupProbe:
-          exec:
-            command: ["/bin/sh", "-c", "sleep 30; echo success"]
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 80
----
-apiVersion: autoscaling/v2beta2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: test-hpa
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: test-deployment
-  minReplicas: 1
-  maxReplicas: 5
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 80
----
-apiVersion: monitoring.coreos.com/v1
-kind: PrometheusRule
-metadata:
-  name: test-prometheus-rule
-spec:
-  groups:
-  - name: pod-metrics
-    matches:
-    - alert: PodLatencyOverload
-      expr: histogram_quantile(0.99, iostream_bytes_received_seconds{pod=~".*",container=.".*"}) > 1000000
-    - alert: PodCPUUtilization
-      expr: vector(kube_cpu_usage_seconds_total{pod=~".*",container=.".*",usage_period_s=1m}) / vector(kube_cpu_usage_millicore_seconds{pod=~".*",container=.".*",usage_period_s=1m}) * 100 > 70
-  rules:
-  - alert: PodLatencyOverload
-    annotations:
-      description: The average data input rate of a pod's container exceeds 1000000 bytes in a second
-    expr: histogram_quantile(0.99, iostream_bytes_received_seconds{pod=~".*",container=.".*"}) > 1000000
-    for: 1m
-    labels:
-      severity: critical
-    notifications:
-    - name: Test-LatencyAlerts
-  - alert: PodCPUUtilization
-    annotations:
-      description: A pod's container CPU utilization exceeds 70 for 1 minute
-    expr: vector(kube_cpu_usage_seconds_total{pod=~".*",container=.".*",usage_period_s=1m}) / vector(kube_cpu_usage_millicore_seconds{pod=~".*",container=.".*",usage_period_s=1m}) * 100 > 70
-    for: 1m
-    labels:
-      severity: warning
-    notifications:
-    - name: Test-CPUAlerts
+        - name: test-container
+          image: alpine:3.16
+          command: ["sleep", "2000"]
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          env:
+            - name: STARTUP_LATENCY_METRIC
+              value: "startup-latency"
+            - name: DEPLOYMENT_LATENCY_METRIC
+              value: "deployment-create"
+            - name: POD_LATENCY_METRIC
+              value: "pod-delete"
+          containers:
+          - name: prometheus-exporter
+            image: prom/node-exporter:v0.20.0
+            command:
+              - /bin/ash
+              - -c
+              - "node_exporter -collector.logging-prometheus=true --web.listen-address :8080 --path=/metrics"
+            port: 8080
+          volumes:
+            - name: metrics-volume
+              emptyDir: {}
+          terminationGracePeriodSeconds: 10
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      containers:
+        - name: log-collector
+          image: logzio/kubectl-forwarder:1.2
+          command:
+            - logzio-kubectl-forwarder
+            - --address=tcp://logzio.io:5005
+            - --port=8080
+          volumeMounts:
+            - name: logzio-key
+              secret:
+                defaultMode: 200
+                optional: true
+                name: logzio-key
+          volumeMounts:
+            - name: metrics-volume
+              mountPath: /metrics
+          hostNetwork: true
+          terminationGracePeriodSeconds: 10
+      terminationGracePeriodSeconds: 10

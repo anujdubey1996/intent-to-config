@@ -1,9 +1,52 @@
-auth-server:
-  replicas: 3
-  image: quay.io/poc-io/auth-server:latest
-  port: 8080
-  hostPort: 30008
-  env:
-    SEPARATOR: |
-      ,
-      :=
+apiVersion:apps/v1
+kind: Template
+metadata:
+  name: authserver-chart-yml
+  labels:
+    app: auth-server
+spec:
+  template:
+    metadata:
+      labels:
+        app: auth-server
+        chart: {{ .Chart.Name }}
+    spec:
+      replicas: {{ .Values.replicaCount }}
+      selector:
+        matchLabels:
+          app: auth-server
+      serviceAccountName: auth-server
+      containers:
+      - name: auth-server
+        image: auth-server:{{ .Values.imageTag }}
+        env:
+        {{- with .Values.appSettings }}
+          - name: CONFIG_URL
+            value: {{ .url }}
+        {{- end }}
+        ports:
+        {{- $ports := .Values.service.ports }}
+        {{ range $port_index, $port := $ports }}
+        - name: {{ $port.name }}
+          containerPort: {{ $port.containerPort }}
+          {{- if $port.servicePort }}
+          servicePort: {{ $port.servicePort }}
+          {{- end }}
+          {{- if $port.protocol }}
+          protocol: {{ $port.protocol }}
+          {{- end }}
+        {{- end }}
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: {{ (index .Values.service.livenessProbe.httpGet.path) | default "http" }}
+          scheme: HTTP
+        initialDelaySeconds: 15
+        periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: {{ (index .Values.service.readinessProbe.httpGet.path) | default "http" }}
+          scheme: HTTP
+        initialDelaySeconds: 15
+        periodSeconds: 10

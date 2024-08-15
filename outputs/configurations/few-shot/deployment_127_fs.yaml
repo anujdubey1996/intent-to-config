@@ -2,49 +2,61 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controller-manager
-  labels:
-    app: controller-manager
 spec:
   selector:
     matchLabels:
       app: controller-manager
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
       maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
         app: controller-manager
     spec:
       containers:
-      - name: controller-manager
-        image: controller-manager:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 8080
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
-      - name: sidecar-proxy
-        image: sidecar-proxy:latest
-        imagePullPolicy: Always
-        env:
-        - name: CONTROLLER_MANAGER_HOST
-          value: controller-manager
-        ports:
-        - containerPort: 8080
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
+        - name: controller-manager
+          image: quay.io/kubernetes-helm/controller-manager:v5.13.3
+          ports:
+            - name: http2
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http2
+        - name: proxy
+          image: quay.io/kubernetes-helm/k8s-subject-access-webhook:v0.1.2
+          env:
+            - name: K8S_SERVICE_NAME
+              value: controller-manager
+            - name: K8S_API_SERVER
+              value: http://${K8S_SERVICE_NAME}:8080
+            - name: ALLOWED_PRINCIPALS
+              value: "*"
+            - name: RBAC_POLICY
+              value: Webhook
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          command:
+          - /bin/bash
+          - -c
+          - |
+            kubectl port-forward $K8S_SERVICE_NAME $K8S_API_PORT:8081 --address 0.0.0.0
+            sleep 30
+            exec /k8s-subject-access-webhook --config-file /etc/k8s-sa-webhook.cfg

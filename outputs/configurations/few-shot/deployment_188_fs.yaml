@@ -2,10 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cloudflared-tunnel
-  labels:
-    app: cloudflared-tunnel
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: cloudflared-tunnel
@@ -14,42 +11,37 @@ spec:
       labels:
         app: cloudflared-tunnel
     spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 5
       containers:
-      - name: cloudflared-tunnel
-        image: cloudflare/cloudflared:latest
-        ports:
-        - name: cloudflare
-          containerPort: 80 # For your custom service definition, change this to the port you want to use
-        env:
-        - name: TUNNEL_ID
-          valueFrom:
-            secretKeyRef:
-              name: cloudflared-tunnel-credentials
-              key: tunnel-id
-        - name: TUNNEL_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: cloudflared-tunnel-credentials
-              key: tunnel-api-key
-        livenessProbe:
-          httpGet:
-            path: /probe
-            port: 8080
-            scheme: HTTP
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8080
-            scheme: HTTP
-        volumeMounts:
-        - name: cloudflared-config
-          mountPath: /etc/cloudflared
-        - name: cloudflared-credentials
-          mountPath: /etc/cloudflared/ credentials
+        - name: cloudflared
+          image: cloudflare/cloudflared:v2021.12.0
+          env:
+            - name: TUNNEL_URL
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflared-credentials
+                  key: tunnel-url
+            - name: TUNNEL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflared-credentials
+                  key: tunnel-token
+          ports:
+            - name: cloudflared-port
+              containerPort: 8080
+          volumeMounts:
+            - name: cloudflared-config
+              mountPath: /etc/cloudflared
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: cloudflared-port
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: cloudflared-port
       volumes:
         - name: cloudflared-config
           configMap:
             name: cloudflared-config
-        - name: cloudflared-credentials
-          secret:
-            secretName: cloudflared-tunnel-credentials

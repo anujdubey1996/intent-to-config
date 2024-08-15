@@ -1,0 +1,315 @@
+
+Here are some examples of Kubernetes deployment configurations based on intent:
+
+Intent: Unknown Intent
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: neptune-10ab
+  name: neptune-10ab
+  namespace: neptune
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: neptune-10ab
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: neptune-10ab
+    spec:
+      serviceAccountName: neptune-sa-v2
+      containers:
+      - image: httpd:2.4-alpine
+        name: neptune-pod-10ab
+        resources:
+          requests:
+            memory: 20Mi
+          limits:
+            memory: 50Mi
+
+status: {}
+
+
+Intent: Define a Kubernetes deployment for a container running the lalyos/12factor image with environment variables sourced from a secret.
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geolocationdb
+  labels:
+    app: geolocationdb
+spec:
+  selector:
+    matchLabels:
+      app: geolocationdb
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: geolocationdb
+    spec:
+      containers:
+      - name: geolocationdb
+        image: vprofile/vprofiledb:V1
+        args:
+         - "--ignore-db-dir=lost+found"
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: geolo-db-data
+        ports:
+        - name: geolo-port
+          containerPort: 3306
+        env:
+         - name: MYSQL_ROOT_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: app-secret
+               key: db-pass
+      nodeSelector:
+        zone: us-east-1a
+      volumes:
+        - name: geolo-db-data
+          # This AWS EBS volume must already exist.
+          awsElasticBlockStore:
+             volumeID: vol-0343110a53e1a3eaf
+             fsType: ext4
+
+
+Intent: Deploy a containerized application with specific environment variables. The deployment configuration specifies a single container using an image built from a Dockerfile and sets various environment variables.
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dp
+  namespace: own
+spec: 
+  replicas: 2
+  strategy: 
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  minReadySeconds: 30
+  selector:
+    matchLabels:
+      app: java
+  template:
+    metadata: 
+     name: tmp
+     labels:
+       app: java
+    spec:
+      containers:
+      - name: con
+        image: 637423476845.dkr.ecr.ap-south-1.amazonaws.com/ecs:test
+        ports:
+        - containerPort: 8080
+
+
+
+Intent: Create a Kubernetes Deployment for a Redis instance with a single replica. The deployment configures resource requests and limits for the Redis container and exposes the default Redis port
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: currencyservice
+spec:
+  selector:
+    matchLabels:
+      app: currencyservice
+  template:
+    metadata:
+      labels:
+        app: currencyservice
+    spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: server
+          image: gcr.io/google-samples/microservices-demo/currencyservice:v0.3.6
+          ports:
+            - name: grpc
+              containerPort: 7000
+          env:
+            - name: PORT
+              value: "7000"
+            - name: DISABLE_TRACING
+              value: "1"
+            - name: DISABLE_PROFILER
+              value: "1"
+            - name: DISABLE_DEBUGGER
+              value: "1"
+          readinessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:7000"]
+          livenessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:7000"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
+
+Intent: Deploy the cert-controller in a Kubernetes cluster when the certController is to be created and the certManager is not enabled for the webhook
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stash-demo
+  namespace: demo
+  labels:
+    app: stash-demo
+  # This annotations indicates that data should be recovered on each restart of the workload
+  annotations:
+    stash.appscode.com/restorepolicy: "OnRestart"
+    stash.appscode.com/repository: "demo-backup-repo"
+    stash.appscode.com/directories: "[/source/data]"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stash-demo
+  template:
+    metadata:
+      labels:
+        app: stash-demo
+      name: busybox
+    spec:
+      containers:
+      - args:
+        - sleep
+        - "3600"
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        name: busybox
+        volumeMounts:
+        - mountPath: /source/data
+          name: source-data
+      restartPolicy: Always
+      volumes:
+      - name: source-data
+        configMap:
+          name: stash-sample-data
+
+
+Now, based on the following intent, generate the corresponding Kubernetes deployment configuration:
+
+Intent: Create a Kubernetes Deployment configuration using Helm templating for deploying a Chrome node in a Selenium Grid, with conditional inclusion based on various Helm values and configurations.
+
+The deployment should consist of a single container using an image of selenium/standalone-chrome with the following environment variables and volume mounts. The deployment should define a service of type ClusterIP to expose the node within the cluster and port 4444.
+
+Furthermore, the deployment should set limits on the CPU and memory resources for the container and should have a readiness probe and liveness probe.
+
+Finally, there should be a condition for enabling the chromeDriver based on the value of the helm set flag `--chrome-driver` and the version of the chrome driver should be set based on the helm value of `chrome-driver-version`.
+
+Configuration:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenium-grid-chrome
+  labels:
+    app: selenium-grid-chrome
+spec:
+  selector:
+    matchLabels:
+      app: selenium-grid-chrome
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  minReadySeconds: 30
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: selenium-grid-chrome
+    spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 5
+      containers:
+      - name: selenium-chrome
+        image: selenium/standalone-chrome:{{ .Values.seleniumVersion }}
+        envFrom:
+        - secretRef:
+            name: selenium-grid-secret
+        ports:
+        - name: selenium-port
+          containerPort: 4444
+        volumeMounts:
+        - name: selenium-data-volume
+          mountPath: /var/lib/selenium
+        readinessProbe:
+          httpGet:
+            path: /wd/hub/status
+            port: 4444
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /wd/hub/status
+            port: 4444
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      containers:
+      - name: selenium-chrome
+        if:
+          equals:
+            {{ .Values.chromeDriver }}
+            "true"
+        image: selenium/standalone-chrome:{{ .Values.chromeDriverVersion }}
+        envFrom:
+        - secretRef:
+            name: chrome-driver-secret
+        volumeMounts:
+        - name: chrome-driver-volume
+          mountPath: /usr/bin/chromedriver
+      volumes:
+      - name: selenium-data-volume
+        emptyDir: {}
+      - name: chrome-driver-volume
+        secret:
+          secretName: selenium-chrome-driver
+        optional: true
+      resources:
+        limits:
+          cpu: {{ .Values.seleniumCPULimit }}
+          memory: {{ .Values.seleniumMemoryLimit }}
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+```
+In this configuration:
+
+* The deployment is named `selenium-grid-chrome`
+* The labels consist of `app: selenium-grid-chrome`
+* The replica count is defined based on the Helm values.
+* Pods from this deployment are labeled with `app: selenium-grid-chrome`.
+* It uses a `RollingUpdate` strategy with resource definition and liveness and readiness probes to ensure smooth rolling updates.
+* The spec contains a `serviceAccountName` for the default service account and `terminationGracePeriodSeconds` set to 5.
+* The container name is set to `selenium-chrome`.
+* The image used is `selenium/standalone-chrome` and the version is based on the Helm values.
+* The container will have environment variables sourced from a secret `selenium-grid-secret`.
+* The container will have port 4444 exposed.
+* The container will have a volume mount at `/var/lib/selenium` named `selenium-data-volume` which will be an empty Dir.
+* The container will have a readiness probe and a liveness probe, both checking the status at `/wd/hub/status` on port 4444 with an initial delay of 5 and 15 seconds respectively and a period of 10 seconds.
+* The `nodeSelector` ensures that the pods are deployed on Linux nodes.
+* The `if` condition in the container spec allows for optional inclusion of the `selenium-chrome` container based on the value of the helm set flag `--chrome-driver`.
+* If the condition is true (i.e. helm flag is set), the container uses `selenium/standalone-chrome:{{ .Values.chromeDriverVersion }}` image, sources environment variables from `chrome-driver-secret` and has a volume mount at `/usr/bin/chromedriver` named `chrome-driver-volume`. The volume `chrome-driver-volume` is set to be a secret and the `secretName` is based on the Helm values. The volume is optional in case the user does not want to use the chromeDriver.
+* The `resources` section is used to set CPU and memory limits based on the Helm values.
+* The `tolerations` section allows this pod to be scheduled on nodes with taints that have the effect of NoSchedule but only if the taint operator is set to Exists.
+* The `spec.containers.volumes` section contains two `volumes` for the container, `selenium-data-volume` and `chrome-driver-volume`. The `selenium-data-volume` will be created as an emptyDir and `chrome-driver-volume` will be a secret set to `selenium-chrome-driver`.

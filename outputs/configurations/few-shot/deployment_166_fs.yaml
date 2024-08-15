@@ -1,82 +1,46 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: consul
+  name: consul-service
+  namespace: consul
   labels:
     app: consul
-    environment: production
+    tier: backend
   annotations:
-    description: "Consul service deployment for the production environment"
+    # This annotation indicates that the deployment should be rolled out gradually
+    rollout.knative.dev/max-surge: "1"
+    # This annotation sets the deployment's revision history limit
+    revision.knative.dev/max-history: "5"
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: consul
-      environment: production
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
   template:
     metadata:
       labels:
         app: consul
-        environment: production
+        tier: backend
     spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
       containers:
-        - name: consul
-          image: bitnami/consul:latest
+        - name: consul-container
+          image: hashicorp/consul:1.11.2
           ports:
-            - containerPort: 8500
-              name: consul
-            - containerPort: 8600
-              name: consul-ui
-              protocol: TCP
-          volumeMounts:
-            - name: consul-config
-              mountPath: /etc/consul.d
+            - name: consul-dns
+              containerPort: 8600
+            - name: consul-http
+              containerPort: 8500
           env:
-            - name: CONSUL_DEBUG_HTTP
-              value: "true"
-            - name: CONSUL_LAN_ADDR
-              value: "0.0.0.0"
-            - name: CONSUL_HTTP_ADDR
-              value: "0.0.0.0"
-            - name: CONSUL_HTTP_PORT_HTTP_TCP_8500_PORT
-              value: "8500"
-            - name: CONSUL_HTTP_PORT_HTTP_TCP_8600_PORT
-              value: "8600"
-          imagePullPolicy: Always
-          readinessProbe:
-            httpGet:
-              path: /v1/health/self
-              port: 8500
-          livenessProbe:
-            httpGet:
-              path: /v1/health/self
-              port: 8500
-      volumes:
-        - name: consul-config
-          configMap:
-            name: consul-config
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: consul
-  labels:
-    app: consul
-    environment: production
-spec:
-  selector:
-    app: consul
-    environment: production
-  ports:
-    - name: consul
-      port: 8500
-      targetPort: 8500
-    - name: consul-ui
-      port: 8600
-      targetPort: 8600
-  type: LoadBalancer
+            - name: CONSUL_LAN_IP
+              value: "10.0.0.1"
+            # Add more environment variables as needed
+          command: ["consul", "agent", "-server", "-bootstrap", "-client=0.0.0.0"]
+          resources:
+            requests:
+              memory: 8Mi
+              cpu: 500m
+            limits:
+              memory: 32Mi
+              cpu: 1000m

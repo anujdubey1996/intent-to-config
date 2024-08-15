@@ -1,6 +1,50 @@
-replicas: 3
-image: my-microservice:latest
-
-env:
-  APP_NAME: my-app
-  APP_VERSION: v1
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ include "myapp.fullname" . }}
+    chart: {{ include "myapp.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "myapp.fullname" . }}
+      chart: {{ include "myapp.chart" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "myapp.fullname" . }}
+        chart: {{ include "myapp.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+    spec:
+      serviceAccountName: {{ include "myapp.serviceAccountName" . }}
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+          - containerPort: {{ .Values.service.port }}
+        env:
+        - name: APP_ENV
+          value: "production"
+          {{- if .Values.configMaps | boolean}}
+        configMap:
+          name: {{ .Release.Name }}
+          {{- else if .Values.secrets | boolean }}
+        secret:
+          optional: true
+          secretName: {{ .Release.Name }}
+        {{- end }}
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ .Release.Name }}

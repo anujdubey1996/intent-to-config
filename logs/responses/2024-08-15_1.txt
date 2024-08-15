@@ -1,0 +1,260 @@
+
+Here are some examples of Kubernetes deployment configurations based on intent:
+
+Intent: Unknown Intent
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: neptune-10ab
+  name: neptune-10ab
+  namespace: neptune
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: neptune-10ab
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: neptune-10ab
+    spec:
+      serviceAccountName: neptune-sa-v2
+      containers:
+      - image: httpd:2.4-alpine
+        name: neptune-pod-10ab
+        resources:
+          requests:
+            memory: 20Mi
+          limits:
+            memory: 50Mi
+
+status: {}
+
+
+Intent: Define a Kubernetes deployment for a container running the lalyos/12factor image with environment variables sourced from a secret.
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geolocationdb
+  labels:
+    app: geolocationdb
+spec:
+  selector:
+    matchLabels:
+      app: geolocationdb
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: geolocationdb
+    spec:
+      containers:
+      - name: geolocationdb
+        image: vprofile/vprofiledb:V1
+        args:
+         - "--ignore-db-dir=lost+found"
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: geolo-db-data
+        ports:
+        - name: geolo-port
+          containerPort: 3306
+        env:
+         - name: MYSQL_ROOT_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: app-secret
+               key: db-pass
+      nodeSelector:
+        zone: us-east-1a
+      volumes:
+        - name: geolo-db-data
+          # This AWS EBS volume must already exist.
+          awsElasticBlockStore:
+             volumeID: vol-0343110a53e1a3eaf
+             fsType: ext4
+
+
+Intent: Deploy a containerized application with specific environment variables. The deployment configuration specifies a single container using an image built from a Dockerfile and sets various environment variables.
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dp
+  namespace: own
+spec: 
+  replicas: 2
+  strategy: 
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  minReadySeconds: 30
+  selector:
+    matchLabels:
+      app: java
+  template:
+    metadata: 
+     name: tmp
+     labels:
+       app: java
+    spec:
+      containers:
+      - name: con
+        image: 637423476845.dkr.ecr.ap-south-1.amazonaws.com/ecs:test
+        ports:
+        - containerPort: 8080
+
+
+
+Intent: Create a Kubernetes Deployment for a Redis instance with a single replica. The deployment configures resource requests and limits for the Redis container and exposes the default Redis port
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: currencyservice
+spec:
+  selector:
+    matchLabels:
+      app: currencyservice
+  template:
+    metadata:
+      labels:
+        app: currencyservice
+    spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: server
+          image: gcr.io/google-samples/microservices-demo/currencyservice:v0.3.6
+          ports:
+            - name: grpc
+              containerPort: 7000
+          env:
+            - name: PORT
+              value: "7000"
+            - name: DISABLE_TRACING
+              value: "1"
+            - name: DISABLE_PROFILER
+              value: "1"
+            - name: DISABLE_DEBUGGER
+              value: "1"
+          readinessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:7000"]
+          livenessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:7000"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
+
+Intent: Deploy the cert-controller in a Kubernetes cluster when the certController is to be created and the certManager is not enabled for the webhook
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stash-demo
+  namespace: demo
+  labels:
+    app: stash-demo
+  # This annotations indicates that data should be recovered on each restart of the workload
+  annotations:
+    stash.appscode.com/restorepolicy: "OnRestart"
+    stash.appscode.com/repository: "demo-backup-repo"
+    stash.appscode.com/directories: "[/source/data]"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stash-demo
+  template:
+    metadata:
+      labels:
+        app: stash-demo
+      name: busybox
+    spec:
+      containers:
+      - args:
+        - sleep
+        - "3600"
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        name: busybox
+        volumeMounts:
+        - mountPath: /source/data
+          name: source-data
+      restartPolicy: Always
+      volumes:
+      - name: source-data
+        configMap:
+          name: stash-sample-data
+
+
+Now, based on the following intent, generate the corresponding Kubernetes deployment configuration:
+
+Intent: Deploy the kuard application with 10 replicas to ensure high availability, utilizing a rolling update strategy for seamless updates. The deployment includes readiness probes to confirm that the application is ready to handle traffic, ensuring smooth operation during rollouts
+
+Configuration:
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kuard-deployment
+  labels:
+    app: kuard
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: kuard
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 2
+      maxSurge: 3
+  template:
+    metadata:
+      labels:
+        app: kuard
+    spec:
+      containers:
+      - name: kuard
+        image: gcr.io/kuar-demo/kuard-2:latest
+        ports:
+        - containerPort: 8080
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 8080
+        initialDelaySeconds: 5
+        periodSeconds: 10
+```
+
+Explanation:
+
+- `apiVersion: apps/v1`: Specifies the version of the Kubernetes API for use in this configuration.
+- `kind: Deployment`: Defines the object type as a Deployment.
+- `metadata`: Contains data that helps the object be uniquely identified, including the name of the Deployment and any labels that might be helpful for filtering or selecting this Deployment later.
+- `spec`: Contains the specifications of what the controller should manage, including the number of replicas and the specific container image to use within the pods.
+- `replicas`: Defines the desired number of replicas for this Deployment, ensuring high availability in this case with 10 replicas.
+- `selector`: Used in conjunction with the spec's replicas, the selector helps match current pods to the Deployment, allowing the controller to update or handle them correctly.
+- `matchLabels`: Contains a key-value pair that uniquely identifies the pod within a cluster. `app: kuard` has been chosen as the label.
+- `strategy`: Describes the strategy to use for scaling the Deployment, such as rolling updates or recreating the whole Deployment at once. In this case, `RollingUpdate` will be used.
+- `rollingUpdate`: Defines the behavior during a rolling update, ensuring maximum availability and minimal disruption for updates. `maxUnavailable` allows up to 2 pods to be unavailable during update, while `maxSurge` sets the maximum number of pods created beyond the current number at a time, in this case 3 pods.
+- `template`: Contains the metadata template for the pods that will be created, including container configuration details, networking, resources, and probes.
+- `containers`: Describes the container to run within the pod, including the image to use and exposed ports.
+- `name`: Sets the name of the container within the pod.
+- `ports`: Defines the network port that the container uses and exposes to the outside world. In this case, `8080` has been chosen, port for the kuard application.
+- `readinessProbe`: Enables the controller to check whether the container is ready to receive traffic. In this case, a `httpGet` probe is used to check the status of the application at URL `/`, with an initial delay of 5 seconds and a period of 10 seconds thereafter. This ensures that the application has sufficient time to start and become ready before checking its readiness.

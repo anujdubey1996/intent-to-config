@@ -1,9 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-app-deployment
+  name: my-app
 spec:
-  replicas: 3
   selector:
     matchLabels:
       app: my-app
@@ -13,25 +12,17 @@ spec:
         app: my-app
     spec:
       containers:
-      - name: my-app
-        image: my-app:latest
+      - name: my-container
+        image: my-registr.yum:my-image:1.0.0
         ports:
-        - containerPort: 8080
+        - containerPort: 80
         env:
-        - name: MY_API_KEY
-          value: abc123
-        - name: MY_SECRET_TOKEN
-          value: xyz789
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: my-app-service
-spec:
-  type: ClusterIP
-  selector:
-    app: my-app
-  ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 8080
+         - name: MY_API_KEY
+           value: my-api-key-value
+         - name: MY_DB_URL
+           value: my-db-url
+         - name: MY_SECRET_KEY
+           valueFrom:
+             secretKeyRef:
+               name: my-secret
+               key: my-secret-key

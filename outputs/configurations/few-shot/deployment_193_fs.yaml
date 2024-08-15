@@ -15,15 +15,9 @@ spec:
         app: meow
     spec:
       containers:
-      - name: my-meow
-        image: ghcr.io/your-username/your-repo:your-tag
-        ports:
-        - containerPort: 8080
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
+        - name: meow
+          image: meow:v1
+          ports:
+            - name: http
+              containerPort: 80
+      imagePullPolicy: Always

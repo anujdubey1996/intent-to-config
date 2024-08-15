@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: pedido-ms
-  labels:
-    app: pedido-ms
 spec:
   replicas: 3
   selector:
@@ -14,27 +12,26 @@ spec:
       labels:
         app: pedido-ms
     spec:
+      serviceAccountName: pedido-sa
       containers:
       - name: pedido-ms
-        image: pedido-ms:latest
+        image: <image_url/pedido-ms>
         ports:
         - containerPort: 8080
-        resources:
-          requests:
-            cpu: 250m
-            memory: 50Mi
-          limits:
-            cpu: 500m
-            memory: 100Mi
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
-          initialDelaySeconds: 15
-          periodSeconds: 10
+        env:
+        # Set environment variables as needed
         readinessProbe:
           httpGet:
-            path: /healthz
+            path: /readiness
             port: 8080
-          initialDelaySeconds: 15
-          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 8080
+        resources:
+          requests:
+            cpu: <cpu_requests>
+            memory: <memory_requests>
+          limits:
+            cpu: <cpu_limits>
+            memory: <memory_limits>

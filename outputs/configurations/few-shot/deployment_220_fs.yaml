@@ -1,43 +1,41 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-app-deployment
-  labels:
-    app: my-app
+  name: custom-server-app
+  namespace: custom-app
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: my-app
+      app: custom-server-app
+  replicas: 1
   template:
     metadata:
       labels:
-        app: my-app
+        app: custom-server-app
     spec:
+      serviceAccountName: default
       containers:
-      - name: my-app-container
-        image: my-app-image:latest
+      - name: custom-server-container
+        image: registry.example.com/my-custom-server:v1
         ports:
         - containerPort: 8080
         volumeMounts:
-        - name: my-app-scripts
+        - name: scripts-volume
           mountPath: /scripts
-        - name: my-app-secrets
+        - name: secrets-volume
           mountPath: /secrets
         env:
-        - name: APP_SECRET_KEY
+        - name: MY_SECRET_KEY
           valueFrom:
             secretKeyRef:
-              name: my-app-secret
-              key: secret-key
-        env:
-        - name: DB_URI
-          value: "mongodb://user:password@mongo-service.default.svc.cluster.local/my-database"
-        command: ["node", "/scripts/my-app.js", "--debug"]
+              name: my-secret
+              key: secret_key
+        command: ["/bin/sh", "-c", "node server.js --debug"]
+      restartPolicy: Always
       volumes:
-      - name: my-app-scripts
+      - name: scripts-volume
         configMap:
-          name: my-app-scripts-configmap
-      - name: my-app-secrets
+          name: custom-server-scripts
+      - name: secrets-volume
         secret:
-          secretName: my-app-secret
+          secretName: my-secrets

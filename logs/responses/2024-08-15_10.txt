@@ -1,0 +1,327 @@
+
+Here are some examples of Kubernetes deployment configurations based on intent:
+
+Intent: Unknown Intent
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: neptune-10ab
+  name: neptune-10ab
+  namespace: neptune
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: neptune-10ab
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: neptune-10ab
+    spec:
+      serviceAccountName: neptune-sa-v2
+      containers:
+      - image: httpd:2.4-alpine
+        name: neptune-pod-10ab
+        resources:
+          requests:
+            memory: 20Mi
+          limits:
+            memory: 50Mi
+
+status: {}
+
+
+Intent: Define a Kubernetes deployment for a container running the lalyos/12factor image with environment variables sourced from a secret.
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geolocationdb
+  labels:
+    app: geolocationdb
+spec:
+  selector:
+    matchLabels:
+      app: geolocationdb
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: geolocationdb
+    spec:
+      containers:
+      - name: geolocationdb
+        image: vprofile/vprofiledb:V1
+        args:
+         - "--ignore-db-dir=lost+found"
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: geolo-db-data
+        ports:
+        - name: geolo-port
+          containerPort: 3306
+        env:
+         - name: MYSQL_ROOT_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: app-secret
+               key: db-pass
+      nodeSelector:
+        zone: us-east-1a
+      volumes:
+        - name: geolo-db-data
+          # This AWS EBS volume must already exist.
+          awsElasticBlockStore:
+             volumeID: vol-0343110a53e1a3eaf
+             fsType: ext4
+
+
+Intent: Deploy a containerized application with specific environment variables. The deployment configuration specifies a single container using an image built from a Dockerfile and sets various environment variables.
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dp
+  namespace: own
+spec: 
+  replicas: 2
+  strategy: 
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  minReadySeconds: 30
+  selector:
+    matchLabels:
+      app: java
+  template:
+    metadata: 
+     name: tmp
+     labels:
+       app: java
+    spec:
+      containers:
+      - name: con
+        image: 637423476845.dkr.ecr.ap-south-1.amazonaws.com/ecs:test
+        ports:
+        - containerPort: 8080
+
+
+
+Intent: Create a Kubernetes Deployment for a Redis instance with a single replica. The deployment configures resource requests and limits for the Redis container and exposes the default Redis port
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: currencyservice
+spec:
+  selector:
+    matchLabels:
+      app: currencyservice
+  template:
+    metadata:
+      labels:
+        app: currencyservice
+    spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: server
+          image: gcr.io/google-samples/microservices-demo/currencyservice:v0.3.6
+          ports:
+            - name: grpc
+              containerPort: 7000
+          env:
+            - name: PORT
+              value: "7000"
+            - name: DISABLE_TRACING
+              value: "1"
+            - name: DISABLE_PROFILER
+              value: "1"
+            - name: DISABLE_DEBUGGER
+              value: "1"
+          readinessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:7000"]
+          livenessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:7000"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
+
+Intent: Deploy the cert-controller in a Kubernetes cluster when the certController is to be created and the certManager is not enabled for the webhook
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stash-demo
+  namespace: demo
+  labels:
+    app: stash-demo
+  # This annotations indicates that data should be recovered on each restart of the workload
+  annotations:
+    stash.appscode.com/restorepolicy: "OnRestart"
+    stash.appscode.com/repository: "demo-backup-repo"
+    stash.appscode.com/directories: "[/source/data]"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stash-demo
+  template:
+    metadata:
+      labels:
+        app: stash-demo
+      name: busybox
+    spec:
+      containers:
+      - args:
+        - sleep
+        - "3600"
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        name: busybox
+        volumeMounts:
+        - mountPath: /source/data
+          name: source-data
+      restartPolicy: Always
+      volumes:
+      - name: source-data
+        configMap:
+          name: stash-sample-data
+
+
+Now, based on the following intent, generate the corresponding Kubernetes deployment configuration:
+
+Intent: Deploy a configurable application with multiple replicas and optional update strategies. The deployment includes settings for security, image management, environment configuration through secrets, and health checks. It also supports resource allocation, volume mounting, node selection, affinity, and tolerations based on provided values, ensuring the application is properly managed and scaled according to the deployment's requirements
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${DEPLOYMENT_NAME}
+  labels:
+    app: ${APP_NAME}
+  namespace: ${NAMESPACE}
+
+spec:
+  replicas: ${REPLICAS}
+  selector:
+    matchLabels:
+      app: ${APP_NAME}
+  strategy:
+    ${UPDATES_STRATEGY}:
+      type: ${UPDATES_STRATEGY_TYPE}
+      ${UPDATES_STRATEGY_ROLLING_REFILL}: ${UPDATES_STRATEGY_ROLLING_UPDATE_REFILL}
+      ${UPDATES_STRATEGY_MAX_UNAVAILABLE}: ${UPDATES_STRATEGY_MAX_UNAVAILABLE}
+      ${UPDATES_STRATEGY_MAX_SURGE}: ${UPDATES_STRATEGY_MAX_SURGE}
+  minReadySeconds: ${MIN_READY_SECONDS}
+  selector:
+    matchLabels:
+      app: ${APP_NAME}
+  template:
+    metadata:
+      labels:
+        app: ${APP_NAME}
+    spec:
+      serviceAccountName: ${SERVICE_ACCOUNT_NAME}
+      terminationGracePeriodSeconds: ${TERMINATION_GRACE_PERIOD}
+      securityContext:
+        ${SECURITY_CONTEXT}: {}
+      controllers:
+        - args:
+          - args0
+          - args1
+          containerName: ${CONTAINER_NAME}
+          image: ${IMAGE_URL}
+          imagePullPolicy: ${IMAGE_PULL_POLICY}
+          ports:
+          - name: ${PORT_NAME}
+            containerPort: ${CONTAINER_PORT}
+          env:
+          ${ENVIRONMENT_CONFIG}:
+          readinessProbe:
+            exec:
+              command: ["/bin/kubectl", "-n", "${NAMESPACE}", "--dry-run", "--output=json", "--template='{{.spec.containers[{{(index .spec.containers | index by key "{{ containerName | quote }}" )}}].readinessProbe}'"]
+            initialDelaySeconds: ${READINESS_PROBE_INITIAL_DELAY}
+            periodSeconds: ${READINESS_PROBE_PERIOD}
+            timeoutSeconds: ${READINESS_PROBE_TIMEOUT}
+          livenessProbe:
+            exec:
+              command: ["/bin/kubectl", "-n", "${NAMESPACE}", "--dry-run", "--output=json", "--template='{{.spec.containers[{{(index .spec.containers | index by key "{{ containerName | quote }}" )}}].livenessProbe}'"]
+            initialDelaySeconds: ${LIVENESS_PROBE_INITIAL_DELAY}
+            periodSeconds: ${LIVENESS_PROBE_PERIOD}
+            timeoutSeconds: ${LIVENESS_PROBE_TIMEOUT}
+          resources:
+          ${RESOURCE_CONFIG}:
+          volumeMounts:
+          ${VOLUME_MOUNTS}:
+      nodeSelector:
+        ${NODE_SELECTOR}: {}
+      affinity:
+        ${AFFINITY}: {}
+      tolerations:
+        ${TOLERATIONS}: {}
+
+Here's an annotated version of the generated configuration with descriptions of placeholders:
+
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <Deployment Name> (e.g., my-app)
+  labels:
+    app: <App Name> (e.g., my-app)
+  namespace: <Kubernetes Namespace> (e.g., default)
+
+spec:
+  replicas: <Number of Replicas> (e.g., 3)
+  selector:
+    matchLabels:
+      app: <App Name> (e.g., my-app)
+  strategy:
+    <Update Strategy Type> (e.g., RollingUpdate):
+      type: <Update Strategy Type> (e.g., Recreate)
+      <Optional Rolling Update Configuration> (e.g., RollingUpdate for Recreate):
+        type: <Update Strategy Subtype> (e.g., Recreate)
+        maxSurge: <Number of Pods to Created Above the Desired Number> (e.g., 1)
+        maxUnavailable: <Number of Pods Below the Desired Number> (e.g., 1)
+        rollbackTo: <Version to rollback if an update fails> (e.g., v1)
+  minReadySeconds: <Timeout for a newly created pod before it becomes ready> (e.g., 30)
+  selector:
+    matchLabels:
+      app: <App Name> (e.g., my-app)
+  template:
+    metadata:
+      labels:
+        app: <App Name> (e.g., my-app)
+    spec:
+      serviceAccountName: <Service Account Name> (e.g., default)
+      terminationGracePeriodSeconds: <Termination Grace Period> (e.g., 5)
+      securityContext: <Container Security Context Configuration> (e.g., allowPrivileged: true, runAsUser: 1000)
+      controllers:
+        - args: <List of container command line arguments> (e.g., ["--http-port", "8080"])
+          containerName: <Container Name> (e.g., my-app)
+          image: <Container Image URL> (e.g., gcr.io/google-samples/node-hello:1.0)
+          imagePullPolicy: <Image Pull Policy> (e.g., Always)
+          ports:
+          - name: <Container Port Name> (e.g., http)
+            containerPort: <Container Port Number> (e.g., 8080)
+          env: <Environment Variables Configuration> (e.g., MYAPP_ENV_KEY: myapp_env_value)
+          readinessProbe: <Container Readiness Probe Configuration> (e.g., checks container health when the app is ready to start accepting traffic)
+          livenessProbe: <Container Liveness Probe Configuration> (e.g., checks container health if it fails, restarts the container and logs the error)
+          resources: <CPU and Memory Requests and Limits> (e.g., limits.cpu: "2", limits.memory: "512Mi")
+          volumeMounts: <Volume Mount Configuration> (e.g., mountPath: /mnt/data, name: data-volume)
+      nodeSelector: <Node Selector Configuration> (e.g., zone: us-west-1a)
+      affinity: <Pod Affinity Configuration> (e.g., requires that the scheduled pods are scheduled onto the same node as other pods matching pod affinity selectors)
+      tolerations: <Tolerations Configuration> (e.g., tolerates the taint effect of node affinity, scheduler, and pod disruption budges on certain node taints)

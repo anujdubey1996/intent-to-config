@@ -1,74 +1,96 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: airbyte-api
-  labels:
-    app: airbyte
-    component: api
+  name: airbyte-cloud
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: airbyte
-      component: api
+      component: airbyte-cloud
+  replicas: 1
   template:
     metadata:
       labels:
-        app: airbyte
-        component: api
+        component: airbyte-cloud
     spec:
       containers:
-      - name: airbyte-api
-        image: airbyte/airbyte-api:<version>
+      - name: airbyte-cloud
+        image: airbyte/airbyte-Cloud:latest
         ports:
-        - containerPort: 80
+        - name: airbyte-cloud-port
+          containerPort: 8080
+        env:
+        - name: AIRBYTE_CLOUD_API_SECRET_KEY
+          value: $(AIRBYTE_CLOUD_API_SECRET_KEY) # Value should be set through an environment variable or secret
         resources:
-          limits:
-            memory: 128Mi
           requests:
             cpu: 200m
-            memory: 64Mi
-        env:
-        - name: AMBASSADOR_HOST
-          value: airbyte-api.service.internal
-        - name: AMBASSADOR_PORT
-          value: 80
-      imagePullSecret: <image-pull-secret>
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 1024Mi
+
 ---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: airbyte-dbt-core
-  labels:
-    app: airbyte
-    component: dbt-core
+  name: airbyte-api-server
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: airbyte
-      component: dbt-core
+      component: airbyte-api-server
+  replicas: 1
   template:
     metadata:
       labels:
-        app: airbyte
-        component: dbt-core
+        component: airbyte-api-server
     spec:
       containers:
-      - name: airbyte-dbt-core
-        image: airbyte/airbyte-dbt-core:<version>
-        resources:
-          limits:
-            memory: 128Mi
-          requests:
-            cpu: 200m
-            memory: 64Mi
+      - name: airbyte-api-server
+        image: airbyte/airbyte-api-server:latest
+        ports:
+        - name: airbyte-api-server-port
+          containerPort: 80
         env:
-        - name: DB_URL
-          value: <database-url>
-        - name: DB_USER
-          value: <database-user>
-        - name: DB_PASSWORD
-          value: <database-password>
-        command: ["dbt", "run"]
-      imagePullSecret: <image-pull-secret>
+        - name: AIRBYTE_API_SERVER_API_TOKEN
+          value: $(AIRBYTE_API_SERVER_API_TOKEN) # Value should be set through an environment variable or secret
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 200m
+            memory: 512Mi
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-api-gateway
+spec:
+  selector:
+    matchLabels:
+      component: airbyte-api-gateway
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        component: airbyte-api-gateway
+    spec:
+      containers:
+      - name: airbyte-api-gateway
+        image: airbyte/airbyte-api-gateway:latest
+        ports:
+        - name: airbyte-api-gateway-port
+          containerPort: 8081
+        env:
+        - name: AIRBYTE_API_GATEWAY_API_TOKEN
+          value: $(AIRBYTE_API_GATEWAY_API_TOKEN) # Value should be set through an environment variable or secret
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 200m
+            memory: 512Mi

@@ -1,7 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kao-deployment
+  name: kao-service-deployment
+  namespace: kao
   labels:
     app: kao-service
 spec:
@@ -14,40 +15,44 @@ spec:
       labels:
         app: kao-service
     spec:
+      serviceAccountName: kao-service-sa
+
       containers:
-      - name: kao-container
-        image: localhost:5000/kao-service:latest
+      - name: kao-service
+        image: registry.example.com/kao-service:latest
         ports:
-        - containerPort: 8777
+          - name: http
+            containerPort: 8777
         env:
+        - name: KAO_CONSUMER_API_KEY
+          value: "XXX"
+        - name: KAO_CONSUMER_SECRET
+          value: "YYY"
         - name: DAPR_HTTP_PORT
-          value: "0"
+          value: "8043"
         - name: DAPR_GRPC_PORT
-          value: "0"
-        readinessProbe:
-          httpGet:
-            path: /healthcheck
-            port: 8777
-        livenessProbe:
-          httpGet:
-            path: /healthcheck
-            port: 8777
-        volumeMounts:
-        - name: dapr- secrets
-          mountPath: "/app/dapr"
-        readinessProbe:
-          httpGet:
-            path: /healthcheck
-            port: 8777
-        imagePullPolicy: Always
-      volumes:
-      - name: dapr-secrets
-        secret:
-          secretName: dapr-config
-          items:
-          - key: dapr.io/app/dotnet-new-app/app-id
-            path: app-id
-          - key: tracing
-            path: tracing-config.json
-          - key: logging
-            path: logging-config.json
+          value: "8044"
+        # Add Tracing and Logging configurations in JSON format
+        command: ["/bin/sh"]
+        command:
+          - -c
+          - |
+            export DAPR_LOGGING_LAYOUT= json
+            export DAPR_LOGGING_OPTIONS='{"outputType":"stdout","level":"info","appender":{"type":"logfmt","fields":["level","timestamp","logger","message"]}}'
+            export DAPR_TRACING_EXPORTER_OTLP="otlp://localhost:4318"
+            exec /usr/local/bin/kao-service
+      readinessProbe:
+        httpGet:
+          path: /healthz
+          port: 8777
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 8777
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi

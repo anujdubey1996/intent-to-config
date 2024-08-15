@@ -18,28 +18,5 @@ spec:
       - name: grafana
         image: grafana/grafana:latest
         ports:
-        - containerPort: 3000
-        env:
-        - name: GF_SECURITY_ADMIN_PASSWORD
-          value: <your-admin-password>
-        volumeMounts:
-        - name: grafana-persistent-volume
-          mountPath: /var/lib/grafana
-      volumes:
-      - name: grafana-persistent-volume
-        persistentVolumeClaim:
-          claimName: grafana-pvclaim
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: grafana-pvclaim
-  storageClass: standard
-  labels:
-    app: grafana
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
+          - name: grafana-port
+            containerPort: 3000

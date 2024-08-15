@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-ui
+spec:
+  selector:
+    matchLabels:
+      app: vote-ui
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: vote-ui
+    spec:
+      containers:
+      - name: redis
+        image: redis
+        ports:
+        - containerPort: 6379
+      serviceAccountName: default
+      service:
+        type: ClusterIP
+        ports:
+        - name: redis-port
+          targetPort: 6379
+        selector:
+          app: vote-ui

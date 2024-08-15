@@ -1,55 +1,37 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mysql-pass
-type: Opaque
-data:
-  mysql-root-password: $(echo -n $MYSQL_ROOT_PASSWORD | base64)
-
----
-
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mysql-pv-claim
-spec:
-  storageClassName: standard
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
-
----
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mysql-deployment
+  name: my-database
+  labels:
+    app: my-database
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: mysql
+      app: my-database
   template:
     metadata:
       labels:
-        app: mysql
+        app: my-database
     spec:
+      serviceAccountName: my-database-sa
+      volumes:
+      - name: my-database-persistent-storage
+        persistentVolumeClaim:
+          claimName: my-database-pvc
       containers:
-      - name: mysql
-        image: mysql:5.7
+      - name: my-database
+        image: mysql:8.0
+        ports:
+        - name: my-database-port
+          containerPort: 3306
         env:
         - name: MYSQL_ROOT_PASSWORD
-          secretKeyRef:
-            name: mysql-pass
-            key: mysql-root-password
-        ports:
-        - containerPort: 3306
+          value: my-database-password
+        envFrom:
+        - secretRef:
+            name: my-database-credentials
+        - configMapRef:
+            name: my-database-config
         volumeMounts:
-        - name: mysql-persistent-storage
-          mountPath: /var/lib/mysql
-      volumes:
-      - name: mysql-persistent-storage
-        persistentVolumeClaim:
-          claimName: mysql-pv-claim
+        - mountPath: /var/lib/mysql
+          name: my-database-persistent-storage

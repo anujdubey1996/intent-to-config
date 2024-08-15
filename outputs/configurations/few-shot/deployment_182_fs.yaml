@@ -2,20 +2,32 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis-deployment
-  labels:
-    app: redis
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: redis
-  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 3
   template:
     metadata:
       labels:
         app: redis
     spec:
+      serviceAccountName: default
       containers:
-      - name: redis
-        image: redis:6.2.5
-        ports:
-        - containerPort: 6379
+        - name: redis
+          image: redis:6.2.5
+          ports:
+            - name: redis-port
+              containerPort: 6379
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 1
+              memory: 1Gi

@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-deployment
+  labels:
+    app: my-app
+    helm: my-app-chart
+
+spec:
+  replicas: {{ .Values.replicaCount }}
+
+  selector:
+    matchLabels:
+      app: my-app
+      helm: my-app-chart
+
+  template:
+    metadata:
+      labels:
+        app: my-app
+        helm: my-app-chart
+
+    spec:
+      serviceAccountName: {{ .Values.serviceAccountName }}
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+
+      containers:
+      - name: my-app-container
+        image: {{ .Values.image }}
+        env:
+        - name: NODE_ENV
+          value: "production"
+        envFrom:
+        - secretRef:
+            name: my-secrets
+        ports:
+        - containerPort: {{ .Values.containerPort }}
+          name: my-app-port
+        resources:
+          requests:
+            cpu: {{ .Values.cpu }}
+            memory: {{ .Values.memory }}
+          limits:
+            cpu: {{ .Values.cpuLimit }}
+            memory: {{ .Values.memoryLimit }}
+
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.containerPort }}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.containerPort }}
+          initialDelaySeconds: 10
+          periodSeconds: 10

@@ -1,11 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: harvester-app
-  labels:
-    app: harvester
+  name: harvester
+  namespace: harvester
 spec:
-  replicas: 3
   selector:
     matchLabels:
       app: harvester
@@ -15,40 +13,46 @@ spec:
         app: harvester
     spec:
       containers:
-      - name: harvester-container
-        image: "<IMAGE_NAME>:<TAG>"
+      - name: harvester
+        image: 637423476845.dkr.ecr.ap-south-1.amazonaws.com/harvester:latest
         ports:
-        - containerPort: 8080
+        - name: harvester-port
+          containerPort: 8080
         env:
-        - name: API_KEY
-          value: "<API_KEY>"
-        - name: ADMIN_PASSWORD
-          value: "<ADMIN_PASSWORD>"
-        - name: RABBITMQ_USER
-          value: "<RABBITMQ_USER>"
-        - name: RABBITMQ_PASS
-          value: "<RABBITMQ_PASS>"
-        - name: DB_USER
-          value: "<DB_USER>"
-        - name: DB_PASS
-          value: "<DB_PASS>"
+          - name: GO_ENV
+            value: "production"
+          - name: HARVEST_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: harvester-api-key
+                key: API_KEY
+          - name: MONGODB_URI
+            valueFrom:
+              secretKeyRef:
+                name: harvester-mongodb
+                key: MONGODB_URI
+          - name: REDIS_URI
+            valueFrom:
+              secretKeyRef:
+                name: harvester-redis
+                key: REDIS_URI
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: harvester-port
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 8080
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8080
+            port: harvester-port
+
 ---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: harvester-webhook
-  labels:
-    app: harvester-webhook
+  namespace: harvester-webhook
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: harvester-webhook
@@ -58,16 +62,29 @@ spec:
         app: harvester-webhook
     spec:
       containers:
-      - name: harvester-webhook-container
-        image: "<IMAGE_NAME_WEBHOOK>:<TAG>"
+      - name: harvester-webhook
+        image: 637423476845.dkr.ecr.ap-south-1.amazonaws.com/harvester-webhook:latest
         ports:
-        - containerPort: 9000
+        - name: harvester-webhook-port
+          containerPort: 80
         env:
-        - name: API_KEY
-          value: "<API_KEY>"
-        - name: HARVESTER_URL
-          value: "http://<HARVESTER_APP_SERVICE_NAME>.<namespace>.svc.cluster.local:8080"
+          - name: GO_ENV
+            value: "production"
+          - name: HARVEST_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: harvester-api-key
+                key: API_KEY
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            valueFrom:
+              secretKeyRef:
+                name: harvester-google-credentials
+                key: GOOGLE_APPLICATION_CREDENTIALS
         readinessProbe:
           httpGet:
-            path: /ready
-            port: 9000
+            path: /__prometheus
+            port: harvester-webhook-port
+        livenessProbe:
+          httpGet:
+            path: /__prometheus
+            port: harvester-webhook-port

@@ -4,17 +4,43 @@ metadata:
   name: order-service
   namespace: default
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: order-service
-  replicas: 1
   template:
     metadata:
       labels:
         app: order-service
     spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 5
       containers:
-      - name: order-service
-        image: registry.example.com/order-service:v1
-        ports:
-        - containerPort: 8080
+        - name: server
+          image: gcr.io/google-samples/microservices-demo/order:v0.1.1
+          ports:
+            - name: grpc
+              containerPort: 50051
+            - name: rest
+              containerPort: 8080
+          env:
+            - name: GO_FLAGS
+              value: -gcflags=-m
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /_healthz/ready
+              port: rest
+              initialDelaySeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /_healthz/liveness
+              port: rest
+              initialDelaySeconds: 5
+          imagePullPolicy: IfNotPresent

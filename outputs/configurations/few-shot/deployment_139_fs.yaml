@@ -1,10 +1,29 @@
-{{- with .Values.worker.city }}
-apiVersion: v1
-kind: ConfigMap
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: {{ include "cool-app.fullname" . }}-worker-env
+  name: worker
   labels:
-    {{ include "cool-app.labels" . | nindent 8 }}
-data:
-  CITY: {{ . }}
-{{- end }}
+    app: worker
+    env: {{ .Release.Name }}
+    config: {{ .Values.config }}
+spec:
+  selector:
+    matchLabels:
+      app: worker
+  replicas: {{ .Values.replicas }}
+  template:
+    metadata:
+      labels:
+        app: worker
+        env: {{ .Release.Name }}
+        config: {{ .Values.config }}
+    spec:
+      containers:
+      - name: worker
+        image: {{ .Values.image }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.httpPort }}
+        envFrom:
+        - configMapRef:
+            name: config-{{ .Release.Name }}-{{ .Values.config }}

@@ -1,42 +1,36 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web-app
-  labels:
-    app: web-app
+  name: my-web-app
 spec:
   replicas: 3
-  selector:
-    matchLabels:
-      app: web-app
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 2
       maxUnavailable: 1
-    scale:
-      minReplicas: 1
-      maxReplicas: 10
+      maxSurge: 1
+  selector:
+    matchLabels:
+      myapp: web
   template:
     metadata:
       labels:
-        app: web-app
+        myapp: web
     spec:
       containers:
-      - name: web-app
-        image: your-web-app-image:latest
+      - image: myorg/web-sample-app:v1.0.0
+        name: web-container
         ports:
-        - containerPort: 80
-          name: http
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 80
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 80
-          initialDelaySeconds: 15
-          periodSeconds: 10
+        - containerPort: 8080
+        env:
+        - name: API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: my-secret
+              key: api-key
+        resources:
+          requests:
+            memory: 100Mi
+          limits:
+            memory: 200Mi
+      terminationGracePeriodSeconds: 30

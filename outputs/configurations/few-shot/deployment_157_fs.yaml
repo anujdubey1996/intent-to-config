@@ -1,44 +1,51 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis-session-store
+  name: sessionstore
+  labels:
+    app: myapp
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
-      app: redis-session-store
+      app: myapp
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  minReadySeconds: 120
   template:
     metadata:
       labels:
-        app: redis-session-store
+        app: myapp
     spec:
       containers:
-      - name: redis
-        image: bitnami/redis:latest
+      - name: sessionstore
+        image: redis:6.0-alpine
         ports:
-        - name: redis
-          containerPort: 6379
-        volumeMounts:
-          - name: redis-persistence
-            mountPath: /bitnami/redis
+        - containerPort: 6379
         env:
-        - name: ALLOW_EMPTY_PASSWORD
-          value: "yes"
-      volumes:
-      - name: redis-persistence
-        persistentVolumeClaim:
-          claimName: redis-session-store-pvclaim
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: redis-session-store-pvclaim
-  storageClass: standard
-  labels:
-    app: redis-session-store
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Mi
+          - name: REDIS_SESSION_ID
+            value: "myapp_session_store"
+        resources:
+          requests:
+            memory: "64Mi"
+          limits:
+            memory: "128Mi"
+        readinessProbe:
+          tcpSocket:
+            port: 6379
+        lifecycle:
+          preStop:
+            exec:
+              command: ["docker", "exec", "-it", "$(POD_ID)" ,"redis-cli", "FLUSHALL"]
+      volumeClaimTemplates:
+      - metadata:
+          name: sessionstore-persistence
+        spec:
+          accessModes: [ReadWriteOnce]
+          storageClassName:gp2
+          resources:
+            requests:
+              storage: 20Gi

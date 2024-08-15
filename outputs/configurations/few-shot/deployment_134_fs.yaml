@@ -1,120 +1,156 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: airbyte-api-server
-  labels:
-    app: airbyte-api-server
+  name: airbyte-docker
+  namespace: airbyte
 spec:
-  replicas: 3
   selector:
     matchLabels:
-      app: airbyte-api-server
+      app: airbyte-docker
+  replicas: 1
   template:
     metadata:
       labels:
-        app: airbyte-api-server
+        app: airbyte-docker
     spec:
+      NodeSelector:
+        node-role.kubernetes.io/worker: true
       containers:
       - name: airbyte-api-server
-        image: quay.io/airbytehq/airbyte-api-server:latest
+        image: airbyte/airbyte-api-server:latest
         ports:
         - containerPort: 8080
-        resources:
-          limits:
-            memory: "2Gi"
-            cpu: "2"
         env:
-        - name: AIRBYTE_API_SERVER_EXTRA_OIDC_CERTIFICATES
-          value: "path/to/airbyte_api_server_extra_oidc_certificates.json"
-        - name: AIRBYTE_API_SERVER_JWT_SECRET
-          value: "path/to/jwt_secret"
+          - name: AIRBYTE_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: airbyte-apitoken
+                key: apiToken
+          - name: HOST_NAME
+            value: airbyte-api-server
+          - name: DB_URI
+            valueFrom:
+              configMapKeyRef:
+                name: airbyte-postgres-data
+                key: db-uri
+      resources: # Container resources (Limits, requests)
+        limits:
+          memory: "512Mi"
+          cpu: "2"
+        requests:
+          memory: "256Mi"
+          cpu: "1"
+status: {}
 
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: airbyte-cli
-  labels:
-    app: airbyte-cli
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: airbyte-cli
-  template:
-    metadata:
-      labels:
-        app: airbyte-cli
-    spec:
-      containers:
-      - name: airbyte-cli
-        image: quay.io/airbytehq/airbyte-cli:latest
-        resources:
-          limits:
-            memory: "1Gi"
-            cpu: "1"
-        env:
-        - name: AIRBYTE_CLI_EXTRA_OIDC_CERTIFICATES
-          value: "path/to/airbyte_cli_extra_oidc_certificates.json"
-        - name: AIRBYTE_CLI_JWT_SECRET
-          value: "path/to/jwt_secret"
 
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: airbyte-controller-runner
-  labels:
-    app: airbyte-controller-runner
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: airbyte-controller-runner
-  template:
-    metadata:
-      labels:
-        app: airbyte-controller-runner
-    spec:
-      containers:
-      - name: airbyte-controller-runner
-        image: quay.io/airbytehq/airbyte-controller-runner:latest
-        resources:
-          limits:
-            memory: "2Gi"
-            cpu: "2"
-        env:
-        - name: AIRBYTE_CLI_EXTRA_OIDC_CERTIFICATES
-          value: "path/to/airbyte_cli_extra_oidc_certificates.json"
-        - name: AIRBYTE_CONTROLLER_RUNNER_JWT_SECRET
-          value: "path/to/jwt_secret"
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: airbyte-worker
-  labels:
-    app: airbyte-worker
+  namespace: airbyte
 spec:
-  replicas: 4
   selector:
     matchLabels:
       app: airbyte-worker
+  replicas: 1
   template:
     metadata:
       labels:
         app: airbyte-worker
     spec:
+      NodeSelector:
+        node-role.kubernetes.io/worker: true
       containers:
       - name: airbyte-worker
-        image: quay.io/airbytehq/airbyte-worker:latest
-        resources:
-          limits:
-            memory: "2Gi"
-            cpu: "2"
+        image: airbyte/airbyte-worker:latest
         env:
-        - name: AIRBYTE_CLI_EXTRA_OIDC_CERTIFICATES
-          value: "path/to/airbyte_cli_extra_oidc_certificates.json"
-        - name: AIRBYTE_WORKER_JWT_SECRET
-          value: "path/to/jwt_secret"
+          - name: AIRBYTE_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: airbyte-apitoken
+                key: apiToken
+          - name: JOB_ID
+            value: your-job-id
+          - name: DB_URI
+            valueFrom:
+              configMapKeyRef:
+                name: airbyte-postgres-data
+                key: db-uri
+      resources:  # Container resources (Limits, requests)
+        limits:
+          memory: "512Mi"
+          cpu: "2"
+        requests:
+          memory: "256Mi"
+          cpu: "1"
+status: {}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-postgres
+  namespace: airbyte
+spec:
+  selector:
+    matchLabels:
+      app: airbyte-postgres
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: airbyte-postgres
+    spec:
+      containers:
+      - name: airbyte-postgres
+        image: postgres:12
+        env:
+          - name: POSTGRES_USER
+            value: postgres
+          - name: POSTGRES_PASSWORD
+            value: password
+        volumeClaimTemplate:
+          storageClassName: standard
+          resources:
+            requests:
+              storage: 10Gi
+        ports:
+        - containerPort: 5432
+status: {}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airbyte-monitoring
+  namespace: airbyte
+spec:
+  selector:
+    matchLabels:
+      app: airbyte-monitoring
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: airbyte-monitoring
+    spec:
+      containers:
+      - name: airbyte-monitoring
+        image: prom/kubernetes-prometheus-operator:latest
+        env:
+          - name: K8S_PROMETHEUS_PROTESTER_E2E_K8S_PROVIDER
+            value: "kubernetes"
+        ports:
+        - containerPort: 9090
+        - containerPort: 30800
+        arguments:
+          - --component-config-file=-
+        volumeClaimTemplate:
+          storageClassName: standard
+          resources:
+            requests:
+              storage: 10Gi
+status: {}

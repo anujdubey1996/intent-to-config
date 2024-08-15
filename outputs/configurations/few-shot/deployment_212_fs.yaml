@@ -1,12 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: customer-deployment
+  name: customer
+  labels:
+    app: customer
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: customer
+  replicas: 1
   template:
     metadata:
       labels:
@@ -17,4 +19,4 @@ spec:
         image: chmatvey/customer:latest
         env:
         - name: SPRING_PROFILES_ACTIVE
-          value: kube
+          value: "kube"

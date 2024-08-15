@@ -1,41 +1,37 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-db
-  labels:
-    app: my-db
+  name: database
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: my-db
+      app: database
+  replicas: 1
+  strategy: {}
   template:
     metadata:
       labels:
-        app: my-db
+        app: database
     spec:
+      serviceAccountName: mysql-sa-v2
       containers:
-        - name: my-db
-          image: mysql:latest
-          ports:
-            - containerPort: 3306
-          envFrom:
-            - configMapRef:
-                name: app-config
-          volumeMounts:
-            - name: config-volume
-              mountPath: /var/lib/mysql
-              subPath: config.cnf
-          readinessProbe:
-            tcpSocket:
-              port: 3306
-          livenessProbe:
-            tcpSocket:
-              port: 3306
-      volumes:
-        - name: config-volume
-          configMap:
-            name: app-config
-            items:
-              - key: database
-                path: config.cnf
+      - image: mysql:latest
+        name: mysql-pod
+        envFrom:
+          - configMapRef:
+              name: app-config
+        ports:
+        - name: mysql-port
+          containerPort: 3306
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: mysql-data
+      volumeClaimTemplates:
+      - metadata:
+          name: mysql-data
+        spec:
+           storageClassName: local-storage
+           accessModes: [ReadWriteOnce]
+           resources:
+              requests:
+                storage: 100Mi

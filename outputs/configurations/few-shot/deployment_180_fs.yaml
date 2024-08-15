@@ -2,44 +2,81 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: bibbi-backend-api
+  namespace: bibbi
   labels:
     app: bibbi-backend-api
+    environment: production
+  annotations:
+    # This annotation ensures consistent backup of data across restarts and updates in the Kubernetes cluster.
+    stash.appscode.com/restorepolicy: "OnRestart"
+    # This annotation configures the Kubernetes storage class to use for backup/recovery.
+    stash.appscode.com/repository: "bibbi-backup-repo"
+    # This annotation specifies the directories to be backed up for the Kubernetes deployment.
+    stash.appscode.com/directories: "/app/data"
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  minReadySeconds: 30
   selector:
     matchLabels:
       app: bibbi-backend-api
+      environment: production
   template:
     metadata:
       labels:
         app: bibbi-backend-api
+        environment: production
     spec:
+      serviceAccountName: bibbi-service-account
+      terminationGracePeriodSeconds: 5
       containers:
-      - name: bibbi-backend-api
-        image: bibbi/bibbi-backend-api:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: DATABASE_URL
-          value: "mongodb+srv://username:password@cluster.amazonaws.com/db?retryWrites=true&w=majority"
-        - name: ACCESS_TOKEN_SECRET
-          value: "mysecret"
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 200m
-            memory: 256Mi
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
-          initialDelaySeconds: 15
-          periodSeconds: 20
+        - name: bibbi-backend-api
+          image: 638272679210.dkr.ecr.us-west-2.amazonaws.com/bibbi:latest
+          env:
+            - name: APP_ENV
+              value: production
+            - name: NODE_ENV
+              value: production
+            # Set environment variables with values from secrets
+            - name: DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: bibbi-db-credentials
+                  key: dbUser
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bibbi-db-credentials
+                  key: dbPass
+          ports:
+            - name: api
+              containerPort: 8080
+          readinessProbe:
+            exec:
+              command: ["curl", "-f", "-s", "http://localhost:8080/health"]
+          livenessProbe:
+            exec:
+              command: ["curl", "-f", "-s", "http://localhost:8080/health"]
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
+      nodeSelector:
+        zone: us-west-2a
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelAffinity:
+              terminatingSelector:
+                matchExpressions:
+                - key: environment
+                  operator: In
+                  values:
+                  - production

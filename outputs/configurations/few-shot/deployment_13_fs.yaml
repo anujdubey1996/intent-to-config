@@ -1,104 +1,148 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-app-deployment
+  name: {{ .Release.Name }}
+  annotations:
+    helm.sh/chart: {{ .Chart.Name }}
+    app.kubernetes.io/managed-by: Helm
+    cert-manager.io/cluster-issuer: {{ .Values.certmanager.issuer }}
   labels:
-    app: my-app
+    app: {{ .Release.Name }}
+    chart: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
 spec:
-  replicas: 3
+  replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-      app: my-app
+      app: {{ .Release.Name }}
+  strategy:
+    type: {{ .Values.replicaController.type }}
+    scaling:
+      {{ toYaml .Values.replicaController.minScale }}
+      {{ toYaml .Values.replicaController.maxScale }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.replicaController.maxUnavailable }}
+      maxSurge: {{ .Values.replicaController.maxSurge }}
   template:
     metadata:
+      creationTimestamp: null
       labels:
-        app: my-app
+        app: {{ .Release.Name }}
     spec:
-      volumes:
-      - name: config-volume
-        configMap:
-          name: my-app-config
+      serviceAccountName: {{ .Values.serviceAccount }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccount }}
+      containerSecurityContext:
+        runAsUser: {{ .Values.container.runAsUser }}
+        runAsGroup: {{ .Values.container.runAsGroup }}
+        allowedCapabilities:
+        - {{ range .Values.container.allowedCapabilities }}  --cap-add={{ . }}\n  {{ end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
+      imagePullSecrets:
+      - name: {{ .Values.imageRegistrySecret.name }}
       containers:
-      - name: my-app-container
-        image: my-registry-url/my-app:latest
-        imagePullPolicy: IfNotPresent
+        image: {{ .Values.image.repository }}
+        imagePullPolicy: {{ .Values.imageRegistrySecret.alwaysPull }}
+        name: {{ .Release.Name }}
+        args:
+          {{- range .Values.container.command }} -- {{ . }}\n  {{ end }}
+        command:
+          {{- if .Values.container.command }}
+            {{- range $key, $arg := .Values.container.command }}
+            - {{ $arg | quote }}
+            {{ end }}
+          {{ else }}
+            {{ toYaml .Values.container.entrypoint }}
+          {{ end }}
         ports:
-        - name: http
-          containerPort: 80
+          {{- range $port := .Values.containers.ports }}
+          - name: {{ .name }}
+            containerPort: {{ .containerPort }}
+            {{- if .hostPath }}
+              hostPath:
+                path: {{ .hostPath }}
+            {{ end }}
+          {{- end }}
         env:
-        - name: ENV_VAR_1
-          valueFrom:
-            configMapKeyRef:
-              name: my-app-config
-              key: app_env_var_1
-        - name: ENV_VAR_2
-          valueFrom:
-            secretKeyRef:
-              name: my-secret
-              key: app_env_var_2
-        envFrom:
-        - configMapRef:
-            name: my-app-config
-        - secretRef:
-            name: my-secret
+          {{- if .Values.containerEnvVariables }}
+          {{- range $k, $v := .Values.containerEnvVariables }}
+          - name: {{ $k | quote }}
+            value: {{ $v | quote }}
+          {{- end }}
+          {{ end }}
         resources:
           limits:
-            cpu: "1"
-            memory: "512Mi"
+            cpu: {{ .Values.resources.limits.cpu }}
+            memory: {{ .Values.resources.limits.memory }}
+            {{- if .Values.resources.limits.gpu }}
+              nvidia.com/gpu: {{ .Values.resources.limits.gpu }}
+            {{ end }}
           requests:
-            cpu: "500m"
-            memory: "256Mi"
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: http
-          initialDelaySeconds: 15
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: http
-          initialDelaySeconds: 15
-          periodSeconds: 10
+            cpu: {{ .Values.resources.requests.cpu }}
+            memory: {{ .Values.resources.requests.memory }}
+            {{- if .Values.resources.requests.gpu }}
+              nvidia.com/gpu: {{ .Values.resources.requests.gpu }}
+            {{ end }}
+        volumes:
+          {{- if .Values.volumes }}
+          {{- range $vol := .Values.volumes }}
+          {{ include "k8s/volumes/" $vol }}
+          {{- end }}
+          {{ end }}
       nodeSelector:
-        zone: us-west
+        {{- if .Values.nodeSelector }}
+        nodeSelector:
+          {{- toYaml .Values.nodeSelector }}
+        {{ end }}
       affinity:
         podAntiAffinity:
+          {{- if and .Values.podAntiAffinity.preferred }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          {{- range $preferredMode := .Values.podAntiAffinity.preferred }}
+          {{- include "k8s/affinity/" $preferredMode }}
+          {{ end }}
+          {{ end }}
+        nodeAffinity:
+          {{- if .Values.nodeAffinity }}
           requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                - key: app
-                  operator: In
-                  values:
-                  - my-app
-            topologyKey: kubernetes.io/hostname
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - my-app
-            topologyKey: kubernetes.io/hostname
-
----
-
-apiVersion: autoscaling/v2beta2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: my-app-hpa
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: my-app-deployment
-  minReplicas: 1
-  maxReplicas: 10
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
+            nodeSelectorTerms:
+            {{- range $term := .Values.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution }}
+            - matchExpressions:
+              {{- range $op := $term.matchExpressions }}
+              key: {{ $op.key | quote }}
+              operator: {{ $op.operator | quote }}
+              values:
+              {{- range $v := $op.values }}
+              - {{ $v | quote }}
+              {{ end }}
+            {{- end }}
+          {{ end }}
+          {{ end }}
+      tolerations:
+        {{- if .Values.tolerations }}
+        tolerations:
+        {{- range $tol := .Values.tolerations }}
+        - effect: {{ $tol.effect | quote }}
+          operator: {{ $tol.operator | quote }}
+          key: {{ $tol.key | quote }}
+          value: {{ $tol.value | quote }}
+          {{- if $tol.tolerationSeconds }}
+          tolerationSeconds: {{ $tol.tolerationSeconds }}
+          {{- end }}
+          {{- if $tol.tolerationTaints }}
+          tolerationTaints:
+          {{- range $taint := $tol.tolerationTaints }}
+          - effect: {{ $taint.effect | quote }}
+            key: {{ $taint.key | quote }}
+            {{- if $taint.tolerationEffect }}
+              tolerationEffect: {{ $taint.tolerationEffect }}
+            {{ end }}
+          {{ end }}
+          {{- end }}
+        {{ end }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.imagePullSecrets }}
+      - name: {{ .name }}
+      {{ end }}
+      {{ end }}

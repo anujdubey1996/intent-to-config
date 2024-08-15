@@ -1,21 +1,41 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web-server-deployment
-  labels:
-    app: web-server
+  name: myapp-deployment
 spec:
-  replicas: 3
   selector:
     matchLabels:
-      app: web-server
+      app: myapp
+  replicas: 3
   template:
     metadata:
       labels:
-        app: web-server
+        app: myapp
     spec:
       containers:
-      - name: web-server
-        image: your-docker-image:latest
+      - name: myapp-container
+        image: myapp:latest
         ports:
-        - containerPort: 8080
+        - name: app-port
+          containerPort: 8080
+        env:
+        - name: DB_NAME
+          value: postgres
+        - name: DB_USER
+          value: myuser
+        - name: DB_PASSWORD
+          value: mypassword
+        - name: DB_HOST
+          value: postgres-service
+        - name: DB_PORT
+          value: "5432"
+      - name: postgres-container
+        image: postgres:latest
+        ports:
+        - name: database-port
+          containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: myuser
+        - name: POSTGRES_PASSWORD
+          value: mypassword

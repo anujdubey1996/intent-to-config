@@ -1,0 +1,372 @@
+
+Here are some examples of Kubernetes deployment configurations based on intent:
+
+Intent: Unknown Intent
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: neptune-10ab
+  name: neptune-10ab
+  namespace: neptune
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: neptune-10ab
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: neptune-10ab
+    spec:
+      serviceAccountName: neptune-sa-v2
+      containers:
+      - image: httpd:2.4-alpine
+        name: neptune-pod-10ab
+        resources:
+          requests:
+            memory: 20Mi
+          limits:
+            memory: 50Mi
+
+status: {}
+
+
+Intent: Define a Kubernetes deployment for a container running the lalyos/12factor image with environment variables sourced from a secret.
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geolocationdb
+  labels:
+    app: geolocationdb
+spec:
+  selector:
+    matchLabels:
+      app: geolocationdb
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: geolocationdb
+    spec:
+      containers:
+      - name: geolocationdb
+        image: vprofile/vprofiledb:V1
+        args:
+         - "--ignore-db-dir=lost+found"
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: geolo-db-data
+        ports:
+        - name: geolo-port
+          containerPort: 3306
+        env:
+         - name: MYSQL_ROOT_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: app-secret
+               key: db-pass
+      nodeSelector:
+        zone: us-east-1a
+      volumes:
+        - name: geolo-db-data
+          # This AWS EBS volume must already exist.
+          awsElasticBlockStore:
+             volumeID: vol-0343110a53e1a3eaf
+             fsType: ext4
+
+
+Intent: Deploy a containerized application with specific environment variables. The deployment configuration specifies a single container using an image built from a Dockerfile and sets various environment variables.
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dp
+  namespace: own
+spec: 
+  replicas: 2
+  strategy: 
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  minReadySeconds: 30
+  selector:
+    matchLabels:
+      app: java
+  template:
+    metadata: 
+     name: tmp
+     labels:
+       app: java
+    spec:
+      containers:
+      - name: con
+        image: 637423476845.dkr.ecr.ap-south-1.amazonaws.com/ecs:test
+        ports:
+        - containerPort: 8080
+
+
+
+Intent: Create a Kubernetes Deployment for a Redis instance with a single replica. The deployment configures resource requests and limits for the Redis container and exposes the default Redis port
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: currencyservice
+spec:
+  selector:
+    matchLabels:
+      app: currencyservice
+  template:
+    metadata:
+      labels:
+        app: currencyservice
+    spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: server
+          image: gcr.io/google-samples/microservices-demo/currencyservice:v0.3.6
+          ports:
+            - name: grpc
+              containerPort: 7000
+          env:
+            - name: PORT
+              value: "7000"
+            - name: DISABLE_TRACING
+              value: "1"
+            - name: DISABLE_PROFILER
+              value: "1"
+            - name: DISABLE_DEBUGGER
+              value: "1"
+          readinessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:7000"]
+          livenessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:7000"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
+
+Intent: Deploy the cert-controller in a Kubernetes cluster when the certController is to be created and the certManager is not enabled for the webhook
+Configuration:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stash-demo
+  namespace: demo
+  labels:
+    app: stash-demo
+  # This annotations indicates that data should be recovered on each restart of the workload
+  annotations:
+    stash.appscode.com/restorepolicy: "OnRestart"
+    stash.appscode.com/repository: "demo-backup-repo"
+    stash.appscode.com/directories: "[/source/data]"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stash-demo
+  template:
+    metadata:
+      labels:
+        app: stash-demo
+      name: busybox
+    spec:
+      containers:
+      - args:
+        - sleep
+        - "3600"
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        name: busybox
+        volumeMounts:
+        - mountPath: /source/data
+          name: source-data
+      restartPolicy: Always
+      volumes:
+      - name: source-data
+        configMap:
+          name: stash-sample-data
+
+
+Now, based on the following intent, generate the corresponding Kubernetes deployment configuration:
+
+Intent: Create a Kubernetes Deployment using Helm templates with dynamic values for various configurations. The deployment includes options for autoscaling, image pulling, security settings, resource management, and additional configurations like volumes, node selectors, affinities, and tolerations.
+
+Configuration (YAML):
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  annotations:
+    helm.sh/chart: {{ .Chart.Name }}
+    app.kubernetes.io/managed-by: Helm
+    cert-manager.io/cluster-issuer: {{ .Values.certmanager.issuer }}
+  labels:
+    app: {{ .Release.Name }}
+    chart: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  strategy:
+    type: {{ .Values.replicaController.type }}
+    scaling:
+      {{ toYaml .Values.replicaController.minScale }}
+      {{ toYaml .Values.replicaController.maxScale }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.replicaController.maxUnavailable }}
+      maxSurge: {{ .Values.replicaController.maxSurge }}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccount }}
+      containerSecurityContext:
+        runAsUser: {{ .Values.container.runAsUser }}
+        runAsGroup: {{ .Values.container.runAsGroup }}
+        allowedCapabilities:
+        - {{ range .Values.container.allowedCapabilities }}  --cap-add={{ . }}\n  {{ end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
+      imagePullSecrets:
+      - name: {{ .Values.imageRegistrySecret.name }}
+      containers:
+        image: {{ .Values.image.repository }}
+        imagePullPolicy: {{ .Values.imageRegistrySecret.alwaysPull }}
+        name: {{ .Release.Name }}
+        args:
+          {{- range .Values.container.command }} -- {{ . }}\n  {{ end }}
+        command:
+          {{- if .Values.container.command }}
+            {{- range $key, $arg := .Values.container.command }}
+            - {{ $arg | quote }}
+            {{ end }}
+          {{ else }}
+            {{ toYaml .Values.container.entrypoint }}
+          {{ end }}
+        ports:
+          {{- range $port := .Values.containers.ports }}
+          - name: {{ .name }}
+            containerPort: {{ .containerPort }}
+            {{- if .hostPath }}
+              hostPath:
+                path: {{ .hostPath }}
+            {{ end }}
+          {{- end }}
+        env:
+          {{- if .Values.containerEnvVariables }}
+          {{- range $k, $v := .Values.containerEnvVariables }}
+          - name: {{ $k | quote }}
+            value: {{ $v | quote }}
+          {{- end }}
+          {{ end }}
+        resources:
+          limits:
+            cpu: {{ .Values.resources.limits.cpu }}
+            memory: {{ .Values.resources.limits.memory }}
+            {{- if .Values.resources.limits.gpu }}
+              nvidia.com/gpu: {{ .Values.resources.limits.gpu }}
+            {{ end }}
+          requests:
+            cpu: {{ .Values.resources.requests.cpu }}
+            memory: {{ .Values.resources.requests.memory }}
+            {{- if .Values.resources.requests.gpu }}
+              nvidia.com/gpu: {{ .Values.resources.requests.gpu }}
+            {{ end }}
+        volumes:
+          {{- if .Values.volumes }}
+          {{- range $vol := .Values.volumes }}
+          {{ include "k8s/volumes/" $vol }}
+          {{- end }}
+          {{ end }}
+      nodeSelector:
+        {{- if .Values.nodeSelector }}
+        nodeSelector:
+          {{- toYaml .Values.nodeSelector }}
+        {{ end }}
+      affinity:
+        podAntiAffinity:
+          {{- if and .Values.podAntiAffinity.preferred }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          {{- range $preferredMode := .Values.podAntiAffinity.preferred }}
+          {{- include "k8s/affinity/" $preferredMode }}
+          {{ end }}
+          {{ end }}
+        nodeAffinity:
+          {{- if .Values.nodeAffinity }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            {{- range $term := .Values.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution }}
+            - matchExpressions:
+              {{- range $op := $term.matchExpressions }}
+              key: {{ $op.key | quote }}
+              operator: {{ $op.operator | quote }}
+              values:
+              {{- range $v := $op.values }}
+              - {{ $v | quote }}
+              {{ end }}
+            {{- end }}
+          {{ end }}
+          {{ end }}
+      tolerations:
+        {{- if .Values.tolerations }}
+        tolerations:
+        {{- range $tol := .Values.tolerations }}
+        - effect: {{ $tol.effect | quote }}
+          operator: {{ $tol.operator | quote }}
+          key: {{ $tol.key | quote }}
+          value: {{ $tol.value | quote }}
+          {{- if $tol.tolerationSeconds }}
+          tolerationSeconds: {{ $tol.tolerationSeconds }}
+          {{- end }}
+          {{- if $tol.tolerationTaints }}
+          tolerationTaints:
+          {{- range $taint := $tol.tolerationTaints }}
+          - effect: {{ $taint.effect | quote }}
+            key: {{ $taint.key | quote }}
+            {{- if $taint.tolerationEffect }}
+              tolerationEffect: {{ $taint.tolerationEffect }}
+            {{ end }}
+          {{ end }}
+          {{- end }}
+        {{ end }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.imagePullSecrets }}
+      - name: {{ .name }}
+      {{ end }}
+      {{ end }}
+```
+
+Here's a brief explanation of the key configuration sections that make up the Helm template:
+
+1. `replicas`: Number of replicas to be created for the deployment.
+2. `selector`: Used for label selection and managing the objects that belong to the deployment.
+3. `strategy`: Contains the scaling strategies for the deployment along with options for rolling updates, min/max scaling, and maxSurge/maxUnavailable parameters.
+4. `template`: Defines the template for creating the pod.
+5. `container`: Configuration for the container used in the pod, including the image, arguments, command, resource allocation (CPU, memory, and GPU), and various other options like security context, dnsPolicy, imagePullSecrets, ports, env, and volumeMounts.
+6. `volumes`: Configuration for persistent storage volumes such as configMaps, secret, emptyDir, NFS, AWS EBS, etc.
+7. `nodeSelector`: Configuration for node affinity, used for scheduling pods onto specific nodes.
+8. `affinity`: Configuration for pod anti-affinity to ensure pods are placed on different nodes, and for node affinity to prefer the deployment on specific nodes.
+9. `tolerations`: Configuration for tolerations, allowing pods to be placed on tainted nodes.
+10. `imagePullSecrets` (optional): Configuration for image pull secrets, which are used to authenticate your cluster to the registry when pulling container images.

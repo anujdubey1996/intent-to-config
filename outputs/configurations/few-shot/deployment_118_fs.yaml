@@ -4,55 +4,69 @@ metadata:
   name: auth-server
   labels:
     app: auth-server
-    chart: auth-server-1.0.0
-    release: my-auth-server
   annotations:
-    # Add any custom annotations here based on Helm values
-
+    app.kubernetes.io/instance: auth-server
 spec:
-  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: auth-server
-      release: my-auth-server
-
   template:
     metadata:
-      labels:
-        app: auth-server
-        release: my-auth-server
       annotations:
-        # Add any custom annotations here based on Helm values
-
+        app.kubernetes.io/instance: auth-server
     spec:
       serviceAccountName: auth-server-sa
+      securityContext:
+        fsGroup: 9999
+        runAsUser: 1000
       containers:
-        - name: auth-server
-          image: "{{ .Values.image.repo }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - containerPort: {{ .Values.service.port }}
-          envFrom:
-            - configMapRef:
-                name: auth-server-config
-          volumeMounts:
-            - name: auth-server-storage
-              mountPath: /opt/app/storage
-              subPath: (sub-path from Helm values)
-          securityContext:
-            runAsUser: {{ .Values.securityContext.runAsUser }}
-            fsGroup: {{ .Values.securityContext.fsGroup }}
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.service.port }}
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.service.port }}
+      - name: auth-server
+        image: auth-server:v3
+        env:
+        - name: JWT_SECRET
+          value: my_jwt_secret
+        ports:
+        - name: auth
+          containerPort: 8080
+        volumeMounts:
+        - mountPath: /config
+          name: config-volume
       volumes:
-        - name: auth-server-storage
-          persistentVolumeClaim:
-            claimName: auth-server-pvc
-      nodeSelector:
-        # Add any custom node selectors here based on Helm values
+      - name: config-volume
+        configMap:
+          name: auth-server-config
+  spec:
+    replicas: 1
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1
+    selector:
+      matchLabels:
+        app: auth-server
+    template:
+      metadata:
+        labels:
+          app: auth-server
+      spec:
+        containers:
+        - name: auth-server
+          image: auth-server:v3
+          env:
+          - name: JWT_SECRET
+            value: my_jwt_secret
+          ports:
+          - name: auth
+            containerPort: 8080
+          volumeMounts:
+          - mountPath: /config
+            name: config-volume
+        serviceAccountName: auth-server-sa
+        securityContext:
+          fsGroup: 9999
+          runAsUser: 1000
+        volumes:
+        - name: config-volume
+          configMap:
+            name: auth-server-config

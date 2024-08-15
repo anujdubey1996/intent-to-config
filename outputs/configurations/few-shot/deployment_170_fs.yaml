@@ -1,41 +1,55 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
-  name: auth-server-deployment
+  name: auth-server
+  namespace: auth
+  labels:
+    app: auth-server
+    version: 0.1.0
+
 spec:
-  replicas: {{ .Values.replicas }}
+  replicas: 3
+
   selector:
     matchLabels:
       app: auth-server
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
+  minReadySeconds: 30
+
   template:
     metadata:
       labels:
         app: auth-server
+        version: 0.1.0
     spec:
       containers:
         - name: auth-server
-          image: "{{ .Values.imageName }}:{{ .Values.imageVersion }}"
+          image: <AUTH_SERVER_IMAGE>
           ports:
-            - name: http
-              containerPort: {{ .Values.servicePort }}
+            - containerPort: 8080
+            - containerPort: 443
           env:
-            - name: SERVICE_TYPE
-              value: {{ .Values.serviceType }}
-            - name: NUM_REPLICAS
-              value: {{ .Values.replicas }}
-            - name: SERVICE_PORT
-              value: {{ .Values.servicePort }}
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: auth-server-service
-spec:
-  selector:
-    app: auth-server
-  type: {{ .Values.serviceType }}
-  ports:
-    - name: http
-      port: 3000
-      targetPort: {{ .Values.servicePort }}"
+            - name: APP_ENV
+              value: development
+            - name: JWT_SECRET_KEY
+              value: <JWT_SECRET_KEY>
+          resources:
+            requests:
+              memory: 64Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          terminationGracePeriodSeconds: 30
+    terminationGracePeriodSeconds: 30

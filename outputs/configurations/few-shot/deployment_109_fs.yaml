@@ -1,21 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: search-deployment
+  name: searchservice
   labels:
-    app: search-app
+    app: searchservice
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: search-app
+      app: searchservice
   template:
     metadata:
       labels:
-        app: search-app
+        app: searchservice
     spec:
       containers:
-      - name: search-container
-        image: nginx:1.22.3
+      - name: server
+        image: gcr.io/google-samples/microservices-demo/searchservice:v0.3.7
         ports:
-        - containerPort: 80
+        - name: grpc
+          containerPort: 9656
+        env:
+         - name: API_PORT
+           value: "9656"
+         - name: DISABLE_TRACING
+           value: "1"
+         - name: DISABLE_PROFILER
+           value: "1"
+         - name: DISABLE_DEBUGGER
+           value: "1"

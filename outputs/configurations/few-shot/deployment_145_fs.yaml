@@ -2,20 +2,22 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: helloworld
-  labels:
-    app: helloworld
 spec:
-  replicas: 3
   selector:
     matchLabels:
       app: helloworld
+  replicas: 1
   template:
     metadata:
       labels:
         app: helloworld
     spec:
+      serviceAccountName: default
       containers:
       - name: helloworld
-        image: k8s.gcr.io/echolives-helloworld:v1
+        image: <YOUR_DOCKER_IMAGE_URL>:<TAG>
+        env:
+          - name: APP_NAME
+            value: "world"
         ports:
-        - containerPort: 8080
+          - containerPort: 8080

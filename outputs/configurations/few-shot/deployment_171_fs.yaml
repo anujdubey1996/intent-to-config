@@ -5,29 +5,40 @@ metadata:
   labels:
     app: auth-server
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: auth-server
+  replicas: <num-replicas>
   template:
     metadata:
       labels:
         app: auth-server
     spec:
+      serviceAccountName: default
       containers:
-      - name: auth-server
-        image: "your_auth_server_image"
+      - name: <container-name>
+        image: <image-name>
         ports:
-        - containerPort: 8080
-          name: auth-server
+        - name: <port-number>
+          containerPort: <port-number>
         env:
-        - name: DATABASE_USERNAME
+        - name: APP_ENV
+          value: production
+        - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
-              name: auth-secret
-              key: username
-        - name: DATABASE_PASSWORD
+              name: jwt-secret
+              key: enc-key
+        - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: auth-secret
+              name: <database-secret>
               key: password
+        readinessProbe:
+          httpGet:
+            path: /health/readiness
+            port: <port-number>
+        livenessProbe:
+          httpGet:
+            path: /health/liveness
+            port: <port-number>

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flixpredix-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flixpredix-admin
+  template:
+    metadata:
+      labels:
+        app: flixpredix-admin
+    spec:
+      serviceAccountName: flixpredix-admin-sa
+      containers:
+      - name: flixpredix-admin
+        image: us-west-1.ecr.aws.amazon.com/flixpredix-admin:latest
+        ports:
+        - containerPort: 8080

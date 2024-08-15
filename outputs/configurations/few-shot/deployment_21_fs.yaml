@@ -5,7 +5,6 @@ metadata:
   labels:
     app: zookeeper-operator
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: zookeeper-operator
@@ -16,8 +15,8 @@ spec:
     spec:
       containers:
       - name: zookeeper-operator
-        image: zookeeper-operator:latest
-        ports:
-        - containerPort: 2181
-        - containerPort: 2888
-        - containerPort: 3888
+        image: registry.redhat.io/redhat-operators/zookeeper-operator:v5.4.0
+        env:
+        - name: KZKR_ZOOKEEPER_OPTS
+          value: "-daemon -log4j:/etc/zookeeper/log4j.properties"
+      replicas: 1

@@ -1,31 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-stats-app
-  labels:
-    app: my-stats-app
+  name: my-stats-script-deployment
+  namespace: my-namespace
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: my-stats-app
-      tier: backend
+      app: my-stats-script
   template:
     metadata:
       labels:
-        app: my-stats-app
-        tier: backend
+        app: my-stats-script
     spec:
       containers:
-      - name: my-stats-app
-        image: alpine:3.15
-        command: ["python", "stats-app.py"]
+      - name: stats-app-container
+        image: my-registry/my-stats-script:latest
         ports:
-        - containerPort: 8080
-        volumeMounts:
-        - name: stats-db
-          mountPath: /app/config
-      volumes:
-      - name: stats-db
-        configMap:
-          name: stats-db-config
+        - containerPort: 8000
+        command: ["python", "stats-app.py"]

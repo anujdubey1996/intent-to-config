@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fullstackapi.fullname" . }}
+  namespace: {{ .Release.Namespaces.fullstackapi }}
+  labels:
+    app: {{ include "fullstackapi.name" . }}
+    chart: {{ include "fullstackapi.chart" . }}
+    release: {{ .Release.Name }}
+    revision: {{ .Values.revision }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "fullstackapi.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "fullstackapi.name" . }}
+        release: {{ .Release.Name }}
+        revision: {{ .Values.revision }}
+        helm: {{ .Chart.Name }}-{{ .Chart.Version | quote }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: {{ include "fullstackapi.serviceAccount" . }}
+      containers:
+      - name: {{ include "fullstackapi.containerName" . }}
+        image: "{{ .Values.containerRegistry }}/{{ .Values.fullstackapi.containerImage }}:{{ .Values.fullstackapi.containerImageTag }}"
+        imagePullPolicy: {{ .Values.fullstackapi.imagePullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.http.containerPort }}
+          protocol: TCP
+        env:
+        - name: HTTP_PORT
+          value: "{{ .Values.http.containerPort }}"
+        - name: GRAPHQL_PORT
+          value: "{{ .Values.graphql.containerPort }}"
+        - name: PGHOST
+          value: "database"
+        - name: PGUSER
+          value: {{ .Values.fullstackapi.postgresqlUser }}
+        - name: PGDATABASE
+          value: {{ .Values.fullstackapi.postgresqlDatabase }}
+        - name: PG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.postgresqlPasswordSecretName }}
+              key: {{ .Values.fullstackapi.postgresqlPasswordSecretKey }}
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: "http"
+        resources:
+          limits:
+            memory: {{ .Values.fullstackapi.containerMemoryLimit }}
+          requests:
+            memory: {{ .Values.fullstackapi.containerMemoryRequest }}
+        volumeMounts:
+        - name: fullstackapi-persistent-storage
+          mountPath: /data/db
+        - name: fullstackapi-certs
+          mountPath: /certs
+      volumes:
+      - name: fullstackapi-persistent-storage
+        storageClass: {{ .Values.fullstackapi.volumeStorageClass }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.fullstackapi.volumeClaimName }}
+      - name: fullstackapi-certs
+        secret:
+          secretName: {{ .Values.fullstackapi.secretsName }}

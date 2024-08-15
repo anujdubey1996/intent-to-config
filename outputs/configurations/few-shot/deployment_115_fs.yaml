@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: site-deployment
+  labels:
+    app: site
 spec:
   replicas: 0
   selector:
@@ -13,7 +15,7 @@ spec:
         app: site
     spec:
       containers:
-      - name: site-container
-        image: nginx:latest
+      - name: site
+        image: my-site-container:latest
         ports:
         - containerPort: 80

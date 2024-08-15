@@ -3,8 +3,6 @@ kind: Deployment
 metadata:
   name: react-clock-basic
   namespace: terraform-clock-app
-  labels:
-    app: react-clock-basic
 spec:
   replicas: 3
   selector:
@@ -17,25 +15,22 @@ spec:
     spec:
       containers:
       - name: react-clock-basic
-        image: <your-dockerhub-username>/react-clock-basic:latest
+        image: 637423476845.dkr.ecr.ap-south-1.amazonaws.com/clock:basic
         ports:
-          - containerPort: 80
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "200m"
-            memory: "256Mi
+        - containerPort: 3000
         readinessProbe:
           httpGet:
             path: /
-            port: 80
-          initialDelaySeconds: 5
-          periodSeconds: 10
+            port: 3000
         livenessProbe:
           httpGet:
             path: /
-            port: 80
-          initialDelaySeconds: 15
-          periodSeconds: 20
+            port: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        resources:
+          requests:
+            memory: "50Mi"
+          limits:
+            memory: "100Mi"

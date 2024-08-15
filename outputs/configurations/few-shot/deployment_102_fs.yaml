@@ -12,28 +12,25 @@ spec:
       labels:
         app: selenoid-chrome-vnc
     spec:
+      serviceAccountName: selenoid-sa-v2
       containers:
-        - name: selenoid-chrome-vnc
-          image: <your-container-registry>/selenoid-chrome-vnc:<tag>
-          env:
-          - name: SELENIUM_HUB_URL
-            value: <selenium-hub-url>
-          resources:
-            limits:
-              memory: "512Mi"
-              cpu: "2"
-            requests:
-              memory: "256Mi"
-              cpu: "1"
-          ports:
-          - containerPort: 4444 # Remote WebDriver port
-            name: rwd
-          - containerPort: 5900
-            name: vnc
-          readinessProbe:
-            tcpSocket:
-              port: 4444
-          livenessProbe:
-            httpGet:
-              path: "/"
-              port: 4444
+      - image: cloudgoportal/selenoid-chrome-vnc
+        name: selenoid-vnc-chrome
+        args:
+         - --hub=http://localhost:4444/wd/hub
+        ports:
+        - name: vnc-port
+          containerPort: 5900
+        resources:
+          requests:
+            cpu: 200m
+            memory: 500Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        env:
+         - name: GOOGLE_APPLICATION_CREDENTIALS
+           valueFrom:
+             secretKeyRef:
+               name: selenoid-sa-v2
+               key: service-account-key

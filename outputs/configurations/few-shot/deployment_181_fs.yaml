@@ -1,48 +1,60 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-app-deployment
-  labels:
-    app: my-app
+  name: dynamic-service-deployment
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   selector:
     matchLabels:
-      app: my-app
+      app: dynamic-service
   template:
     metadata:
       labels:
-        app: my-app
+        app: dynamic-service
     spec:
+      serviceAccountName: default
       containers:
-      - name: my-app-container
-        image: my-app-image:v1
-        ports:
-        - containerPort: 8080
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
+      - name: dynamic-service-container
+        image: <YOUR_DOCKER_REGISTRY_URL>/<YOUR_IMAGE_NAME>:<YOUR_IMAGE_TAG>
+        envFrom:
+          - secretRef:
+              name: environment-variables
+        resources:
+          requests:
+            memory: 50Mi
+          limits:
+            memory: 100Mi
         livenessProbe:
           httpGet:
-            path: /healthz
+            path: /healthcheck
             port: 8080
-          initialDelaySeconds: 10
-          periodSeconds: 10
-        resources:
-          limits:
-            cpu: "2"
-            memory: "512Mi"
-          requests:
-            cpu: "1"
-            memory: "256Mi"
-      rollingUpdate:
-        maxSurge: 1
-        maxUnavailable: 1
-      strategy:
-        type: RollingUpdate
-        rollingUpdate:
-          maxSurge: 1
-          maxUnavailable: 1
-        type: RollingUpdate
-      terminationGracePeriodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: 8080
+        restartPolicy: Always
+        containers:
+        - name: dynamic-service-container
+          image: <YOUR_DOCKER_REGISTRY_URL>/<YOUR_IMAGE_NAME>:<YOUR_IMAGE_TAG>
+          envFrom:
+            - secretRef:
+                name: environment-variables
+          resources:
+            requests:
+              memory: 50Mi
+            limits:
+              memory: 100Mi
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 8080
+          restartPolicy: OnFailure

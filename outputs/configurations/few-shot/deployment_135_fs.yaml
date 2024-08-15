@@ -1,167 +1,129 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: airbyte-api
+  name: airbyte-connector-salesforce
+  namespace: airbyte
 spec:
   selector:
     matchLabels:
-      app: airbyte-api
-  replicas: 3
+      app: airbyte-connector-salesforce
   template:
     metadata:
       labels:
-        app: airbyte-api
+        app: airbyte-connector-salesforce
     spec:
       containers:
-      - name: airbyte-api
-        image: airbyte/airbyte-api:latest
+      - name: airbyte-connector-salesforce
+        image: airbyte/airbyte:v0.47.0-alpine
         ports:
-        - containerPort: 80
+        - containerPort: 8080
         env:
-        - name: AIRBYTE_API_JWT_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: airbyte-jwt-secret
-              key: jwt-secret
+        - name: CONNECTOR_ID
+          value: "salesforce"
+        - name: API_KEY
+          value: <API_KEY>
+        - name: API_SECRET
+          value: <API_SECRET>
+        - name: API_URL
+          value: <API_URL>
+        - name: MAX_WORKERS
+          value: 1
         resources:
+          requests:
+            memory: 512Mi
           limits:
-            memory: "64Mi"
-            cpu: "250m"
+            memory: 1Gi
         readinessProbe:
           httpGet:
-            path: /health
-            port: 80
+            path: /healthz
+            port: 8080
         livenessProbe:
           httpGet:
-            path: /health
-            port: 80
+            path: /healthz
+            port: 8080
+
 ---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: airbyte-api-webui
+  name: airbyte-connector-mysql
+  namespace: airbyte
 spec:
   selector:
     matchLabels:
-      app: airbyte-api-webui
-  replicas: 2
+      app: airbyte-connector-mysql
   template:
     metadata:
       labels:
-        app: airbyte-api-webui
+        app: airbyte-connector-mysql
     spec:
       containers:
-      - name: airbyte-api-webui
-        image: airbyte/airbyte-api-webui:latest
+      - name: airbyte-connector-mysql
+        image: airbyte/airbyte:v0.47.0-alpine
         ports:
-        - containerPort: 3000
+        - containerPort: 8081
         env:
-        - name: AIRBYTE_API_URL
-          value: "http://airbyte-api:80"
-        - name: AIRBYTE_API_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: airbyte-api-secret-key
-              key: api-secret-key
+        - name: CONNECTOR_ID
+          value: "mysql"
+        - name: DB_HOST
+          value: <DB_HOST>
+        - name: DB_USERNAME
+          value: <DB_USERNAME>
+        - name: DB_PASSWORD
+          value: <DB_PASSWORD>
+        - name: DB_NAME
+          value: <DB_NAME>
         resources:
+          requests:
+            memory: 512Mi
           limits:
-            memory: "512Mi"
-            cpu: "500m"
+            memory: 1Gi
         readinessProbe:
           httpGet:
-            path: /health
-            port: 3000
+            path: /healthz
+            port: 8081
         livenessProbe:
           httpGet:
-            path: /health
-            port: 3000
+            path: /healthz
+            port: 8081
+
 ---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: airbyte-worker
+  name: airbyte-platform
+  namespace: airbyte
 spec:
   selector:
     matchLabels:
-      app: airbyte-worker
-  replicas: 10
+      app: airbyte-platform
   template:
     metadata:
       labels:
-        app: airbyte-worker
+        app: airbyte-platform
     spec:
       containers:
-      - name: airbyte-worker
-        image: airbyte/airbyte-worker:latest
-        env:
-        - name: AIRBYTE_API_URL
-          value: "http://airbyte-api:80"
-        - name: AIRBYTE_API_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: airbyte-api-secret-key
-              key: api-secret-key
-        - name: AIRBYTE_WORKER_MAX_ parallel_connections
-          value: "4"
+      - name: airbyte-platform
+        image: airbyte/airbyte:v0.47.0-alpine
+        ports:
+        - containerPort: 8000
         resources:
+          requests:
+            memory: 1Gi
           limits:
-            memory: "2Gi"
-            cpu: "500m"
-        command: ["airbyte", "run", "--config", "/airbyte.yml"]
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: airbyte-pipeline-manager
-spec:
-  selector:
-    matchLabels:
-      app: airbyte-pipeline-manager
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: airbyte-pipeline-manager
-    spec:
-      containers:
-      - name: airbyte-pipeline-manager
-        image: airbyte/airbyte-pipeline-manager:latest
+            memory: 2Gi
+        readinessProbe:
+          httpGet:
+            path: /healthz/platform
+            port: 8000
+        livenessProbe:
+          httpGet:
+            path: /healthz/platform
+            port: 8000
         env:
-        - name: AIRBYTE_API_URL
-          value: "http://airbyte-api:80"
-        - name: AIRBYTE_API_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: airbyte-api-secret-key
-              key: api-secret-key
-        resources:
-          limits:
-            memory: "1Gi"
-            cpu: "500m"
-        command: ["airbyte", "run", "--config", "/airbyte.yml"]
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: airbyte-api
-spec:
-  selector:
-    app: airbyte-api
-  ports:
-  - name: http
-    port: 80
-    targetPort: 80
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: airbyte-api-webui
-spec:
-  selector:
-    app: airbyte-api-webui
-  ports:
-  - name: http
-    port: 3000
-    targetPort: 3000
+        - name: AIRBYTE_API_KEY
+          value: <API_KEY>
+        - name: AIRBYTE_API_SECRET
+          value: <API_SECRET>

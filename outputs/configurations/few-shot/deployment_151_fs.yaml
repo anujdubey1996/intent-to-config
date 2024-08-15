@@ -1,9 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cert-controller
-  labels:
-    app: cert-controller
+  name: cert-controller-deployment
+  namespace: cert-manager
 spec:
   replicas: 1
   selector:
@@ -14,13 +13,38 @@ spec:
       labels:
         app: cert-controller
     spec:
+      serviceAccountName: cert-controller-sa
+      containerSecurityContext:
+        runAsUser: 1000
+        capabilities:
+          drop: ALL
+      terminationGracePeriodSeconds: 30
       containers:
       - name: cert-controller
-        image: <cert-controller-image>
+        image: jetstack/cert-manager:v1.6.0
+        imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 443
-          name: https
-          protocol: TCP
+        - name: webhooks-port
+          containerPort: 80
         env:
-        - name: WEBHOOK_SKIPPERS
-          value: "certmanagers.k8s.io"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        args:
+        - CertController
+        - --install
+        - --webhook-service-cert-signature-key=cert-manager
+        - --webhooks= certificate.acme.zero-dns.vercel.com:/certificate-manager/acme/challenge
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: webhooks-port
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: webhooks-port

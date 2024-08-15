@@ -1,43 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-mysql
-  labels:
-    app: mysql
+  name: mydb
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: mysql
+      app: mydb
+  replicas: 1
   template:
     metadata:
       labels:
-        app: mysql
+        app: mydb
     spec:
       containers:
-      - name: mysql
-        image: mysql:5.7
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          value: super-secret-password
+      - image: mysql:5.7
+        name: mydb
         ports:
         - containerPort: 3306
-          name: mysql
-        volumeMounts:
-        - name: mysql-persistent-storage
-          mountPath: /var/lib/mysql
-      volumes:
-      - name: mysql-persistent-storage
-        persistentVolumeClaim:
-          claimName: my-mysql-pvclaim
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: my-mysql-pvclaim
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi

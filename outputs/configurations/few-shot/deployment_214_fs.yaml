@@ -1,12 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wildwest-deployment
+  name: wildwest
   namespace: wildwest
-  labels:
-    app: wildwest
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   selector:
     matchLabels:
       app: wildwest
@@ -20,3 +23,19 @@ spec:
         image: wildwest:latest
         ports:
         - containerPort: 8080
+        env:
+         - name: MYSQL_ROOT_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: mysql-pass
+               key: password
+      nodeSelector:
+        zone: us-east-1a
+      containers:
+      - name: wildwest
+        image: wildwest:latest
+        resources:
+          requests:
+            cpu: 1000m
+          limits:
+            cpu: 1000m

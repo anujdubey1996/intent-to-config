@@ -1,12 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: consul-deployment
-  labels:
-    app: consul
+  name: consul
+  namespace: consul
   annotations:
-    app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: consul-0.1.0
+    deployment.kubernetes.io/revision: "1"
+    sidecar.istio.io/inject: "false"
 spec:
   replicas: 1
   selector:
@@ -19,27 +18,14 @@ spec:
     spec:
       containers:
       - name: consul
-        image: hashicorp/consul:latest
+        image: consul:1.15.1
         ports:
-        - containerPort: 8500
-          name: consul-http
-        - containerPort: 8600
-          name: consul-rrp
-        - containerPort: 8080
-          name: consul-ui
-        readinessProbe:
-          httpGet:
-            path: /v1/health/service/consul
-            port: 8500
-        livenessProbe:
-          httpGet:
-            path: /v1/health/service/consul
-            port: 8500
-      resources:
-        limits:
-          memory: "128Mi"
-          cpu: "500m"
-        requests:
-          memory: "64Mi"
-          cpu: "250m"
-status: {}
+        - name: consul-server
+          containerPort: 8500
+        resources:
+          limits:
+            memory: "400Mi"
+            cpu: "4"
+          requests:
+            memory: "200Mi"
+            cpu: "2"

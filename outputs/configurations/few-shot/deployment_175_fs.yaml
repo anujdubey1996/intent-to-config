@@ -1,19 +1,47 @@
 apiVersion: apps/v1
-   kind: Deployment
-   metadata:
-     name: my-microservice
-   spec:
-     replicas: {{ .Values.replicas }}
-     selector:
-       matchLabels:
-         app: my-microservice
-     template:
-       metadata:
-         labels:
-           app: my-microservice
-       spec:
-         containers:
-         - name: {{ .Chart.Name }}
-           image: {{ .Values.image }}
-           ports:
-           - containerPort: {{ .Values.service.port }}
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount }}
+      containers:
+      - name: {{ .Release.Name }}
+        image: {{ .Values.image }}
+        ports:
+          - containerPort: {{ .Values.containerPort }}
+        env:
+          - name: APP_ENVIRONMENT
+            value: {{ .Values.appEnvironment }}
+          - name: APP_PORT
+            value: {{ .Values.appPort }}
+        resources:
+          requests:
+            cpu: {{ .Values.cpuRequest }}
+            memory: {{ .Values.memoryRequest }}
+          limits:
+            cpu: {{ .Values.cpuLimit }}
+            memory: {{ .Values.memoryLimit }}
+      nodeSelector:
+        zone: {{ .Values.zone }}
+      volumes:
+        - name: {{ .Release.Name }}
+          configMap:
+            name: {{ .Release.Name }}-config
+            items:
+            - key: database.password
+              valueFrom:
+                secretKeyRef:
+                  name: database-credentials
+                  key: password
+                defaultMode: 420

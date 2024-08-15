@@ -1,47 +1,61 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{include "my-service-fullname" .}}
+  name: {{ .Release.Name }}
   labels:
-    app: {{include "my-service-name" .}}
-    helm: chart-name
+    app: {{ .Release.Name }}
+    chart: {{ .Chart }}
+    release: {{ .Release.Namespace }}
+    revision: {{ .Revision }}
+    appVersion: {{ .Values.appVersion }}
+    chartVersion: {{ .Values.chartVersion }}
+    k8sVersion: {{ .Values.k8sVersion }}
 spec:
-  replicas: {{.Values.replicaCount}}
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{include "my-service-name" .}}
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: {{.Values.maxUnavailable}}
-      maxSurge: {{.Values.maxSurge}}
-
+      app: {{ .Release.Name }}
+      release: {{ .Release.Namespace }}
   template:
     metadata:
       labels:
-        app: {{include "my-service-name" .}}
-
+        app: {{ .Release.Name }}
+        release: {{ .Release.Namespace }}
+      annotations:
+        {{ if .Values.podAnnotations }}
+        {{ toYaml .Values.podAnnotations | indent 12 }}
+        {{ end }}
     spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
       containers:
-      - name: {{include "my-service-name" .}}
-        image: {{.Values.container.image}}
-        imagePullPolicy: {{.Values.container.imagePullPolicy}}
+      - name: {{ .Values.container.name }}
+        image: {{ .Values.container.image }}
         ports:
-          - name: http
-            containerPort: {{.Values.container.httpPort}}
-            protocol: TCP
+        {{ toYaml (index .Values.container.ports 0) }}
+        env:
+        {{ toYaml (index .Values.container.env 0) }}
+        volumeMounts:
+        {{ toYaml (index .Values.container.volumeMounts 0) }}
         readinessProbe:
-          httpGet:
-            path: /health
-            port: {{.Values.container.httpPort}}
+          {{ toYaml (index .Values.container.readinessProbe 0) }}
         livenessProbe:
-          httpGet:
-            path: /health
-            port: {{.Values.container.httpPort}}
-        resources:
-          limits:
-            cpu: {{.Values.container.cpu}}
-            memory: "{{.Values.container.memory}}"
-          requests:
-            cpu: {{.Values.container.cpu}}
-            memory: "{{.Values.container.memory}}"
+          {{ toYaml (index .Values.container.livenessProbe 0) }}
+      nodeSelector:
+        {{ if .Values.nodeSelector }}
+        {{ toYaml .Values.nodeSelector }}
+        {{ end }}
+      affinity:
+        {{ if .Values.affinity }}
+        {{ toYaml .Values.affinity }}
+        {{ end }}
+      tolerations:
+        {{ if .Values.tolerations }}
+        {{ toYaml .Values.tolerations }}
+        {{ end }}
+      schedulerName: {{ .Values.schedulerName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      volumes:
+      {{ if .Values.volumes }}
+      {{ toYaml .Values.volumes }}
+      {{ end }}

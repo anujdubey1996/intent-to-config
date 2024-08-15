@@ -1,49 +1,49 @@
 apiVersion: apps/v1
-kind: ReplicaSet
-metadata:
-  name: my-app-v2
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: my-app-v2
-  template:
-    metadata:
-      labels:
-        app: my-app-v2
-    spec:
-      containers:
-      - name: my-app-v2
-        image: my-app-v2:latest
-        ports:
-        - containerPort: 80
-
----
-apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: my-app-v2
+  labels:
+    app: my-app
 spec:
   replicas: 3
   selector:
     matchLabels:
       app: my-app-v2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
         app: my-app-v2
     spec:
-      terminationGracePeriodSeconds: 30
+      serviceAccountName: my-app-sa
+      terminationGracePeriodSeconds: 5
       containers:
-      - name: my-app-v2
-        image: my-app-v2:latest
-        ports:
-        - containerPort: 80
-      readinessProbe:
-        httpGet:
-          path: /readiness
-          port: 80
-      livenessProbe:
-        httpGet:
-          path: /liveness
-          port: 80
+        - name: my-app-container
+          image: my-app-v2
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: ENV_1
+              value: "value-1"
+            - name: ENV_2
+              value: "value-2"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1024Mi

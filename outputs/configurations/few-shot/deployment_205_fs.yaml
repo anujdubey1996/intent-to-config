@@ -2,10 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: details-v1
-  labels:
-    app: details-v1
 spec:
-  replicas: 3
   selector:
     matchLabels:
       app: details-v1
@@ -15,25 +12,40 @@ spec:
         app: details-v1
     spec:
       containers:
-      - name: details
-        image: library/details:v1
-        env:
-        - name: APP_NAME
-          value: details-v1
-        ports:
-        - containerPort: 8080
-        imagePullPolicy: Always
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: details-v1
-  labels:
-    app: details-v1
-spec:
-  type: ClusterIP
-  ports:
-  - port: 80
-  selector:
-    app: details-v1
+        - name: details-v1-container
+          image: details/v1
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret-db
+                  key: db-host
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret-db
+                  key: db-port
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret-db
+                  key: db-database
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret-db
+                  key: db-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret-db-password
+              optional: true
+          resources:
+            limits:
+              memory: "128Mi"
+            requests:
+              cpu: "500m"
+              memory: "64Mi"
+      replicas: 1

@@ -9,8 +9,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 25%
-      maxSurge: 25%
+      maxUnavailable: 1
+      maxSurge: 3
   selector:
     matchLabels:
       app: kuard
@@ -19,14 +19,16 @@ spec:
       labels:
         app: kuard
     spec:
+      serviceAccountName: default
       containers:
       - name: kuard
-        image: gcr.io/google-samples/kuard-amd64:blue
+        image: gcr.io/kuar-demo/kuard-amd64:1.3.0
         ports:
-        - containerPort: 8080
+        - name: http
+          containerPort: 8080
         readinessProbe:
           httpGet:
             path: /healthz
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 10
+            port: http
+          initialDelaySeconds: 3
+          periodSeconds: 5

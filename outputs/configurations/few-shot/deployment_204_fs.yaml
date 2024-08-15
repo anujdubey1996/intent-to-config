@@ -1,6 +1,16 @@
-apiVersion: apps/v1
-kind: Deployment
+---
+# Add HorizontalPodAutoscaler configuration for scale based on traffic
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
 metadata:
-  name: publisher-deployment
+  name: publisher-autoscaler
   labels:
     app: publisher
+spec:
+  targetCPUUtilization: 50
+  minReplicas: 1
+  maxReplicas: 3
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: publisher

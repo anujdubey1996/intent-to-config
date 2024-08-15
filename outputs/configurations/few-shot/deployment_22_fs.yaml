@@ -2,11 +2,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: my-react-app
+  labels:
+    app: my-react-app
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: my-react-app
+  replicas: 1
   template:
     metadata:
       labels:
@@ -14,6 +16,6 @@ spec:
     spec:
       containers:
       - name: my-react-app
-        image: my-registry/my-react-app:latest
+        image: my-docker-image:latest
         ports:
         - containerPort: 3000

@@ -1,11 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-app-deployment
-  labels:
-    app: my-app
+  name: my-app
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 2
   selector:
     matchLabels:
       app: my-app
@@ -15,13 +18,8 @@ spec:
         app: my-app
     spec:
       containers:
-      - name: my-app-container
-        image: my-app-image
+      - name: app
+        image: my-container-image
         ports:
         - containerPort: 80
-      strategy:
-        type: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 1
-          maxSurge: 2
-        type: RollingUpdate
+      imagePullPolicy: Always

@@ -1,19 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hello-world
+  name: helloworld
 spec:
-  replicas: 3
   selector:
     matchLabels:
-      app: hello-world
+      app: helloworld
+  replicas: 3
   template:
     metadata:
       labels:
-        app: hello-world
+        app: helloworld
     spec:
       containers:
-      - name: hello-world
-        image: username/helloworld:latest
+      - name: hello
+        image: myregistry.com/hello-world:v1.0.1-test
         ports:
-        - containerPort: 80
+        - containerPort: 8080
+          name: http
+        - containerPort: 8443
+          name: https
+        env:
+        - name: MY_QUERY
+          value: "some-query-string"

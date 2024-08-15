@@ -1,59 +1,33 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: mysql-deployment
-  labels:
-    app: mysql-app
+  name: my-mysql
 spec:
-  replicas: 3
   selector:
     matchLabels:
-      app: mysql-app
+      app: my-mysql
+  serviceName: my-mysql
+  replicas: 3
   template:
     metadata:
       labels:
-        app: mysql-app
+        app: my-mysql
     spec:
+      serviceAccountName: my-mysql-sa
+      volunteerNodes: node-01,node-02,node-03
       containers:
       - name: mysql
         image: mysql:5.7
+        ports:
+        - name: mysql
+          containerPort: 3306
         env:
         - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mysql-password
-              key: password
-        ports:
-        - containerPort: 3306
-          name: mysql
+          value: my-root-password
         volumeMounts:
-        - name: mysql-persistent-volume
+        - name: data-volume
           mountPath: /var/lib/mysql
       volumes:
-      - name: mysql-persistent-volume
+      - name: data-volume
         persistentVolumeClaim:
-          claimName: mysql-pv-claim
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: mysql-service
-spec:
-  selector:
-    app: mysql-app
-  ports:
-  - port: 3306
-    targetPort: 3306
-  type: ClusterIP
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mysql-pv-claim
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
+          claimName: my-mysql-pvc

@@ -1,45 +1,41 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: whoami
+  name: whoami-deployment
   labels:
     app: whoami
 spec:
-  replicas: 3
   selector:
     matchLabels:
       app: whoami
+  replicas: 3
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
       maxSurge: 1
-    # Specify update strategy subresources here.
-
+  minReadySeconds: 30
   template:
     metadata:
       labels:
         app: whoami
     spec:
-      serviceAccountName: whoami-sa
-      securityContext:
-        runAsUser: 9999
+      serviceAccountName: default
       containers:
-      - name: whoami
-        image: containous/whoami@sha256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      - name: container
+        image: containous/whoami
         ports:
         - containerPort: 8080
-        # Add any other container configurations here, such as volumes, etc.
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: whoami
-spec:
-  selector:
-    app: whoami
-  type: ClusterIP
-  ports:
-  - port: 80
-    targetPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      resources:
+        limits:
+          cpu: "100m"
+          memory: "50Mi"
+        requests:
+          cpu: "50m"
+          memory: "25Mi"
